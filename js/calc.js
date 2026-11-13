@@ -177,6 +177,7 @@
 
   VL.calc = {
     render,
+    engine: loadEngine,
     load(metaKey, name, side) {
       const e = VL.meta.data && VL.meta.data.formats[metaKey];
       S.fmt = e ? e.parent : S.fmt;

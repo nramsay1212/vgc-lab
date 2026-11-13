@@ -1,7 +1,7 @@
 /* Offline support. Network first, so updates (including the weekly data
  * refresh) show up right away; the cached copy is used only when offline. */
-const CACHE = 'vgclab-v3';
-const SHELL = ['./', 'index.html', 'css/app.css', 'js/store.js', 'js/content.js', 'js/study.js', 'js/help.js', 'js/meta.js', 'js/calc.js', 'js/companion.js', 'js/teamcheck.js', 'js/plan.js', 'js/app.js', 'data/dex.json', 'manifest.webmanifest', 'icons/icon-192.png'];
+const CACHE = 'vgclab-v4';
+const SHELL = ['./', 'index.html', 'css/app.css', 'js/store.js', 'js/content.js', 'js/study.js', 'js/help.js', 'js/meta.js', 'js/calc.js', 'js/companion.js', 'js/teamcheck.js', 'js/plan.js', 'js/arcade.js', 'js/app.js', 'data/dex.json', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

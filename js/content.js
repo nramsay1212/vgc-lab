@@ -22,7 +22,7 @@
   ];
 
   VL.SESSION = [
-    { id: 'drill', t: 'Study drill', m: '5 min', d: 'One round in the Study tab. Pick the drill with your lowest accuracy.' },
+    { id: 'drill', t: 'Study drill or game', m: '5 min', d: 'One round in Study or one game in Games.' },
     { id: 'warm', t: 'Warm-up: calc 3 threats', m: '10 min', d: null },
     { id: 'ladder', t: 'Ladder block with your focus', m: '6–10 games', d: 'At <span class="term" data-term="preview">team preview</span>, say your <span class="term" data-term="bring4">bring-4</span>, your <span class="term" data-term="lead">lead</span>, and your <span class="term" data-term="wincon">win condition</span> before you lock in.' },
     { id: 'log', t: 'Log every game', m: '1 min each', d: 'Right after the game, while you still remember the turn it swung.' },

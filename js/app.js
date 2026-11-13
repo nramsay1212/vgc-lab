@@ -102,7 +102,7 @@
     for (const d of VL.study.DRILLS) { const a = VL.study.accuracy(d.id); if (a !== null && (weakest === null || a < weakest.a)) weakest = { a, n: d.name }; }
     const desc = {
       warm: threats.length ? `Run your main attacks into ${threats.map(esc).join(', ')}, the Pokémon beating you most lately, and check who outspeeds whom.` : 'Pick 3 threats you see a lot. Run your main attacks into them in a damage calc and check who outspeeds whom. After a few logged games this fills in from your losses.',
-      drill: weakest ? `One round in the Study tab. Your weakest drill right now is ${esc(weakest.n)} (${weakest.a}%).` : 'One round in the Study tab. Start with Type vs Pokémon.',
+      drill: weakest ? `One round in Study or one game in Games. Your weakest drill right now is ${esc(weakest.n)} (${weakest.a}%).` : 'One round in Study or one game in Games. Speed Duel is a good start.',
     };
     $('checklist').innerHTML = VL.SESSION.map(s => {
       const on = !!(day.done && day.done[s.id]);
@@ -398,6 +398,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       renderHeader(); renderToday(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderTeams(); renderSettings();
       VL.study.render();
       if (VL.teamcheck) VL.teamcheck.render();
+      if (VL.arcade) VL.arcade.render();
       if (VL.plan && !inside('op-list')) VL.plan.render();
       if (VL.companion && location.hash === '#companion' && !inside('cp-live')) VL.companion.render();
       if (VL.meta.render && location.hash === '#meta' && !inside('mt-detail')) VL.meta.render();
@@ -406,7 +407,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   store.onChange(renderAll);
 
   // ---------- routing ----------
-  const TABS = ['today', 'log', 'companion', 'review', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
+  const TABS = ['today', 'log', 'companion', 'review', 'study', 'games', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
@@ -415,6 +416,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     VL.closeSheet();
     if (was && was.id !== 'p-' + tab) window.scrollTo(0, 0);
     if (tab === 'calc' && VL.calc) VL.calc.render();
+    if (tab === 'games' && VL.arcade) VL.arcade.render(); else if (VL.arcade) VL.arcade.stop();
     if (tab === 'companion' && VL.companion) VL.companion.render();
     if (tab === 'meta' && VL.meta.render) VL.meta.render();
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
