@@ -25,15 +25,22 @@
     <div class="navgroup">Train</div>
     <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
     <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log a game</span><kbd>N</kbd></a>
+    <a href="#companion"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Battle companion</span></a>
     <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
     <div class="navgroup">Learn</div>
     <a href="#study"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg><span>Study</span></a>
+    <a href="#meta"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Meta</span></a>
+    <a href="#calc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg><span>Damage calculator</span></a>
+    <a href="#predict"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Prediction practice</span></a>
     <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
     <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
     <div class="navgroup">Plan</div>
     <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
+    <a href="#teamcheck"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Team checker</span></a>
+    <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span></a>
+    <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
+    <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
     <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
-    <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span><span class="later">later</span></a>
   </nav>
   <div class="side-foot">
     <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Sync, backup &amp; theme</span></a>
@@ -65,7 +72,7 @@
         <p id="focus-text" style="margin:0;font-size:17px;font-weight:500"></p>
         <div id="focus-form" hidden class="row">
           <label for="focus-input" style="flex:1 1 100%">One habit to practice in every game this week
-            <input type="text" id="focus-input" placeholder="e.g. Say my bring-4 and win condition out loud before turn 1">
+            <input type="text" id="focus-input" placeholder="For example: Say my bring-4 and win condition out loud before turn 1">
           </label>
           <button class="btn small" id="focus-save">Save focus</button>
         </div>
@@ -97,10 +104,10 @@
         <li><p><b>Ladder volume on its own plateaus.</b> At a high level you already know the game. What's left to gain is in the few turns per game you get wrong, and you only find those by logging them and looking at them later.</p></li>
         <li><p><b>Daily drills build automatic knowledge.</b> Type matchups, speed tiers, items and mechanics should be instant, so your thinking time goes to reads and planning. Five minutes a day of drills keeps it sharp, and missed questions come back more often.</p></li>
         <li><p><b>One focus per week.</b> When you try to fix everything at once, nothing changes. Pick one habit and run it every game until it's automatic. The weekly review shows you which one to pick next.</p></li>
-        <li><p><b>Plan before turn 1.</b> Most Bo1 losses are decided at team preview. Saying your bring-4, lead and win condition out loud makes the decision deliberate, and your log shows whether the plan was the problem.</p></li>
-        <li><p><b>Review a loss turn by turn.</b> You remember the crit, not the turn 2 Protect that set it up. Rewatching finds the turn the game actually turned.</p></li>
+        <li><p><b>Plan before turn 1.</b> Most best-of-1 losses are decided at team preview. Saying your bring-4, lead and win condition out loud makes the decision deliberate, and your log shows whether the plan was the problem.</p></li>
+        <li><p><b>Review a loss turn by turn.</b> You remember the critical hit, not the turn 2 Protect that set it up. Rewatching finds the turn the game actually turned.</p></li>
         <li><p><b>Predict top players.</b> Calling a top player's bring-4 and leads before they're revealed trains the read you need at preview.</p></li>
-        <li><p><b>Bo3 every week.</b> Ladder is Bo1, but big events are Bo3. Games 2 and 3 are about adapting to what you saw, and you can't practice that on ladder.</p></li>
+        <li><p><b>Best of 3 every week.</b> Ladder is best of 1, but big events are best of 3. Games 2 and 3 are about adapting to what you saw, and you can't practice that on ladder.</p></li>
       </ol>
     </details>
   </section>
@@ -119,8 +126,8 @@
         <button type="button" class="l" id="lf-l" aria-pressed="false">LOSS</button>
       </div>
       <div class="row">
-        <label for="lf-type"><span>Game type <span class="term" data-term="bo3">Bo1 / Bo3?</span></span>
-          <select id="lf-type"><option>Ladder (Bo1)</option><option>Bo3 practice</option><option>Tournament</option><option>Online event</option></select>
+        <label for="lf-type"><span>Game type <span class="term" data-term="bo3">best of 1 or 3?</span></span>
+          <select id="lf-type"><option>Ladder (best of 1)</option><option>Best-of-3 practice</option><option>Tournament</option><option>Online event</option></select>
         </label>
         <label for="lf-rating">Rating after<input type="number" id="lf-rating" inputmode="numeric"></label>
         <label for="lf-team">My team<select id="lf-team"></select></label>
@@ -130,6 +137,9 @@
             <option>Tailwind offense</option><option>Trick Room</option><option>Sun</option><option>Rain</option><option>Sand</option><option>Snow</option><option>Terrain</option><option>Balance</option><option>Hyper offense</option><option>Other</option>
           </select>
         </label>
+      </div>
+      <div class="row">
+        <label for="lf-oppname">Opponent (optional)<input type="text" id="lf-oppname" list="dl-opps" placeholder="Their name or username"></label>
       </div>
       <label for="lf-opp"><span>Their 6 at <span class="term" data-term="preview">team preview</span> (comma-separated)</span>
         <input type="text" id="lf-opp" list="dl-mons" placeholder="Incineroar, Rillaboom, Garchomp, ...">
@@ -145,7 +155,7 @@
         <div class="chips" id="lf-tags"></div>
       </div>
       <label for="lf-note">What I'd do differently
-        <textarea id="lf-note" placeholder="Turn 3: I should have protected and doubled into the Trick Room setter instead of going for the KO."></textarea>
+        <textarea id="lf-note" placeholder="Turn 3: I should have protected and doubled into the Trick Room setter instead of going for the knockout."></textarea>
       </label>
       <div class="row" style="justify-content:space-between">
         <span class="sub" id="lf-msg"></span>
@@ -153,6 +163,14 @@
       </div>
     </form>
     <datalist id="dl-mons"></datalist>
+    <datalist id="dl-opps"></datalist>
+    <details class="card" id="rp-card">
+      <summary style="cursor:pointer;font-weight:600">Import from a Showdown replay</summary>
+      <p class="sub">Played on Pokémon Showdown? Paste the replay link and the form above fills itself in: result, both teams and leads. Add your tags and notes, then save.</p>
+      <div class="row"><label for="rp-url">Replay link<input type="text" id="rp-url" placeholder="https://replay.pokemonshowdown.com/..."></label><label for="rp-me">Your Showdown username<input type="text" id="rp-me" placeholder="Used to tell which side was you"></label><button class="btn small" id="rp-go" style="height:36px">Import</button></div>
+      <details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Link not working? Paste the battle log instead</summary><p class="sub">Open the replay, add <code class="k">.log</code> to the end of its address, copy everything, and paste it here.</p><textarea id="rp-log" style="font-family:var(--mono);font-size:12px"></textarea><div class="row" style="justify-content:flex-end"><button class="btn small" id="rp-logo">Import pasted log</button></div></details>
+      <p class="sub" id="rp-msg"></p>
+    </details>
     <div class="card">
       <div class="card-head"><h3>Recent games</h3><span class="sub" id="recent-count"></span></div>
       <div class="scroll" id="recent"></div>
@@ -190,6 +208,10 @@
       <div class="card"><div class="card-head"><h3>By their style</h3></div><div id="rv-arch"></div></div>
       <div class="card"><div class="card-head"><h3>By your lead</h3><span class="sub">Leads used 3+ times</span></div><div id="rv-leads"></div></div>
     </div>
+    <div class="card">
+      <div class="card-head"><h3>When you play your best</h3><span class="sub">From the times you logged games</span></div>
+      <div class="grid2" id="rv-insights"></div>
+    </div>
     <div class="card accent">
       <div class="card-head"><h3>Weekly review with Claude</h3>
         <div class="row" style="gap:8px"><button class="btn" id="coach-copy">Copy review prompt</button><a class="btn ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a></div>
@@ -216,6 +238,7 @@
           <select id="st-pool">
             <option value="fe">Fully evolved, legal in this format</option>
             <option value="legal">Everything legal in this format</option>
+            <option value="meta">Top 50 in the meta</option>
             <option value="logs">Pokémon from my game logs</option>
             <option value="all">Every Pokémon, any game</option>
           </select>
@@ -266,11 +289,143 @@
       </div>
     </div>
     <div id="sv-glossary" class="sv" hidden>
-      <div class="card"><label for="gl-q">Search terms<input type="text" id="gl-q" placeholder="e.g. spread, Trick Room, CP"></label><div id="gl-out" class="gloss"></div></div>
+      <div class="card"><label for="gl-q">Search terms<input type="text" id="gl-q" placeholder="For example: spread, Trick Room, Championship Points"></label><div id="gl-out" class="gloss"></div></div>
     </div>
     <div id="sv-priority" class="sv" hidden>
       <div class="card"><div class="card-head"><h3>Priority brackets</h3><span class="sub">Higher goes first. Speed only decides order within a bracket.</span></div><div id="pr-out"></div></div>
     </div>
+  </section>
+
+
+  <!-- BATTLE COMPANION -->
+  <section class="panel" id="p-companion">
+    <header class="page-head">
+      <h1>Battle companion</h1>
+      <p class="lede">Keep this open on your phone next to your Switch. It counts field turns, tracks what your opponent reveals, and turns the game into a log entry when it ends.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>At <span class="term" data-term="preview">team preview</span>, type their 6 and tap <b>Start battle</b>.</li><li>Tap <b>Next turn</b> at the start of every turn. Timers count down on their own.</li><li>When Tailwind, Trick Room, weather, terrain or screens go up, tap it. The card shows how many turns are left, counting the current one.</li><li>On each opponent card, record what they reveal: item, ability, moves. Tap <b>Protected</b> when they Protect, and the card warns you when a second Protect in a row is likely to fail.</li><li>When the game ends, tap <b>Won</b> or <b>Lost</b>. The log form opens already filled in.</li></ol></details>
+    </header>
+    <div id="cp-setup" class="card">
+      <div class="card-head"><h3>New battle</h3><span class="sub" id="cp-fmt"></span></div>
+      <label for="cp-opp">Their 6<input type="text" id="cp-opp" list="dl-mons" placeholder="Incineroar, Rillaboom, Garchomp, ..."></label>
+      <div class="row"><label for="cp-team">My team<select id="cp-team"></select></label><label for="cp-oppname">Opponent's name (optional)<input type="text" id="cp-oppname" list="dl-opps"></label></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" id="cp-start">Start battle</button></div>
+    </div>
+    <div id="cp-live" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="card turnbar">
+        <div class="turnnum"><span class="sub">Turn</span><b class="num" id="cp-turn">1</b></div>
+        <div class="row" style="gap:8px;align-items:center">
+          <button class="btn ghost small" id="cp-undo" aria-label="Back one turn">− Turn</button>
+          <button class="btn" id="cp-next">Next turn</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Field</h3><span class="sub">Tap to start a timer. Tap again to clear it.</span></div><div class="timers" id="cp-timers"></div></div>
+      <div class="card"><div class="card-head"><h3>Their Pokémon</h3><span class="sub">Tap "Lead" on the two they send out first</span></div><div class="oppgrid" id="cp-opps"></div></div>
+      <div class="card" id="cp-mine-card"><div class="card-head"><h3>My Protects</h3><span class="sub">So you don't forget your own</span></div><div class="chips" id="cp-mine"></div></div>
+      <label for="cp-notes" class="card">Notes during the game<textarea id="cp-notes" placeholder="Turn 2: they Protected the Incineroar and attacked my Sneasler"></textarea></label>
+      <div class="card"><div class="row" style="justify-content:space-between;align-items:center"><span class="sub">Game over?</span><div class="row" style="gap:8px"><button class="btn ghost" id="cp-cancel">Discard</button><button class="btn" id="cp-won" style="background:var(--win)">Won</button><button class="btn" id="cp-lost" style="background:var(--loss)">Lost</button></div></div></div>
+    </div>
+  </section>
+
+  <!-- META -->
+  <section class="panel" id="p-meta">
+    <header class="page-head">
+      <h1>Meta</h1>
+      <p class="lede">What people are actually playing: the most-used Pokémon in a format and how they&#39;re usually built. Updated every week from Smogon&#39;s usage statistics.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick a format. Ladder data is from best-of-1 games; best-of-3 data is closer to tournament play.</li><li>Tap a Pokémon to see its common items, abilities, moves, spreads and teammates.</li><li>Use <b>Open in calculator</b> to load its most common set into the damage calculator.</li><li>In Study, choose the pool <b>Top 50 in the meta</b> to drill exactly what you&#39;ll face.</li></ol></details>
+    </header>
+    <div class="card"><div class="row"><label for="mt-format">Format<select id="mt-format"></select></label><label for="mt-q">Find<input type="text" id="mt-q" placeholder="Name"></label></div><p class="sub" id="mt-src"></p></div>
+    <div class="grid-meta"><div class="card" style="padding:8px"><div id="mt-list" class="metalist"></div></div><div class="card" id="mt-detail"></div></div>
+  </section>
+
+  <!-- CALCULATOR -->
+  <section class="panel" id="p-calc">
+    <header class="page-head">
+      <h1>Damage calculator</h1>
+      <p class="lede">See exactly how much an attack does. Uses the same engine as Pokémon Showdown&#39;s calculator, set to the rules of the format you pick.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick the attacker and defender. <b>Load common set</b> fills in the most-used build from the Meta page.</li><li>Set <span class="term" data-term="statpoints">Stat Points</span> (Champions) or effort values (older games), nature, item and ability for each side.</li><li>Add field effects like weather, terrain, screens or Helping Hand.</li><li>Results show the damage range and how many hits it takes. Use <b>Swap</b> to calc the other direction.</li></ol></details>
+    </header>
+    <div class="card"><div class="row"><label for="cl-format">Format<select id="cl-format"></select></label></div><p class="sub" id="cl-note"></p></div>
+    <div class="grid2" id="cl-sides"></div>
+    <div class="card"><div class="card-head"><h3>Field</h3></div><div id="cl-field" class="fieldgrid"></div></div>
+    <div class="card accent"><div class="card-head"><h3>Results</h3><button class="btn ghost small" id="cl-swap">Swap sides</button></div><div id="cl-out"></div></div>
+  </section>
+
+  <!-- PREDICTION PRACTICE -->
+  <section class="panel" id="p-predict">
+    <header class="page-head">
+      <h1>Prediction practice</h1>
+      <p class="lede">Train your team preview reads on top players. While you watch a tournament match, call each player&#39;s 4 and leads before they&#39;re revealed, then check yourself.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pause the video at team preview. Enter both teams and the match name.</li><li>Pick the 4 and the 2 leads you expect from each player, then <b>Lock in prediction</b>.</li><li>Unpause, watch, and enter what they actually brought and led.</li><li>Your accuracy is tracked over time. Read the reasoning behind any miss: why did they bring that?</li></ol></details>
+    </header>
+    <form class="card" id="pr-form" autocomplete="off">
+      <div class="card-head"><h3>New prediction</h3></div>
+      <div class="row"><label for="pr-src">Match or video<input type="text" id="pr-src" placeholder="For example: Atlanta Regionals top 8, game 1"></label></div>
+      <div class="grid2">
+        <label for="pr-a">Player 1's team<input type="text" id="pr-a" list="dl-mons" placeholder="6 Pokémon, comma-separated"></label>
+        <label for="pr-b">Player 2's team<input type="text" id="pr-b" list="dl-mons" placeholder="6 Pokémon, comma-separated"></label>
+      </div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" type="submit">Next: make my picks</button></div>
+    </form>
+    <div class="card" id="pr-live" hidden></div>
+    <div class="tiles" id="pr-stats"></div>
+    <div class="card"><div class="card-head"><h3>History</h3></div><div id="pr-list"></div></div>
+  </section>
+
+  <!-- TEAM CHECKER -->
+  <section class="panel" id="p-teamcheck">
+    <header class="page-head">
+      <h1>Team checker</h1>
+      <p class="lede">Check any team against the current meta: shared weaknesses, speed, the tools it has or lacks, and the Pokémon most likely to beat it.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick a saved team or paste one in Showdown format. Plain names separated by commas work too.</li><li>Moves, items, abilities and spreads make the check more accurate, but they&#39;re optional.</li><li><b>Shared weaknesses</b> are types that hit 3 or more of your Pokémon hard and that few of them resist.</li><li><b>Biggest threats</b> come from the Meta page: popular Pokémon whose common attacks hit much of your team, or that outspeed it.</li></ol></details>
+    </header>
+    <div class="card"><div class="row"><label for="tc-team">Saved team<select id="tc-team"></select></label><label for="tc-format">Format<select id="tc-format"></select></label></div>
+      <label for="tc-paste">Or paste a team<textarea id="tc-paste" style="font-family:var(--mono);font-size:12.5px;min-height:120px" placeholder="Garchomp @ Life Orb&#10;Ability: Rough Skin&#10;Jolly Nature&#10;- Earthquake&#10;- Dragon Claw&#10;..."></textarea></label>
+      <div class="row" style="justify-content:flex-end"><button class="btn" id="tc-run">Check team</button></div></div>
+    <div id="tc-out" style="display:flex;flex-direction:column;gap:16px"></div>
+  </section>
+
+  <!-- TOURNAMENTS -->
+  <section class="panel" id="p-tournaments">
+    <header class="page-head">
+      <h1>Tournaments</h1>
+      <p class="lede">Every event you enter: placement, record and <span class="term" data-term="cp">Championship Points</span>, with a running season total that follows the best-finish limits.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>After each event, add it here with your record and placement.</li><li>Enter the Championship Points you earned. The season total only counts your best finishes of each event type, the same way the official standings do.</li><li>Tick <b>Made top cut</b> or <b>Made Day 2</b> and the matching Roadmap milestones update automatically.</li><li>Seasons run September to August, the same as the official season.</li></ol></details>
+    </header>
+    <div class="tiles" id="tn-tiles"></div>
+    <form class="card" id="tn-form" autocomplete="off">
+      <div class="card-head"><h3 id="tn-title">Add an event</h3></div>
+      <div class="row">
+        <label for="tn-date">Date<input type="text" id="tn-date" placeholder="2027-01-16"></label>
+        <label for="tn-name">Event name<input type="text" id="tn-name" placeholder="Atlanta Regional Championship" required></label>
+        <label for="tn-kind">Type<select id="tn-kind"></select></label>
+      </div>
+      <div class="row">
+        <label for="tn-players">Players<input type="number" id="tn-players" min="1"></label>
+        <label for="tn-w">Wins<input type="number" id="tn-w" min="0"></label>
+        <label for="tn-l">Losses<input type="number" id="tn-l" min="0"></label>
+        <label for="tn-place">Placement<input type="number" id="tn-place" min="1"></label>
+        <label for="tn-cp">Championship Points earned<input type="number" id="tn-cp" min="0"></label>
+      </div>
+      <div class="row">
+        <label for="tn-team">Team<select id="tn-team"></select></label>
+        <label class="inline"><input type="checkbox" id="tn-day2"> Made Day 2</label>
+        <label class="inline"><input type="checkbox" id="tn-cut"> Made top cut</label>
+      </div>
+      <label for="tn-notes">Notes<textarea id="tn-notes" placeholder="What went well, what to fix before the next one"></textarea></label>
+      <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn ghost" type="button" id="tn-cancel" hidden>Cancel edit</button><button class="btn" type="submit">Save event</button></div>
+    </form>
+    <div class="card"><div class="card-head"><h3>Events</h3></div><div class="scroll" id="tn-list"></div><p class="sub" id="tn-rules"></p></div>
+  </section>
+
+  <!-- OPPONENTS -->
+  <section class="panel" id="p-opponents">
+    <header class="page-head">
+      <h1>Opponents</h1>
+      <p class="lede">Notes on players you face more than once, like regulars at your local events. Your record and the teams you&#39;ve seen fill in from your game log.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>When you log a game, type the opponent&#39;s name in <b>Opponent</b>. The player is added here automatically.</li><li>Write what you learned: how they play, what they like to lead, how they react to pressure.</li><li>Read their card before you play them again.</li></ol></details>
+    </header>
+    <div class="card"><div class="row"><label for="op-q">Find<input type="text" id="op-q" placeholder="Name"></label><label for="op-new">Add a player<input type="text" id="op-new" placeholder="Name"></label><button class="btn small" id="op-add" style="height:36px">Add</button></div></div>
+    <div class="cards" id="op-list"></div>
   </section>
 
   <!-- SKILLS -->
@@ -371,10 +526,10 @@
       <div class="card">
         <div class="card-head"><h3>How Worlds invites work</h3><span class="sub">2027 season rules</span></div>
         <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14.5px">
-          <li>Each season runs from September to that year's Worlds in August. Championship Points (CP) reset every season.</li>
-          <li>Winning a Regional gives a Worlds invite plus 350 CP.</li>
-          <li>Your best 5 Regional and International finishes count. Locals count too: League Challenge 1st is 15 CP and League Cup 1st is 50 CP, with your best 4 of each counting.</li>
-          <li>Online Global Challenges also award CP, counted by rating zone.</li>
+          <li>Each season runs from September to that year's Worlds in August. Championship Points reset every season.</li>
+          <li>Winning a Regional gives a Worlds invite plus 350 Championship Points.</li>
+          <li>Your best 5 Regional and International finishes count. Locals count too: League Challenge 1st place earns 15 Championship Points and League Cup 1st place earns 50, with your best 4 of each counting.</li>
+          <li>Online Global Challenges also award Championship Points, counted by rating zone.</li>
         </ul>
         <p class="sub">These rules change between seasons. Check the current numbers before you plan around them: <a href="https://victoryroad.pro/2027-season-structure/" target="_blank" rel="noopener">Victory Road season structure</a>.</p>
       </div>
@@ -382,7 +537,7 @@
     <div class="card">
       <div class="card-head"><h3>2027 season events: North America and majors</h3><span class="sub">Treat these as reps, not deadlines</span></div>
       <div class="tl" id="timeline"></div>
-      <p class="sub">Every big event you play, even a 3–4 finish, is Bo3 experience against strong players. Find League Challenges and Cups near you with the Play! Pokémon event locator. Dates are from Victory Road's calendar as of Nov 12, 2026, so check them before booking travel.</p>
+      <p class="sub">Every big event you play, even a 3–4 finish, is best-of-3 experience against strong players. Find League Challenges and Cups near you with the Play! Pokémon event locator. Dates are from Victory Road's calendar as of Nov 12, 2026, so check them before booking travel.</p>
     </div>
   </section>
 
@@ -466,18 +621,25 @@
 <nav class="bottombar" aria-label="Sections">
   <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
   <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log</span></a>
+  <a href="#companion"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Battle</span></a>
   <a href="#study"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg><span>Study</span></a>
-  <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
   <button type="button" id="more-btn" aria-expanded="false" aria-controls="sheet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></button>
 </nav>
 <div class="sheet-back" id="sheet-back" hidden></div>
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-grip"></div>
+  <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
+  <a href="#meta"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Meta</span></a>
+  <a href="#calc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg><span>Damage calculator</span></a>
+  <a href="#predict"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Prediction practice</span></a>
   <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
   <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
   <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
-  <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
+  <a href="#teamcheck"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Team checker</span></a>
   <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span></a>
+  <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
+  <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
+  <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
   <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Sync, backup &amp; theme</span></a>
   <button type="button" class="navbtn" data-tour><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Take the tour</span></button>
 </div>
@@ -499,6 +661,11 @@
 <script src="js/content.js"></script>
 <script src="js/study.js"></script>
 <script src="js/help.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/companion.js"></script>
+<script src="js/teamcheck.js"></script>
+<script src="js/plan.js"></script>
 <script src="js/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

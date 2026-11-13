@@ -185,6 +185,20 @@ for (const dex of [latestChampMod ? Dex.mod(latestChampMod) : null, Dex].filter(
   }
 }
 
+// ---------- all moves (type, category, power, priority, spread target) ----------
+const allMoves = {};
+for (const dex of [latestChampMod ? Dex.mod(latestChampMod) : null, Dex].filter(Boolean)) {
+  for (const m of dex.moves.all()) {
+    if (!m.exists || m.isMax || m.isZ || (m.isNonstandard && SKIP_NONSTANDARD.has(m.isNonstandard))) continue;
+    if (allMoves[m.id]) continue;
+    const rec = { n: m.name, t: m.type, c: m.category[0], bp: m.basePower || 0 };
+    if (m.priority) rec.p = m.priority;
+    if (m.target === 'allAdjacentFoes') rec.sp = 'f';
+    else if (m.target === 'allAdjacent') rec.sp = 'a';
+    allMoves[m.id] = rec;
+  }
+}
+
 let commit = '';
 try { commit = execSync('git rev-parse --short HEAD', { cwd: PS }).toString().trim(); } catch (e) { /* not a git checkout */ }
 
@@ -199,6 +213,7 @@ const out = {
   items: Object.fromEntries([...items.entries()].sort()),
   abilities: Object.fromEntries([...abilities.entries()].sort()),
   priorityMoves: Object.fromEntries([...moves.entries()].sort()),
+  moves: Object.fromEntries(Object.entries(allMoves).sort()),
 };
 // Only rewrite the file when the Pokémon data itself changed, so the weekly
 // job doesn't make a commit just because the timestamp moved.
@@ -212,5 +227,5 @@ if (fs.existsSync(OUT)) {
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));
 const kb = (fs.statSync(OUT).size / 1024).toFixed(0);
-console.log(`Wrote ${OUT}: ${species.length} Pokémon, ${outFormats.length} formats, ${items.size} items, ${abilities.size} abilities, ${moves.size} priority moves, ${kb} KB`);
+console.log(`Wrote ${OUT}: ${species.length} Pokémon, ${outFormats.length} formats, ${items.size} items, ${abilities.size} abilities, ${Object.keys(allMoves).length} moves, ${kb} KB`);
 for (const f of outFormats) console.log(`  ${f.current ? '*' : ' '} ${f.name.padEnd(28)} ${f.game.padEnd(36)} ${String(f.species.length).padStart(4)} Pokémon ${String(f.items.length).padStart(4)} items`);

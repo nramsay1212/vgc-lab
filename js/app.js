@@ -31,6 +31,8 @@
     const f = D.dex && D.dex.formats.find(x => x.id === id);
     return f ? f.name : id;
   }
+  VL.curFormatId = curFormatId;
+  VL.fmtName = fmtName;
   function fmtGame(id) { const f = D.dex && D.dex.formats.find(x => x.id === id); return f ? f.game : ''; }
   const games = () => store.list('games').sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const teams = () => store.list('teams').sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -190,7 +192,7 @@
     $('rv-chart').innerHTML = ratingChart(list);
     const tc = {}; for (const g of losses) for (const t of (g.tags || [])) tc[t] = (tc[t] || 0) + 1;
     const tagRows = Object.entries(tc).sort((a, b) => b[1] - a[1]).map(([t, v]) => ({ label: esc(TAGMAP[t] || t), v }));
-    $('rv-tags').innerHTML = tagRows.length ? barList(tagRows, { fmt: r => `${r.v} · ${pct(r.v, losses.length)}%` }) + `<p class="sub">Percent of ${losses.length} losses. RNG is included so you can see how often it really decides games.</p>`
+    $('rv-tags').innerHTML = tagRows.length ? barList(tagRows, { fmt: r => `${r.v} · ${pct(r.v, losses.length)}%` }) + `<p class="sub">Percent of ${losses.length} losses. Bad luck is included so you can see how often it really decides games.</p>`
       : '<div class="empty">Tag your losses when you log them. The biggest bar here is usually your next weekly focus.</div>';
     const mons = monStats(list).filter(m => m.n >= 3).sort((a, b) => (a.w / a.n) - (b.w / b.n) || b.n - a.n).slice(0, 8);
     $('rv-mons').innerHTML = mons.length ? `<div class="bars">${mons.map(m => `<div class="bar"><span>${esc(m.name)} <button class="linkbtn" style="text-decoration:none;color:var(--accent)" data-addnb="${esc(m.name)}">+ notebook</button></span><span class="track"><span class="fill acc" style="display:block;width:${pct(m.w, m.n)}%"></span></span><span class="n">${pct(m.w, m.n)}% · ${m.n}</span></div>`).join('')}</div><p class="sub">Your win rate in games where they brought it to team preview, and how many games.</p>`
@@ -201,6 +203,7 @@
     const leads = {}; for (const g of list) { if (!g.mylead) continue; const k = splitMons(g.mylead).sort().join(' + '); if (!k) continue; (leads[k] ||= { n: 0, w: 0 }); leads[k].n++; if (g.result === 'W') leads[k].w++; }
     const lr = wrRows(Object.entries(leads).filter(([, v]) => v.n >= 3));
     $('rv-leads').innerHTML = lr.length ? barList(lr, { acc: true, fmt: r => `${r.v}% · ${r.n}` }) : '<div class="empty">Log your lead to see which openings win for you.</div>';
+    renderInsights(list);
     const reps = store.list('reports').sort((a, b) => (b.ts || 0) - (a.ts || 0));
     $('coach-past-wrap').hidden = !reps.length;
     const sel = $('coach-past'); const cur = sel.value;
@@ -208,6 +211,24 @@
     if (cur && reps.some(r => r.id === cur)) sel.value = cur;
     const r = reps.find(x => x.id === sel.value) || reps[0];
     $('coach-out').innerHTML = r ? md(r.text) : '';
+  }
+  function renderInsights(list) {
+    const asc = list.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    if (asc.length < 15) { $('rv-insights').innerHTML = `<div class="empty" style="grid-column:1/-1">Needs about 15 logged games (you have ${asc.length}). Then this shows whether you play worse late in a session or at certain times of day.</div>`; return; }
+    let idx = 0, prev = 0; const bySess = {}, byTime = {};
+    const sbin = (i) => i <= 3 ? 'Games 1–3 of a session' : i <= 6 ? 'Games 4–6' : i <= 9 ? 'Games 7–9' : 'Game 10 and later';
+    const tbin = (h) => h >= 5 && h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : h < 22 ? 'Evening' : 'Late night';
+    for (const g of asc) {
+      idx = (g.ts - prev > 90 * 60 * 1000) ? 1 : idx + 1; prev = g.ts;
+      const s = sbin(idx); (bySess[s] ||= { n: 0, w: 0 }).n++; if (g.result === 'W') bySess[s].w++;
+      const t = tbin(new Date(g.ts).getHours()); (byTime[t] ||= { n: 0, w: 0 }).n++; if (g.result === 'W') byTime[t].w++;
+    }
+    const order = (obj, keys) => keys.filter(k => obj[k] && obj[k].n >= 3).map(k => ({ label: esc(k), v: pct(obj[k].w, obj[k].n), n: obj[k].n }));
+    const a = order(bySess, ['Games 1–3 of a session', 'Games 4–6', 'Games 7–9', 'Game 10 and later']);
+    const b = order(byTime, ['Morning', 'Afternoon', 'Evening', 'Late night']);
+    $('rv-insights').innerHTML = `<div><div class="section-label">By game number in a session</div>${barList(a, { acc: true, fmt: r => `${r.v}% · ${r.n}` }) || '<p class="sub">Not enough games yet.</p>'}</div>
+      <div><div class="section-label">By time of day</div>${barList(b, { acc: true, fmt: r => `${r.v}% · ${r.n}` }) || '<p class="sub">Not enough games yet.</p>'}</div>
+      <p class="sub" style="grid-column:1/-1">A session ends after 90 minutes without a logged game. If your win rate drops in later games, that's your cue to stop a ladder block earlier.</p>`;
   }
   function md(text) {
     const lines = esc(text || '').split('\n'); let out = '', list = null;
@@ -254,7 +275,7 @@ ${prev ? `\nLast review said (excerpt): ${prev.text.slice(0, 600).replace(/\s+/g
 
 Write the review in this order, with short markdown headings and bullets:
 1. **Next week's focus**: one specific habit, plus one concrete drill to practice it.
-2. **Patterns**: the 3 most important patterns in the data. Cite counts from the log (for example "5 of 9 losses tagged Gimmick timing"). Separate decision errors from RNG and team matchup problems.
+2. **Patterns**: the 3 most important patterns in the data. Cite counts from the log (for example "5 of 9 losses tagged Gimmick timing"). Separate decision errors from bad luck and team matchup problems.
 3. **Skill check**: where my self-ratings don't match what the log shows.
 4. **Matchups to write up**: up to 3 Pokémon or archetypes to add to the notebook, each with a one-line starting plan.
 5. **Last focus**: one or two lines on whether the logs show progress on this week's focus.
@@ -324,7 +345,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const ms = (store.get('meta', 'milestones') || {}).done || {};
     const total = games().length; const fmts = new Set(games().map(g => g.fmt).filter(Boolean)).size;
     const typeAcc = VL.study.accuracy('typemon');
-    const auto = { m100: total >= 100, mfmt3: fmts >= 3, mtypes: typeAcc !== null && typeAcc >= 95 && ((VL.store.get('drills', 'typemon') || {}).h || []).length >= 50 };
+    const auto = { m100: total >= 100, mfmt3: fmts >= 3, mtypes: typeAcc !== null && typeAcc >= 95 && ((VL.store.get('drills', 'typemon') || {}).h || []).length >= 50, ...(VL.plan ? Object.fromEntries(Object.entries(VL.plan.autoMilestones()).filter(([, v]) => v)) : {}) };
     const isDone = (id) => !!(ms[id] || auto[id]);
     let curStage = VL.STAGES.findIndex(s => !s.ms.every(isDone)); if (curStage < 0) curStage = VL.STAGES.length - 1;
     $('stages').innerHTML = VL.STAGES.map((s, i) => `<div class="stage ${i === curStage ? 'cur' : ''}"><span class="sn">${i + 1}</span><div><h4>${esc(s.n)} ${i < curStage ? '<span class="pill w">done</span>' : i === curStage ? '<span class="pill n">you are here</span>' : ''}</h4><p>${esc(s.d)}</p></div></div>`).join('');
@@ -373,14 +394,19 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (queued) return; queued = true;
     requestAnimationFrame(() => {
       queued = false;
+      const inside = (id) => { const el = $(id); return el && el.contains(document.activeElement) && document.activeElement !== document.body; };
       renderHeader(); renderToday(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderTeams(); renderSettings();
       VL.study.render();
+      if (VL.teamcheck) VL.teamcheck.render();
+      if (VL.plan && !inside('op-list')) VL.plan.render();
+      if (VL.companion && location.hash === '#companion' && !inside('cp-live')) VL.companion.render();
+      if (VL.meta.render && location.hash === '#meta' && !inside('mt-detail')) VL.meta.render();
     });
   }
   store.onChange(renderAll);
 
   // ---------- routing ----------
-  const TABS = ['today', 'log', 'review', 'study', 'skills', 'formats', 'notebook', 'roadmap', 'teams', 'settings'];
+  const TABS = ['today', 'log', 'companion', 'review', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
@@ -388,6 +414,9 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     document.querySelectorAll('.nav a, .side-foot a, .bottombar a, .sheet a').forEach(a => { if (a.getAttribute('href') === '#' + tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     VL.closeSheet();
     if (was && was.id !== 'p-' + tab) window.scrollTo(0, 0);
+    if (tab === 'calc' && VL.calc) VL.calc.render();
+    if (tab === 'companion' && VL.companion) VL.companion.render();
+    if (tab === 'meta' && VL.meta.render) VL.meta.render();
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
   // phone "More" sheet
@@ -429,7 +458,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   $('fmt-select').addEventListener('change', () => {
     let box = $('fmt-custom-wrap');
     if ($('fmt-select').value === 'custom') {
-      if (!box) { box = document.createElement('label'); box.id = 'fmt-custom-wrap'; box.htmlFor = 'fmt-custom'; box.innerHTML = 'Format name<input type="text" id="fmt-custom" placeholder="e.g. Gen 10 VGC Reg A">'; $('fmt-select').parentElement.after(box); }
+      if (!box) { box = document.createElement('label'); box.id = 'fmt-custom-wrap'; box.htmlFor = 'fmt-custom'; box.innerHTML = 'Format name<input type="text" id="fmt-custom" placeholder="For example: Generation 10 VGC Regulation A">'; $('fmt-select').parentElement.after(box); }
       box.hidden = false; $('fmt-custom').value = profile().customFormat || ''; $('fmt-custom').focus();
     } else if (box) box.hidden = true;
   });
@@ -455,19 +484,83 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       mylead: splitMons($('lf-mylead').value).join(', '), myback: splitMons($('lf-myback').value).join(', '),
       opplead: splitMons($('lf-opplead').value).join(', '), turn: Number.isFinite(turn) ? turn : null,
       tags: [...document.querySelectorAll('#lf-tags [aria-pressed=true]')].map(b => b.dataset.tag), note: $('lf-note').value.trim(),
+      oppName: $('lf-oppname').value.trim() || null, source: pendingSource || null,
     });
+    if ($('lf-oppname').value.trim() && VL.plan) VL.plan.ensureOpponent($('lf-oppname').value.trim());
+    pendingSource = null;
     const res = lfResult; setResult(null);
-    for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch']) $(f).value = '';
+    for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false'));
     $('lf-msg').textContent = 'Saved. Next game.';
     VL.markDone('log');
     VL.toast(res === 'W' ? 'Win logged' : 'Loss logged');
   });
+  VL.armDelete = armDelete;
   function armDelete(btn, run) {
     if (btn.dataset.armed) { run(); return; }
     btn.dataset.armed = '1'; const old = btn.textContent; btn.textContent = 'Confirm';
     setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = old; } }, 3000);
   }
+  // ---------- fill the log form from the battle companion or a replay ----------
+  let pendingSource = null;
+  VL.prefillLog = function (o) {
+    location.hash = 'log';
+    setResult(o.result || null);
+    if (o.opp) $('lf-opp').value = o.opp.join(', ');
+    if (o.opplead) $('lf-opplead').value = o.opplead.join(', ');
+    if (o.mylead) $('lf-mylead').value = o.mylead.join(', ');
+    if (o.myback) $('lf-myback').value = o.myback.join(', ');
+    if (o.oppName) $('lf-oppname').value = o.oppName;
+    if (o.team) $('lf-team').value = o.team;
+    if (o.note) $('lf-note').value = o.note;
+    if (o.rating) $('lf-rating').value = o.rating;
+    pendingSource = o.source || null;
+    $('lf-msg').textContent = 'Filled in for you. Add your tags and what you\'d do differently, then save.';
+    setTimeout(() => { window.scrollTo(0, 0); }, 30);
+  };
+  function parseReplay(log, me) {
+    const lines = String(log || '').split('\n');
+    const players = {}, team = { p1: [], p2: [] }, leads = { p1: [], p2: [] }, seen = { p1: [], p2: [] };
+    let turn = 0, winner = '', format = '';
+    const sp = (s) => String(s || '').split(',')[0].trim().replace(/-\*$/, '');
+    for (const l of lines) {
+      const f = l.split('|');
+      if (f[1] === 'player' && f[3]) players[f[2]] = f[3];
+      else if (f[1] === 'poke') team[f[2]] && team[f[2]].push(sp(f[3]));
+      else if (f[1] === 'turn') turn = +f[2];
+      else if (f[1] === 'win') winner = f[2];
+      else if (f[1] === 'gametype' || f[1] === 'tier') { if (f[1] === 'tier') format = f[2]; }
+      else if (f[1] === 'switch' || f[1] === 'drag') {
+        const side = (f[2] || '').slice(0, 2); const name = sp(f[3]).replace(/-Mega(-[XYZ])?$/, '');
+        if (!seen[side]) continue;
+        if (!seen[side].includes(name)) seen[side].push(name);
+        if (turn === 0 && !leads[side].includes(name)) leads[side].push(name);
+      }
+    }
+    const meName = String(me || '').trim().toLowerCase();
+    let mine = Object.keys(players).find(k => players[k].toLowerCase() === meName);
+    if (!mine) return { error: Object.keys(players).length ? `Couldn't tell which player you were. The players were ${Object.values(players).join(' and ')}. Type your username exactly.` : 'That doesn\'t look like a Showdown battle log.' };
+    const opp = mine === 'p1' ? 'p2' : 'p1';
+    return { result: winner ? (winner.toLowerCase() === meName ? 'W' : 'L') : null, opp: team[opp].length ? team[opp] : seen[opp], opplead: leads[opp], mylead: leads[mine], myback: seen[mine].filter(n => !leads[mine].includes(n)), oppName: players[opp], turns: turn, format };
+  }
+  function importReplay(log, url) {
+    const me = $('rp-me').value.trim(); try { localStorage.setItem('vgclab-sdname', me); } catch (e) { /* ignore */ }
+    const r = parseReplay(log, me);
+    if (r.error) { $('rp-msg').textContent = r.error; return; }
+    VL.prefillLog({ ...r, note: `Imported from ${url || 'a pasted Showdown log'}. Lasted ${r.turns} turns.`, source: url || 'showdown-log' });
+    $('rp-msg').textContent = 'Imported. Check the form above.';
+  }
+  try { $('rp-me').value = localStorage.getItem('vgclab-sdname') || ''; } catch (e) { /* ignore */ }
+  $('rp-go').onclick = async () => {
+    let url = $('rp-url').value.trim(); if (!url) { $('rp-msg').textContent = 'Paste a replay link first.'; return; }
+    url = url.replace(/[?#].*$/, '').replace(/\.(json|log)$/, '');
+    if (!/^https:\/\/replay\.pokemonshowdown\.com\//.test(url)) { $('rp-msg').textContent = 'That isn\'t a Showdown replay link. They start with https://replay.pokemonshowdown.com/'; return; }
+    $('rp-msg').textContent = 'Loading…';
+    try { const j = await (await fetch(url + '.json')).json(); importReplay(j.log, url); }
+    catch (e) { $('rp-msg').textContent = 'Couldn\'t load that replay. Use the paste option below instead.'; }
+  };
+  $('rp-logo').onclick = () => importReplay($('rp-log').value, '');
+
   $('recent').addEventListener('click', e => { const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
 
   $('rv-scope').onchange = renderAll;
@@ -560,7 +653,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       const p = profile();
       if (!p.format) putProfile({ format: D.format().id });
       fillFormatSelect(); fillDatalist(); VL.study.fill(curFormatId().startsWith('custom:') ? '' : curFormatId());
-      renderAll();
+      renderAll(); route();
+      VL.meta.ready.then(() => { renderAll(); if (location.hash === '#meta') VL.meta.render(); });
     });
   }).catch(() => banner('Couldn\'t load the Pokémon data. The log still works; Study needs the data file. Check your connection and reload.'));
 })();

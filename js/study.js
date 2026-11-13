@@ -32,6 +32,10 @@
     eff(chart, atk, types) { return types.reduce((m, t) => m * (chart.eff[atk] && chart.eff[atk][t] !== undefined ? chart.eff[atk][t] : 1), 1); },
     pool(fmt, kind) {
       if (kind === 'all') return this.dex.species.map((s, i) => i).filter(i => this.dex.species[i].fe);
+      if (kind === 'meta') {
+        const names = VL.meta ? VL.meta.topNames(fmt && fmt.id, 50) : [];
+        return names.map(n => this.find(n)).filter(i => i >= 0);
+      }
       if (kind === 'logs') {
         const seen = new Set();
         for (const g of VL.store.list('games')) for (const n of (g.opp || [])) { const i = this.find(n); if (i >= 0) seen.add(i); }
@@ -73,6 +77,8 @@
     { id: 'abilities', name: 'Abilities', desc: 'What does this ability do?' },
     { id: 'priority', name: 'Priority', desc: 'What priority bracket is this move in?' },
     { id: 'mechanics', name: 'Mechanics', desc: 'Damage modifiers, durations, status and the battle gimmick, for this game.' },
+    { id: 'commonsets', name: 'Common sets', desc: 'How the 50 most-used Pokémon are usually built: items, abilities and moves.' },
+    { id: 'notebook', name: 'My game plans', desc: 'Flashcards from your matchup notebook. Recall your plan, then check it.' },
   ];
   function mechCards(fmt) {
     const champ = fmt && fmt.mod && fmt.mod.startsWith('champions');
@@ -154,7 +160,7 @@
           const tr = cond === 'tr';
           const first = tie ? 'tie' : ((va > vb) !== tr ? 'A' : 'B');
           const opts = [{ label: `${esc(A.n)} first`, ok: first === 'A' }, { label: `${esc(B.n)} first`, ok: first === 'B' }, { label: 'Speed tie (random)', ok: first === 'tie' }];
-          const ex = `${esc(A.n)} (base ${A.s[5]}, ${SPREADS[sa]}) = ${base[0]}${va !== base[0] ? ` → <b>${va}</b>` : ''}. ${esc(B.n)} (base ${B.s[5]}, ${SPREADS[sb]}) = ${base[1]}${vb !== base[1] ? ` → <b>${vb}</b>` : ''}.${tr ? ' Trick Room: slower moves first.' : ''}${c.fmt && c.fmt.noIVs ? ' No IVs in this game, so minimum Speed still has perfect IVs.' : ''}`;
+          const ex = `${esc(A.n)} (base ${A.s[5]}, ${SPREADS[sa]}) = ${base[0]}${va !== base[0] ? ` → <b>${va}</b>` : ''}. ${esc(B.n)} (base ${B.s[5]}, ${SPREADS[sb]}) = ${base[1]}${vb !== base[1] ? ` → <b>${vb}</b>` : ''}.${tr ? ' Trick Room: slower moves first.' : ''}${c.fmt && c.fmt.noIVs ? ' This game has no individual values, so minimum Speed still has perfect ones.' : ''}`;
           return { q: `Who moves first?`, ctx: `<div><b>${esc(A.n)}</b>: ${SPREADS[sa]}</div><div><b>${esc(B.n)}</b>: ${SPREADS[sb]}</div><div class="sub">${esc(condText)} Level 50, both using a same-priority move.</div>`, opts, html: true, stack: true, ex };
         }
         return null;
@@ -201,6 +207,43 @@
     },
   };
 
+  GEN.commonsets = {
+    keys: (c) => { const e = VL.meta && VL.meta.forFormat(c.fmt && c.fmt.id); return e ? e.mons.slice(0, 50).map(m => m.n) : []; },
+    make(key, c) {
+      const e = VL.meta.forFormat(c.fmt.id); const m = VL.meta.get(e, key); if (!m) return null;
+      const others = e.mons.slice(0, 60).filter(x => x.n !== m.n);
+      const kinds = [];
+      if (m.items[0] && m.items[0][1] >= 25 && m.items[0][0] !== 'No item') kinds.push('item');
+      if (m.abilities.length > 1 && m.abilities[0][1] >= 60) kinds.push('ability');
+      if (m.moves.length >= 4) kinds.push('move');
+      if (!kinds.length) return null;
+      const k = pick(kinds);
+      if (k === 'item') {
+        const right = m.items[0][0]; const pool = [...new Set(others.map(x => x.items[0] && x.items[0][0]).filter(x => x && x !== right && x !== 'No item' && !m.items.some(i => i[0] === x)))];
+        if (pool.length < 3) return null;
+        return { q: `What item does <b>${esc(m.n)}</b> hold most often?`, opts: shuffle([{ label: right, ok: true }, ...shuffle(pool).slice(0, 3).map(x => ({ label: x, ok: false }))]),
+          ex: `Most common items: ${esc(m.items.slice(0, 3).map(x => `${x[0]} ${Math.round(x[1])}%`).join(', '))}.` };
+      }
+      if (k === 'ability') {
+        return { q: `Which ability does <b>${esc(m.n)}</b> run most often?`, opts: shuffle(m.abilities.map((a, i) => ({ label: a[0], ok: i === 0 }))),
+          ex: `${esc(m.abilities.map(x => `${x[0]} ${Math.round(x[1])}%`).join(', '))}.` };
+      }
+      const right = m.moves[0][0]; const mine = new Set(m.moves.map(x => x[0]));
+      const pool = [...new Set(others.flatMap(x => x.moves.slice(0, 4).map(y => y[0])).filter(x => !mine.has(x)))];
+      if (pool.length < 3) return null;
+      return { q: `Which of these moves does <b>${esc(m.n)}</b> use most?`, opts: shuffle([{ label: right, ok: true }, ...shuffle(pool).slice(0, 3).map(x => ({ label: x, ok: false }))]),
+        ex: `Its most common moves: ${esc(m.moves.slice(0, 5).map(x => `${x[0]} ${Math.round(x[1])}%`).join(', '))}.` };
+    },
+  };
+  GEN.notebook = {
+    keys: () => VL.store.list('matchups').filter(m => m.plan || m.lead || m.bring).map(m => m.id),
+    make(key) {
+      const m = VL.store.get('matchups', key); if (!m) return null;
+      const parts = [m.plan && `<b>Plan:</b> ${esc(m.plan)}`, m.lead && `<b>Lead:</b> ${esc(m.lead)}`, m.bring && `<b>Bring:</b> ${esc(m.bring)}`, m.calcs && `<b>Calcs:</b> ${esc(m.calcs)}`].filter(Boolean).join('<br>');
+      return { q: `What's your plan against <b>${esc(m.name)}</b>?`, flash: true, opts: [{ label: 'I remembered it', ok: true }, { label: 'I didn\'t', ok: false }], ex: parts };
+    },
+  };
+
   function ctxFor() {
     const fmt = curFmt();
     let pool = D.pool(fmt, poolKind());
@@ -233,7 +276,7 @@
 
   function startQuiz(id) {
     const ctx = ctxFor();
-    const n = id === 'mechanics' ? Math.min(10, mechCards(ctx.fmt).length) : 10;
+    const n = Math.min(10, GEN[id].keys(ctx).length);
     S.quiz = { id, ctx, n, i: 0, results: [], used: new Set(), cur: null, answered: false, upd: { miss: {} } };
     nextQ();
     $('quiz-wrap').hidden = false;
@@ -245,7 +288,7 @@
     if (z.i >= z.n) return finishQuiz();
     z.cur = nextQuestion(z.id, z.ctx, z.used);
     if (!z.cur) { z.n = z.i; return finishQuiz(); }
-    z.used.add(z.cur.key); z.answered = false;
+    z.used.add(z.cur.key); z.answered = false; z.revealed = false;
     renderQuiz();
   }
   function answer(idx) {
@@ -280,6 +323,15 @@
   function renderQuiz(chosen) {
     const z = S.quiz, q = z.cur;
     const prog = Array.from({ length: z.n }, (_, i) => `<span class="${i < z.results.length ? (z.results[i] ? 'r' : 'w') : i === z.results.length ? 'c' : ''}"></span>`).join('');
+    if (q.flash && !z.answered && !z.revealed) {
+      $('quiz-wrap').innerHTML = `<div class="card-head"><h3>${esc(DRILLS.find(d => d.id === z.id).name)}</h3><button class="linkbtn" id="qz-quit">End round</button></div>
+        <div class="progress">${prog}</div><div class="quiz"><div class="q">${q.q}</div><p class="sub">Say your plan out loud or in your head, then check it.</p>
+        <div class="row"><button class="btn" id="qz-reveal">Show my plan</button></div></div>`;
+      $('qz-reveal').onclick = () => { z.revealed = true; renderQuiz(); };
+      $('qz-quit').onclick = () => { z.n = z.results.length; finishQuiz(); };
+      $('qz-reveal').focus();
+      return;
+    }
     const opts = q.opts.map((o, i) => {
       let cls = 'opt';
       if (z.answered) { if (o.ok) cls += ' right'; else if (i === chosen) cls += ' wrong'; }
@@ -292,7 +344,8 @@
         <div class="q">${q.q}</div>
         ${q.ctx ? `<div class="ctx" style="${q.stack ? 'flex-direction:column;align-items:flex-start;gap:2px' : ''}">${q.ctx}</div>` : ''}
         <div class="opts ${q.six ? 'six' : ''}" style="${q.long ? 'grid-template-columns:1fr' : ''}">${opts}</div>
-        ${z.answered ? `<div class="explain">${q.opts[chosen] && q.opts[chosen].ok ? '<b style="color:var(--win)">Correct.</b> ' : '<b style="color:var(--loss)">Not quite.</b> '}${q.ex}</div>
+        ${q.flash && !z.answered ? `<div class="explain">${q.ex}</div>` : ''}
+        ${z.answered ? `<div class="explain">${q.flash ? (q.opts[chosen] && q.opts[chosen].ok ? '<b style="color:var(--win)">Nice.</b> ' : '<b style="color:var(--loss)">It\'ll come back soon.</b> ') : (q.opts[chosen] && q.opts[chosen].ok ? '<b style="color:var(--win)">Correct.</b> ' : '<b style="color:var(--loss)">Not quite.</b> ')}${q.ex}</div>
           <div class="row" style="justify-content:flex-end"><button class="btn" id="qz-next">${z.i >= z.n ? 'See results' : 'Next'}</button></div>` : ''}
       </div>`;
     $('quiz-wrap').querySelectorAll('[data-opt]').forEach(b => b.onclick = () => answer(+b.dataset.opt));
@@ -338,7 +391,7 @@
     }
     const fmt = curFmt(); const p = D.mon(i, fmt); const chart = D.chart(fmt);
     const legal = fmt.species.includes(i);
-    const names = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'];
+    const names = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed'];
     const bars = p.s.map((v, k) => `<span>${names[k]}</span><span class="num">${v}</span><span class="tr"><span style="width:${Math.min(100, v / 2)}%"></span></span>`).join('');
     const g = defensive(chart, p.t);
     const row = (lbl, arr) => arr.length ? `<div class="kv"><span class="sub" style="width:44px">${lbl}</span>${typesHtml(arr)}</div>` : '';
@@ -347,7 +400,7 @@
       <div style="display:flex;flex-direction:column;gap:10px">
         <div class="kv"><h3>${esc(p.n)}</h3>${typesHtml(p.t)} <span class="pill ${legal ? 'w' : 'm'}">${legal ? 'legal in ' + esc(fmt.name) : 'not legal in ' + esc(fmt.name)}</span></div>
         <div class="statbars">${bars}<span>Total</span><span class="num">${p.s.reduce((a, b) => a + b, 0)}</span><span></span></div>
-        <table class="list"><thead><tr><th>Lv50 Speed</th><th>Min −</th><th>None</th><th>Max</th><th>Max +</th></tr></thead><tbody><tr><td></td>${sp}</tr></tbody></table>
+        <table class="list"><thead><tr><th>Speed at Level 50</th><th>Min −</th><th>None</th><th>Max</th><th>Max +</th></tr></thead><tbody><tr><td></td>${sp}</tr></tbody></table>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <b>Abilities</b>
@@ -364,7 +417,7 @@
     const q = toId($('sp-q').value); const lo = +$('sp-min').value || 0, hi = +$('sp-max').value || 999;
     const para = fmt.gen >= 7 ? 0.5 : 0.25;
     const rows = ctx.pool.map(i => D.mon(i, fmt)).filter(p => p && p.s[5] >= lo && p.s[5] <= hi && (!q || toId(p.n).includes(q))).sort((a, b) => b.s[5] - a.s[5] || a.n.localeCompare(b.n)).slice(0, 500);
-    $('sp-note').textContent = `${rows.length} Pokémon at Level 50 in ${fmt.name}. ${fmt.noIVs ? 'No IVs in this game, so every column assumes perfect IVs.' : 'Min uses 0 IVs; the rest assume 31.'} Scarf, Tailwind and paralysis columns use max Speed with a + nature.`;
+    $('sp-note').textContent = `${rows.length} Pokémon at Level 50 in ${fmt.name}. ${fmt.noIVs ? 'This game has no individual values, so every column assumes perfect ones.' : 'Minimum uses 0 individual values; the rest assume 31.'} Scarf, Tailwind and paralysis columns use max Speed with a + nature.`;
     $('sp-table').innerHTML = `<table class="list"><thead><tr><th>Pokémon</th><th>Base</th><th>Min −</th><th>None</th><th>Max</th><th>Max +</th><th>Scarf</th><th>Tailwind</th><th>Paralyzed</th></tr></thead><tbody>${rows.map(p => {
       const mp = D.speed(p.s[5], 'max+', fmt);
       return `<tr><td>${esc(p.n)}</td><td class="num">${p.s[5]}</td><td class="num">${D.speed(p.s[5], 'min-', fmt)}</td><td class="num">${D.speed(p.s[5], 'none', fmt)}</td><td class="num">${D.speed(p.s[5], 'max', fmt)}</td><td class="num"><b>${mp}</b></td><td class="num">${Math.floor(mp * 1.5)}</td><td class="num">${mp * 2}</td><td class="num">${Math.floor(mp * para)}</td></tr>`;

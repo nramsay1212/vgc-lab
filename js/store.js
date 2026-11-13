@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const VL = (window.VL = window.VL || {});
-  const COLLS = ['meta', 'games', 'matchups', 'teams', 'days', 'reports', 'drills', 'recaps', 'playbook'];
+  const COLLS = ['meta', 'games', 'matchups', 'teams', 'days', 'reports', 'drills', 'recaps', 'playbook', 'events', 'opponents', 'predictions'];
   const empty = () => Object.fromEntries([['v', 1], ...COLLS.map(c => [c, {}])]);
   let state = empty();
   const listeners = new Set();
