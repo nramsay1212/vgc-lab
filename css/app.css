@@ -868,3 +868,4 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .rank-ladder .rk.past{border-color:var(--line-2);color:var(--ink-2)}
 .rank-ladder .rk.here{border-color:var(--accent);background:var(--accent-soft)}
 @media (max-width:700px){.rank-ladder{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.dmgwhy ol{margin:6px 0 0;padding-left:20px;display:grid;gap:4px;font-size:13.5px;color:var(--ink-2)}

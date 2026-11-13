@@ -262,7 +262,7 @@
           const [lo, hi] = r.range(); const hp = Dd.poke.maxHP(); if (!hi) continue;
           G.round++;
           let ko = ''; try { ko = r.kochance().text || ''; } catch (x) { ko = ''; }
-          G.cur = { A, Dd, am, dm, mv, lo: Math.round(1000 * lo / hp) / 10, hi: Math.round(1000 * hi / hp) / 10, ko: ko.replace(/OHKO/g, 'one-hit knockout').replace(/(\d)HKO/g, '$1-hit knockout'), spread: f.doubles && mv.sp, champ, why: whyOf(C, g, A, Dd, M, hp) };
+          G.cur = { A, Dd, am, dm, mv, lo: Math.round(1000 * lo / hp) / 10, hi: Math.round(1000 * hi / hp) / 10, ko: ko.replace(/OHKO/g, 'one-hit knockout').replace(/(\d)HKO/g, '$1-hit knockout'), spread: f.doubles && mv.sp, champ, why: whyOf(C, g, A, Dd, r.move || M, hp, r.rawDesc || {}) };
           return renderDamage();
         } catch (x) { /* try another pairing */ }
       }
@@ -272,12 +272,23 @@
   // what decides the damage, in words: which stats meet, and the multipliers that apply
   const STAT = { atk: 'Attack', def: 'Defense', spa: 'Special Attack', spd: 'Special Defense' };
   const NAT = { Lonely: ['atk', 'def'], Brave: ['atk', 'spe'], Adamant: ['atk', 'spa'], Naughty: ['atk', 'spd'], Bold: ['def', 'atk'], Relaxed: ['def', 'spe'], Impish: ['def', 'spa'], Lax: ['def', 'spd'], Timid: ['spe', 'atk'], Hasty: ['spe', 'def'], Jolly: ['spe', 'spa'], Naive: ['spe', 'spd'], Modest: ['spa', 'atk'], Mild: ['spa', 'def'], Quiet: ['spa', 'spe'], Rash: ['spa', 'spd'], Calm: ['spd', 'atk'], Gentle: ['spd', 'def'], Sassy: ['spd', 'spe'], Careful: ['spd', 'spa'] };
-  function whyOf(C, g, A, Dd, M, hp) {
+  // what the items and abilities that changed the damage actually do
+  const ABIL = { 'Liquid Voice': 'turns sound moves into Water moves', Multiscale: 'halves damage taken at full HP', 'Shadow Shield': 'halves damage taken at full HP', Adaptability: 'makes the same-type bonus 2× instead of 1.5×', 'Huge Power': 'doubles Attack', 'Pure Power': 'doubles Attack', 'Tough Claws': '1.3× for contact moves', 'Sheer Force': '1.3× for moves with extra effects', Technician: '1.5× for moves with 60 power or less', 'Fur Coat': 'doubles Defense', 'Ice Scales': 'halves special damage taken', Filter: '0.75× from super-effective hits', 'Solid Rock': '0.75× from super-effective hits', 'Prism Armor': '0.75× from super-effective hits', 'Thick Fat': 'halves Fire and Ice damage', Pixilate: 'turns Normal moves Fairy and 1.2×', Aerilate: 'turns Normal moves Flying and 1.2×', Refrigerate: 'turns Normal moves Ice and 1.2×', Galvanize: 'turns Normal moves Electric and 1.2×', Sharpness: '1.5× for slicing moves', 'Iron Fist': '1.2× for punching moves', 'Strong Jaw': '1.5× for biting moves', 'Mega Launcher': '1.5× for pulse moves', 'Punk Rock': '1.3× for sound moves dealt, half taken', 'Dragon\'s Maw': '1.5× for Dragon moves', Transistor: '1.3× for Electric moves', Steelworker: '1.5× for Steel moves', 'Water Bubble': 'doubles Water moves, halves Fire taken', Heatproof: 'halves Fire damage taken', Fluffy: 'halves contact damage, doubles Fire taken', 'Dry Skin': 'takes 1.25× from Fire', Levitate: 'immune to Ground moves', 'Flash Fire': 'immune to Fire moves', 'Water Absorb': 'immune to Water moves', 'Volt Absorb': 'immune to Electric moves', 'Sap Sipper': 'immune to Grass moves', 'Storm Drain': 'immune to Water moves', 'Lightning Rod': 'immune to Electric moves', 'Earth Eater': 'immune to Ground moves', 'Well-Baked Body': 'immune to Fire moves', Scrappy: 'lets Normal and Fighting moves hit Ghosts', 'Mind\'s Eye': 'lets Normal and Fighting moves hit Ghosts', 'Tinted Lens': 'doubles not-very-effective hits', Sniper: 'stronger critical hits', 'Solar Power': '1.5× Special Attack in sun', Guts: '1.5× Attack when statused', Hustle: '1.5× Attack', 'Gorilla Tactics': '1.5× Attack', 'Rocky Payload': '1.5× for Rock moves', 'Supreme Overlord': 'stronger for each fainted ally' };
+  const ITEM = { 'Life Orb': '1.3× damage', 'Choice Band': '1.5× Attack', 'Choice Specs': '1.5× Special Attack', 'Expert Belt': '1.2× on super-effective hits', 'Assault Vest': '1.5× Special Defense', Eviolite: '1.5× Defense and Special Defense', 'Muscle Band': '1.1× physical damage', 'Wise Glasses': '1.1× special damage', 'Light Ball': 'doubles Pikachu\'s attacking stats', 'Thick Club': 'doubles Marowak\'s Attack', 'Deep Sea Tooth': 'doubles Clamperl\'s Special Attack' };
+  function factorText(name, kind) {
+    const known = kind === 'ability' ? ABIL[name] : ITEM[name];
+    if (known) return `${name} (${known})`;
+    if (kind === 'item' && / Berry$/.test(name)) return `${name} (halves a super-effective hit of its type)`;
+    if (kind === 'item') return `${name} (1.2× for its move type)`;
+    return name;
+  }
+  function whyOf(C, g, A, Dd, M, hp, raw) {
     const phys = M.category === 'Physical'; const as = phys ? 'atk' : 'spa', ds = phys ? 'def' : 'spd';
     let eff = null;
     try { eff = Dd.poke.types.reduce((m, t) => m * (g.types.get(C.toID ? C.toID(M.type) : M.type.toLowerCase()).effectiveness[t] ?? 1), 1); } catch (e) { eff = null; }
-    const nat = NAT[A.nat] || []; const natNote = nat[0] === as ? ` (${A.nat} raises it)` : nat[1] === as ? ` (${A.nat} lowers it)` : '';
-    return { cat: M.category, type: M.type, bp: M.bp, pr: M.priority || 0, as: STAT[as], ds: STAT[ds], aStat: A.poke.stats[as], dStat: Dd.poke.stats[ds], hp, stab: A.poke.types.includes(M.type) || (A.poke.teraType === M.type), eff, natNote };
+    const nat = NAT[A.nat] || []; const natNote = nat[0] === as ? `, raised by ${A.nat}` : nat[1] === as ? `, lowered by ${A.nat}` : '';
+    const extra = [raw.attackerAbility && factorText(raw.attackerAbility, 'ability'), raw.attackerItem && factorText(raw.attackerItem, 'item'), raw.defenderAbility && factorText(raw.defenderAbility, 'ability'), raw.defenderItem && factorText(raw.defenderItem, 'item')].filter(Boolean);
+    return { cat: M.category, type: M.type, bp: M.bp, pr: M.priority || 0, as: STAT[as], ds: STAT[ds], aStat: A.poke.stats[as], dStat: Dd.poke.stats[ds], hp, stab: A.poke.types.includes(M.type) || (A.poke.teraType === M.type), eff, natNote, extra };
   }
   const effText = (e) => e === 0 ? 'no effect (0×)' : e >= 4 ? 'super effective (4×)' : e >= 2 ? 'super effective (2×)' : e <= 0.25 ? 'not very effective (¼×)' : e < 1 ? 'not very effective (½×)' : 'neutral (1×)';
   function setLine(x, champ) {
@@ -291,11 +302,18 @@
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/8</span><span class="pill m">${G.score} pts</span>`)}
       <div class="vsrow">${VL.sprite(c.A.name, 'lg', false)}<span class="mini">attacks</span>${VL.sprite(c.Dd.name, 'lg', false)}</div><p class="q2"><b>${esc(c.A.name)}</b> uses <b>${esc(c.mv.n)}</b> on <b>${esc(c.Dd.name)}</b>. How much of its HP does it take?</p>
       <div class="grid2"><div class="explain"><b>${esc(c.A.name)}</b><br><span class="sub">${setLine(c.A, c.champ)}</span></div><div class="explain"><b>${esc(c.Dd.name)}</b><br><span class="sub">${setLine(c.Dd, c.champ)}</span></div></div>
-      ${c.why ? `<div class="explain"><b>${esc(c.mv.n)}</b> · ${esc(c.why.type)} · ${esc(c.why.cat)}, ${c.why.bp} power${c.why.pr ? ` · priority ${c.why.pr > 0 ? '+' : ''}${c.why.pr}` : ''}<br><span class="sub">${esc(c.A.name)}'s ${esc(c.why.as)} is ${c.why.aStat}${esc(c.why.natNote)}. ${esc(c.Dd.name)} has ${c.why.hp} HP and ${esc(c.why.ds)} ${c.why.dStat}.</span></div>` : ''}
+      ${c.why ? `<div class="explain"><b>${esc(c.mv.n)}</b> · ${esc(c.why.type)} · ${esc(c.why.cat)}, ${c.why.bp} power${c.why.pr ? ` · priority ${c.why.pr > 0 ? '+' : ''}${c.why.pr}` : ''}<br><span class="sub">${esc(c.A.name)}'s ${esc(c.why.as)} is ${c.why.aStat}${c.why.natNote ? ` (${esc(c.why.natNote.slice(2))})` : ''}. ${esc(c.Dd.name)} has ${c.why.hp} HP and ${esc(c.why.ds)} ${c.why.dStat}.</span></div>` : ''}
       <p class="sub">Level 50, ${c.spread ? 'doubles, hitting both opponents (spread damage)' : 'no field effects'}, full HP, no stat changes. Both use their most common set.</p>
       <div class="dmgslider"><input type="range" min="0" max="150" step="1" value="${v}" id="ar-dmg" ${done ? 'disabled' : ''} aria-label="Your damage guess in percent"><div class="row" style="justify-content:space-between"><span class="mini">0%</span><b class="num" id="ar-dmgv">${v}%${v >= 100 ? ' (knocked out)' : ''}</b><span class="mini">150%</span></div>
         ${done ? `<div class="dmgtrack"><span class="band" style="left:${Math.min(100, c.lo / 1.5)}%;width:${Math.max(0.7, Math.min(100, c.hi / 1.5) - Math.min(100, c.lo / 1.5))}%"></span><span class="mark" style="left:${Math.min(100, guess / 1.5)}%"></span></div>` : ''}</div>
-      ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.${c.why ? `<br><span class="sub">Why: ${esc(c.mv.n)} is ${c.why.cat === 'Physical' ? 'a physical' : 'a special'} move, so it uses ${esc(c.A.name)}'s ${esc(c.why.as)} (${c.why.aStat}) against ${esc(c.why.ds)} (${c.why.dStat}). ${c.why.bp} power, ${c.why.stab ? 'same-type bonus 1.5×' : 'no same-type bonus'}, ${c.why.eff !== null ? effText(c.why.eff) : ''}${c.spread ? ', and 0.75× for hitting both opponents' : ''}.</span>` : ''}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next attack'}</button></div>`
+      ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.</div>${c.why ? `<div class="explain dmgwhy"><b>Why it does that much</b><ol>
+        <li><b>Stats:</b> ${esc(c.mv.n)} is ${c.why.cat === 'Physical' ? 'physical' : 'special'}, so ${esc(c.A.name)}'s ${esc(c.why.as)} (${c.why.aStat}${esc(c.why.natNote)}) hits ${esc(c.Dd.name)}'s ${esc(c.why.ds)} (${c.why.dStat}).${c.why.cat === 'Physical' && c.A.ev[3] ? ` Its Special Attack investment doesn't count here.` : c.why.cat !== 'Physical' && c.A.ev[1] ? ` Its Attack investment doesn't count here.` : ''}</li>
+        <li><b>Power:</b> ${c.why.bp}${c.why.bp <= 60 ? ', which is low' : c.why.bp >= 100 ? ', which is high' : ''}.</li>
+        <li><b>Same-type bonus:</b> ${c.why.stab ? `yes, ${esc(c.A.name)} is ${esc(c.why.type)} type, so 1.5×` : `no, ${esc(c.A.name)} isn't ${esc(c.why.type)} type`}.</li>
+        <li><b>Type matchup:</b> ${esc(c.why.type)} into ${esc(c.Dd.name)} is ${c.why.eff !== null ? effText(c.why.eff) : 'unknown'}.</li>
+        ${c.spread ? '<li><b>Spread:</b> it hits both opponents, so each takes 0.75×.</li>' : ''}
+        ${c.why.extra.length ? `<li><b>Items and abilities:</b> ${c.why.extra.map(esc).join('; ')}.</li>` : ''}
+        <li><b>Random roll:</b> every hit does 85–100% of its maximum, which is why the answer is a range. Out of ${c.why.hp} HP, that's ${c.lo}–${c.hi}%.</li></ol></div>` : ''}<div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next attack'}</button></div>`
         : `<div class="row" style="justify-content:flex-end"><button class="btn" id="ar-lock">Lock in guess</button></div>`}`;
     bindQuit();
     if (done) { $('ar-next').onclick = damageNext; $('ar-next').focus(); return; }
