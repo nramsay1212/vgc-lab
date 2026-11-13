@@ -1,12 +1,12 @@
 {
-  "name": "VGC Lab",
-  "short_name": "VGC Lab",
+  "name": "Toxicroak VGC Lab",
+  "short_name": "Toxicroak Lab",
   "description": "Training log, drills and knowledge base for competitive Pokémon doubles.",
   "start_url": "./#today",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F3F4F7",
-  "theme_color": "#5638C9",
+  "theme_color": "#34407F",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },

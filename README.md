@@ -1,4 +1,4 @@
-# VGC Lab
+# Toxicroak VGC Lab
 
 A training app for competitive Pokémon doubles (VGC): a game log with mistake tags, review stats, knowledge drills, a matchup notebook, and a multi-year roadmap. It works on phone and computer, installs like an app, and works offline.
 

@@ -3,7 +3,7 @@
    Summary first, detail below. Win/loss colors are semantic, the violet accent is for controls. */
 :root{
   --bg:#F3F4F7; --surface:#FFFFFF; --ink:#15171C; --muted:#5D6371; --line:#DCDFE6;
-  --accent:#5638C9; --accent-soft:#ECE8FB; --accent-ink:#FFFFFF;
+  --accent:#34407F; --accent-soft:#E6E9F7; --accent-ink:#FFFFFF;
   --win:#1E8048; --win-soft:#E3F3E9; --loss:#C2342F; --loss-soft:#F9E5E4; --warn:#9A6512; --warn-soft:#FAF0DC;
   --font-display:'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
   --font-body:'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
@@ -14,14 +14,14 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0F1117; --surface:#171A22; --ink:#E7E9EF; --muted:#9BA1AF; --line:#2A2E3A;
-    --accent:#A08CFF; --accent-soft:#252040; --accent-ink:#120E24;
+    --accent:#8C9BEB; --accent-soft:#1E2340; --accent-ink:#0E1124;
     --win:#4CC383; --win-soft:#16291F; --loss:#F07270; --loss-soft:#2D1918; --warn:#E3B05A; --warn-soft:#2B2414;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0F1117; --surface:#171A22; --ink:#E7E9EF; --muted:#9BA1AF; --line:#2A2E3A;
-  --accent:#A08CFF; --accent-soft:#252040; --accent-ink:#120E24;
+  --accent:#8C9BEB; --accent-soft:#1E2340; --accent-ink:#0E1124;
   --win:#4CC383; --win-soft:#16291F; --loss:#F07270; --loss-soft:#2D1918; --warn:#E3B05A; --warn-soft:#2B2414;
   color-scheme: dark;
 }
