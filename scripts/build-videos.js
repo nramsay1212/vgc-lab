@@ -19,16 +19,31 @@ const KEEP_PER_CHANNEL = 60, KEEP_DAYS = 730;
 
 // style: which way the channel mostly plays; only: a title filter for channels that post much more than battles
 const CHANNELS = [
-  { handle: 'WolfeyVGC', id: 'UC9OZkS1Mhl5UvKSiPrYqsxg', name: 'WolfeyVGC', style: 'doubles' },
-  { handle: 'CybertronVGC', name: 'CybertronVGC', style: 'doubles' },
-  { user: 'bazandersonvgc', name: 'Baz Anderson', style: 'doubles' },
+  { id: 'UC9OZkS1Mhl5UvKSiPrYqsxg', name: 'WolfeyVGC', style: 'doubles' },
+  { id: 'UCYoTO-akZCsiusTe4rBxfhA', name: 'CybertronVGC', style: 'doubles' },
+  { id: 'UCUV4fC_HlxFe_Fwlybh2XiA', name: 'Ray Rizzo', style: 'doubles' },
+  { id: 'UCzelFwDFy5eok8e_Gc6gZ6w', name: 'CloverBells', style: 'doubles' },
+  { id: 'UC6bchfxuxGW5Y17wryBBuRQ', name: 'THATSAplusONE', style: 'doubles' },
+  { id: 'UCfPigxmrYQYqDwTsKxlaBXg', name: 'DaWoblefet', style: 'doubles' },
+  { id: 'UCAVKuhZ5Og4O86jkgUgUcyg', name: 'Moxie Boosted', style: 'doubles' },
+  { id: 'UC8k4zJooP9gnqMSZTY-QdVQ', name: 'Skraw! VGC', style: 'doubles' },
+  { id: 'UCS3sXlgO_gj55JS3y8aqBSQ', name: 'Sierra Dawn', style: 'doubles' },
+  { id: 'UCEMu_ArjgsOXYkd11HmKSMQ', name: 'Scooteezy', style: 'doubles' },
+  { id: 'UCWGyrGVrjnco38bjb6ZQYlg', name: 'James Baek', style: 'doubles' },
+  { id: 'UC4q0ikQppInkmpk34dpOjuA', name: 'Eric Rios', style: 'doubles' },
+  { id: 'UCSQ4ebwZTZUT92euLpXGj1A', name: 'Joseph Ugarte', style: 'doubles' },
+  { id: 'UCANgEAFCOg1Vynpqg9dEDDA', name: 'Lee Provost', style: 'doubles' },
+  { id: 'UCi5dCo0kzUggrtTtpnsq7DA', name: 'Baz Anderson', style: 'doubles' },
   { handle: 'pokemon', name: 'Pokémon (official)', style: 'doubles', only: /\bVGC\b|Championships?|Worlds|Regional|International|Champions Battle/i },
-  { handle: 'PokeaimMD', name: 'PokeaimMD', style: 'singles' },
-  { handle: 'Thunderblunder777', name: 'Thunderblunder777', style: 'singles' },
+  { id: 'UCbXuFrNGSKcmZY_5DwYz4Ew', name: 'PokeaimMD', style: 'singles' },
+  { id: 'UC-tIwhZwjGMTCEBUVuAG5fA', name: 'blunder', style: 'singles' },
+  { id: 'UCHOcFHxacqayCMgmTnY94Ng', name: 'ThatsaVGC Singles', style: 'singles' },
+  { id: 'UCbr6TI0Mujw2iFAQE4R8yrQ', name: 'shofu', style: 'singles' },
+  { id: 'UC6ozXwKjqwtzcoq0P_qU56A', name: 'Jamvad', style: 'singles' },
 ];
 
 // streams, merch and other games that aren't about getting better at competitive battles
-const OFF_TOPIC = /pokerogue|!merch|\blive\b|livestream|unboxing|opening|\btcg\b|pok[eé]mon go\b|nuzlocke|randomi[sz]er|minecraft|palworld/i;
+const OFF_TOPIC = /pokerogue|!merch|\blive\b|livestream|unboxing|opening|\btcg\b|pok[eé]mon go\b|nuzlocke|randomi[sz]er|minecraft|palworld|\bvlog\b|pok[eé]mon center|fortnite/i;
 
 async function get(url) {
   for (let attempt = 0; attempt < 3; attempt++) {

@@ -23,6 +23,14 @@
   const START = 1000, PROVISIONAL = 10;
   const RANKS = [[1800, 'Champion'], [1600, 'Master'], [1400, 'Expert'], [1200, 'Ace Trainer'], [1000, 'Trainer'], [0, 'Novice']];
   const rankOf = (r) => (RANKS.find(([min]) => r >= min) || RANKS[RANKS.length - 1])[1];
+  // the title above the one you have, and how far away it is
+  const nextRank = (r) => { const up = RANKS.slice().reverse().find(([min]) => min > r); return up ? { name: up[1], gap: Math.ceil(up[0] - r) } : null; };
+  // every title and where you sit on the ladder (there's no cap: the hardest questions keep counting)
+  function ladderHtml(r) {
+    const asc = RANKS.slice().reverse();
+    return `<div class="rank-ladder">${asc.map(([min, n], i) => { const top = asc[i + 1] ? asc[i + 1][0] : null; const here = r !== null && r >= min && (top === null || r < top);
+      return `<div class="rk ${here ? 'here' : r !== null && r >= min ? 'past' : ''}"><b>${esc(n)}</b><span class="mini">${top === null ? min + '+' : `${min}–${top - 1}`}</span></div>`; }).join('')}</div>`;
+  }
 
   function current() { return (store.get('ratings', 'current') || {}).areas || {}; }
   function overallOf(areas) {
@@ -112,11 +120,12 @@
     const ptsAll = H.reduce((a, h) => a + (h.points || 0), 0);
     const tests = store.list('tests').sort((a, b) => b.ts - a.ts);
     $('pg-tiles').innerHTML = [
-      ['Overall rating', ov === null ? '–' : Math.round(ov), ov === null ? 'Needs 10 answers in at least one area' : rankOf(ov) + (ov30 !== null ? ` · ${ov - ov30 >= 0 ? '+' : ''}${Math.round(ov - ov30)} in 30 days` : '')],
+      ['Overall rating', ov === null ? '–' : Math.round(ov), ov === null ? 'Needs 10 answers in at least one area' : rankOf(ov) + (nextRank(ov) ? ` · ${nextRank(ov).gap} to ${nextRank(ov).name}` : '') + (ov30 !== null ? ` · ${ov - ov30 >= 0 ? '+' : ''}${Math.round(ov - ov30)} in 30 days` : '')],
       ['Points this week', ptsWeek, 'From games and tests'],
       ['Points all time', ptsAll, `${H.length} games and tests`],
       ['Tests taken', tests.length, tests.length ? `Last: ${tests[0].pct}% (${grade(tests[0].pct)})` : 'Take one on the Test page'],
     ].map(([k, v, s]) => `<div class="tile"><div class="k">${esc(k)}</div><div class="v ${k === 'Overall rating' ? 'hot' : ''}">${esc(v)}</div><div class="mini">${esc(s)}</div></div>`).join('');
+    const lad = $('pg-ladder'); if (lad) lad.innerHTML = ladderHtml(ov === null ? null : ov);
 
     // area cards
     $('pg-areas').innerHTML = AREAS.map(a => {
@@ -166,5 +175,5 @@
     const rv = e.target.closest('[data-pgrev]'); if (rv) { const row = document.querySelector(`[data-pgrevrow="${rv.dataset.pgrev}"]`); if (row) row.hidden = !row.hidden; }
   });
 
-  VL.progress = { AREAS, apply, changesHtml, render, rankOf, grade, overallOf, current };
+  VL.progress = { AREAS, apply, changesHtml, render, rankOf, nextRank, grade, overallOf, current };
 })();

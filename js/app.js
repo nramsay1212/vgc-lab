@@ -546,6 +546,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   });
   $('checklist').addEventListener('change', e => {
     const id = e.target.dataset.ck; if (!id) return;
+    if (e.target.checked) VL.sound && VL.sound.play('done');
     const key = dayKey(); const day = store.get('days', key) || { done: {} };
     store.put('days', key, { done: { ...(day.done || {}), [id]: e.target.checked } });
   });
@@ -585,7 +586,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     syncQs(); $('lf-tagq').open = false;
     $('lf-msg').textContent = 'Saved. Next game.';
     VL.markDone('log');
-    VL.toast(res === 'W' ? 'Win logged' : 'Loss logged');
+    VL.toast(res === 'W' ? 'Win logged' : 'Loss logged'); VL.sound && VL.sound.play('save');
   });
   VL.armDelete = armDelete;
   function armDelete(btn, run) {
@@ -683,6 +684,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   });
   $('rc-save').onclick = () => { store.put('recaps', curFormatId(), { won: $('rc-won').value.trim(), miss: $('rc-miss').value.trim(), next: $('rc-next').value.trim() }); VL.toast('Recap saved'); };
   $('milestones').addEventListener('change', e => {
+    if (e.target.checked) VL.sound && VL.sound.play('best');
     const id = e.target.dataset.ms; if (!id) return;
     const cur = (store.get('meta', 'milestones') || {}).done || {};
     store.put('meta', 'milestones', { done: { ...cur, [id]: e.target.checked } });

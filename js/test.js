@@ -59,10 +59,12 @@
     if (!T || T.done) return;
     const it = T.items[T.i]; const o = it.q.opts[k]; if (!o) return;
     T.answers.push({ kind: it.kind, ok: !!o.ok, yours: k });
+    VL.sound && VL.sound.play(o.ok ? 'right' : 'wrong');
     T.i++;
     if (T.i >= T.items.length) finish(); else renderQ();
   }
   function finish() {
+    if (T && !T.done && T.answers.length) VL.sound && VL.sound.play('finish');
     clearInterval(clock);
     if (!T || T.done) return;
     T.done = true;

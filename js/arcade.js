@@ -70,12 +70,13 @@
     ({ duel: duelNext, sort: sortNext, order: orderNext, damage: damageNext, types: typesNext })[id]();
     if (id === 'duel' || id === 'types') {
       G.left = 60;
-      timer = setInterval(() => { G.left--; const el = $('ar-time'); if (el) el.textContent = G.left; if (G.left <= 0) finish(); }, 1000);
+      timer = setInterval(() => { G.left--; const el = $('ar-time'); if (el) el.textContent = G.left; if (G.left > 0 && G.left <= 5) VL.sound && VL.sound.play('tick'); if (G.left <= 0) finish(); }, 1000);
     }
     area().scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
   function scoreHit(ok, miss) {
     G.n++; rate(ok ? 1 : 0);
+    VL.sound && VL.sound.play(!ok ? 'wrong' : (G.streak + 1) % 5 === 0 ? 'streak' : 'right');
     if (ok) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); G.score += 10 + Math.min(G.streak, 10) * 2; }
     else { G.streak = 0; if (miss) G.misses.push(miss); }
   }
@@ -85,6 +86,7 @@
     const key = G.id + ':' + G.mode;
     const rec = VL.store.get('arcade', key) || { best: 0, plays: 0, hist: [] };
     const isBest = G.score > (rec.best || 0);
+    if (G.n) VL.sound && VL.sound.play(isBest ? 'best' : 'finish');
     if (G.n) VL.store.put('arcade', key, { best: Math.max(rec.best || 0, G.score), plays: (rec.plays || 0) + 1, hist: (rec.hist || []).concat([{ s: G.score, a: G.n ? Math.round(100 * G.right / G.n) : 0, t: Date.now() }]).slice(-30) });
     if (G.n && VL.markDone) VL.markDone('drill');
     const changes = G.n && VL.progress ? VL.progress.apply(G.res, { src: 'game', label: `${g.name} · ${g.modes.find(m => m[0] === G.mode)[1]}`, points: G.score }) : null;
@@ -169,6 +171,7 @@
     const c = G.cur; if (c.picked.includes(i)) return; c.picked.push(i);
     if (c.picked.length < 5) return renderSort();
     const correct = sortCorrect(); let hits = 0; c.picked.forEach((x, k) => { if (correct[k] === x) hits++; });
+    VL.sound && VL.sound.play(hits === 5 ? 'streak' : hits >= 3 ? 'right' : 'wrong');
     G.n += 5; G.right += hits; G.score += hits * 10 + (hits === 5 ? 20 : 0);
     c.picked.forEach((x, k) => rate(correct[k] === x ? 1 : 0));
     if (hits === 5) { G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`Round ${G.round}: you had ${hits}/5 in place. Correct: ${correct.map(i => `${esc(c.mons[i].n)} ${c.sets[i].v}`).join(' → ')}`); }

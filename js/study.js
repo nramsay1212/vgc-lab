@@ -424,6 +424,7 @@
     const z = S.quiz; if (!z || z.answered) return;
     z.answered = true;
     const ok = !!z.cur.opts[idx].ok;
+    VL.sound && VL.sound.play(ok ? 'right' : 'wrong');
     z.results.push(ok ? 1 : 0);
     z.upd.miss[z.cur.key] = (z.upd.miss[z.cur.key] || 0) + (ok ? -1 : 2);
     z.i++;
@@ -431,6 +432,7 @@
   }
   function finishQuiz() {
     const z = S.quiz;
+    if (z && z.results.length) VL.sound && VL.sound.play('finish');
     if (z.results.length) {
       const st = drillStats(z.id);
       const miss = { ...(st.miss || {}) };

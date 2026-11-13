@@ -121,9 +121,9 @@
   }
 
   function nextTurn(d) {
-    B.turn = Math.max(1, B.turn + d);
+    B.turn = Math.max(1, B.turn + d); if (d > 0) VL.sound && VL.sound.play('tap');
     if (d > 0) {
-      for (const t of TIMERS) { const v = B.timers[t.k]; if (v && left(t) <= 0) { delete B.timers[t.k]; VL.toast(`${t.l}${t.side !== 'Whole field' ? ' (' + t.side.toLowerCase() + ')' : ''} has ended`); } }
+      for (const t of TIMERS) { const v = B.timers[t.k]; if (v && left(t) <= 0) { delete B.timers[t.k]; VL.sound && VL.sound.play('alarm'); VL.toast(`${t.l}${t.side !== 'Whole field' ? ' (' + t.side.toLowerCase() + ')' : ''} has ended`); } }
     }
     save(); render();
   }

@@ -324,7 +324,7 @@
   <!-- GAMES -->
   <section class="panel" id="p-games">
     <header class="page-head">
-      <h1>Games</h1>
+      <div class="kv" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><h1>Games</h1><button type="button" class="btn ghost small" data-sound-toggle aria-pressed="true">🔊 Sound on</button></div>
       <p class="lede">Fast, scored games for the knowledge that has to be instant in a real battle: speed, turn order, damage and type matchups. Every game ends by reviewing what you missed, with the real numbers.</p>
       <details class="howto"><summary>How to use this page</summary><ol><li>Pick the format and which Pokémon to play with. <b>Top 50 in the meta</b> drills exactly what you'll face.</li><li>Start on the easier level of a game, then move up when you're scoring well.</li><li>Read the review at the end of every game. That's where most of the learning happens.</li><li>One game counts as your daily study drill on the Today page.</li></ol></details>
     </header>
@@ -363,6 +363,7 @@
       <details class="howto"><summary>How to use this page</summary><ol><li>Each area starts at 1000. Right answers raise it and misses lower it. Beating harder questions counts for more.</li><li>A rating is <b>provisional</b> until it has 10 answers. Early ratings move a lot, then settle.</li><li>Ranks: Novice under 1000, Trainer 1000+, Ace Trainer 1200+, Expert 1400+, Master 1600+, Champion 1800+.</li><li>Your overall rating averages the areas that aren't provisional. Study drills don't count, because they repeat your misses on purpose.</li><li>Use the buttons on each area to train it, then check back here.</li></ol></details>
     </header>
     <div class="tiles" id="pg-tiles"></div>
+    <div class="card"><div class="card-head"><h3>Titles</h3><span class="sub">Ratings work like chess ratings: everyone starts at 1000, and harder questions move you more. There's no maximum.</span></div><div id="pg-ladder"></div></div>
     <div class="card"><div class="card-head"><h3>Ratings over time</h3><label for="pg-series" style="flex-direction:row;align-items:center;gap:8px">Show<select id="pg-series" style="width:auto"><option value="all">All areas</option><option value="overall">Overall only</option><option value="types">Type matchups</option><option value="speed">Speed</option><option value="order">Priority and turn order</option><option value="damage">Damage</option><option value="items">Items and abilities</option><option value="mechanics">Mechanics</option><option value="meta">Meta knowledge</option></select></label></div><div id="pg-chart"></div></div>
     <div class="cards" id="pg-areas"></div>
     <div class="grid2">
@@ -715,6 +716,10 @@
       </div>
     </div>
     <div class="card">
+      <div class="card-head"><h3>Sounds</h3><span class="sub">Little sounds for right and wrong answers, games, streaks and saving. Kept on this device.</span></div>
+      <div class="row" style="align-items:center"><label class="vd-check" for="snd-on"><input type="checkbox" id="snd-on" checked> Play sounds</label><label for="snd-vol" style="flex:1 1 220px">Volume<input type="range" id="snd-vol" min="5" max="100" value="60"></label></div>
+    </div>
+    <div class="card">
       <div class="card-head"><h3>Theme</h3></div>
       <div class="seg" role="radiogroup" aria-label="Theme" id="theme-seg">
         <button type="button" role="radio" data-theme-set="dark" aria-checked="true">Dark</button>
@@ -805,6 +810,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="js/store.js?v=8"></script>
+<script src="js/sound.js?v=8"></script>
 <script src="js/content.js?v=8"></script>
 <script src="js/study.js?v=8"></script>
 <script src="js/sprites.js?v=8"></script>

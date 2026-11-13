@@ -48,7 +48,7 @@
     if (!DATA) { load().then(render); return; }
     if (!DATA.videos.length) { root.innerHTML = '<div class="empty">No videos yet. They\'re added by the daily update.</div>'; return; }
     const st = style();
-    const chans = DATA.channels.filter(c => S.both || c.style === st);
+    const chans = DATA.channels.filter(c => (S.both || c.style === st) && DATA.videos.some(v => v.ch === c.id));
     if (S.ch && !chans.some(c => c.id === S.ch)) S.ch = '';
     const all = list();
     const count = (k) => DATA.videos.filter(v => (S.both || chan(v.ch).style === st) && (!S.ch || v.ch === S.ch) && (k === 'all' || v.kind === k)).length;
