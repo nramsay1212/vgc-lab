@@ -54,7 +54,12 @@ function addSpecies(s) {
   };
   if (s.spriteid && s.spriteid !== s.id) rec.sp = s.spriteid; // Showdown sprite file name
   if (!s.nfe) rec.fe = 1;
-  if (s.isMega || s.isPrimal) rec.mg = 1;
+  if (s.isMega || s.isPrimal) {
+    rec.mg = 1;
+    if (s.requiredItem) rec.ri = s.requiredItem; // its stone or orb
+    const bo = Array.isArray(s.battleOnly) ? s.battleOnly[0] : s.battleOnly;
+    if (bo) rec.bo = bo; // the form that holds the stone
+  }
   spIndex.set(s.id, species.length);
   species.push(rec);
   return species.length - 1;
@@ -138,6 +143,8 @@ for (const f of formats) {
     const ov = {};
     if (st.join() !== base.s.join()) ov.s = st;
     if (s.types.join() !== base.t.join()) ov.t = s.types.slice();
+    const abil = Object.values(s.abilities).filter(Boolean).filter(an => dex.abilities.get(an).exists && !dex.abilities.get(an).isNonstandard);
+    if (abil.slice().sort().join() !== base.a.slice().sort().join()) ov.a = abil;
     if (Object.keys(ov).length) overrides[idx] = ov;
     for (const an of Object.values(s.abilities)) {
       const a = dex.abilities.get(an);
@@ -222,6 +229,38 @@ for (const dex of [latestChampMod ? Dex.mod(latestChampMod) : null, Dex].filter(
     else if (m.target === 'allAdjacent') rec.sp = 'a';
     allMoves[m.id] = rec;
   }
+}
+
+// ---------- per-format move differences (power, type, category, priority) ----------
+// The move table above holds the newest numbers; older games get corrections.
+for (const f of outFormats) {
+  const dex = Dex.forFormat(Dex.formats.get(f.id));
+  const mv = {};
+  for (const [id, rec] of Object.entries(allMoves)) {
+    const m = dex.moves.get(id); if (!m.exists) continue;
+    const c = m.category === 'Special' ? 'Sp' : m.category[0];
+    const o = {};
+    if ((m.basePower || 0) !== rec.bp) o.bp = m.basePower || 0;
+    if (m.type !== rec.t) o.t = m.type;
+    if (c !== rec.c) o.c = c;
+    if ((m.priority || 0) !== (rec.p || 0)) o.p = m.priority || 0;
+    const acc = m.accuracy === true ? undefined : m.accuracy;
+    if (acc !== rec.a) o.a = acc === undefined ? 0 : acc;
+    if (Object.keys(o).length) mv[id] = o;
+  }
+  f.mv = mv;
+  // item and ability text where this game's effect differs from the newest one
+  const itd = {}, abd = {};
+  for (const id of f.items) { const t = describe(dex, dex.items.get(id)); if (t && items.get(id) && t !== items.get(id).d) itd[id] = t; }
+  for (const i of f.species) for (const an of (f.overrides[i] && f.overrides[i].a) || species[i].a) {
+    const ab = dex.abilities.get(an); if (!ab.exists) continue; const t = describe(dex, ab);
+    if (t && abilities.get(ab.id) && t !== abilities.get(ab.id).d) abd[ab.id] = t;
+  }
+  if (Object.keys(itd).length) f.itd = itd;
+  if (Object.keys(abd).length) f.abd = abd;
+  // priority moves that exist in this game
+  const rt = TeamValidator.get(f.id).ruleTable;
+  f.pm = dex.moves.all().filter(m => m.exists && m.priority && !m.isMax && !m.isZ && !rt.isBanned('move:' + m.id) && !(m.isNonstandard && !rt.has('+pokemontag:' + String(m.isNonstandard).toLowerCase())) ).map(m => { if (!moves.has(m.id)) moves.set(m.id, { n: m.name, p: m.priority, t: m.type, c: m.category, d: describe(dex, m) }); return m.id; }).sort();
 }
 
 let commit = '';

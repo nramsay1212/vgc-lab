@@ -18,7 +18,7 @@
     { id: 'regional', n: 'Regional Championship', limit: 5, group: 'major', big: true },
     { id: 'special', n: 'Special Event', limit: 5, group: 'major', big: true },
     { id: 'intl', n: 'International Championship', limit: 5, group: 'major', big: true },
-    { id: 'online', n: 'Online Challenge (Global or Grand)', limit: null, group: 'online' },
+    { id: 'online', n: 'Online Challenge (Global or Grand)', limit: 4, group: 'online' },
     { id: 'worlds', n: 'World Championship', limit: 0, group: 'worlds', big: true },
     { id: 'other', n: 'Other tournament (no Championship Points)', limit: 0, group: 'other' },
   ];
@@ -56,7 +56,7 @@
       <td class="num">${e.w ?? '–'}–${e.l ?? '–'}</td><td class="num">${e.place ? '#' + e.place : '–'}</td><td class="num">${e.cp || 0}</td>
       <td style="white-space:nowrap"><button class="linkbtn" data-tnedit="${esc(e.id)}">Edit</button><button class="linkbtn" data-tndel="${esc(e.id)}">Delete</button></td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">No events yet. Add your first League Challenge or online tournament after you play it.</div>';
-    $('tn-rules').textContent = 'Counted points follow the 2027 season rules: your best 4 League Challenges, best 4 League Cups, and best 5 Regional, Special and International finishes combined. Online Challenges are added in full here, so check their limit in the official rules. These limits can change each season.';
+    $('tn-rules').textContent = 'Counted points follow the 2027 season rules: your best 4 League Challenges, best 4 League Cups, best 4 Global and Grand Challenges combined, and best 5 Regional, Special and International finishes combined. World Championship results don\'t add Championship Points.';
   }
   function clearTn() { tnEditing = null; for (const f of ['tn-name', 'tn-players', 'tn-w', 'tn-l', 'tn-place', 'tn-cp', 'tn-notes']) $(f).value = ''; $('tn-date').value = today(); $('tn-day2').checked = false; $('tn-cut').checked = false; $('tn-title').textContent = 'Add an event'; $('tn-cancel').hidden = true; }
   $('tn-cancel').onclick = clearTn;

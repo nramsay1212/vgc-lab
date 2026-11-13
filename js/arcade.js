@@ -188,10 +188,10 @@
       const acts = mons.map((p, k) => {
         // moves this Pokémon actually uses (meta), so the scenarios are realistic
         const m = VL.meta.get(e, p.n);
-        const known = m ? m.moves.map(x => dex.moves[toId(x[0])]).filter(x => x && x.n !== 'Grassy Glide') : [];
-        const prioOpts = known.filter(x => x.p); if (!prioOpts.length) prioOpts.push(dex.moves.protect);
+        const known = m ? m.moves.map(x => D().move(x[0], f)).filter(x => x && x.n !== 'Grassy Glide') : [];
+        const prioOpts = known.filter(x => x.p); if (!prioOpts.length) prioOpts.push(D().move('protect', f));
         let atkOpts = known.filter(x => !x.p && x.c !== 'S');
-        if (!atkOpts.length) atkOpts = Object.values(dex.moves).filter(x => p.t.includes(x.t) && x.bp >= 80 && !x.p && x.c !== 'S').slice(0, 3);
+        if (!atkOpts.length) atkOpts = Object.keys(dex.moves).map(id => D().move(id, f)).filter(x => p.t.includes(x.t) && x.bp >= 80 && !x.p && x.c !== 'S').slice(0, 3);
         const mv = (Math.random() < 0.45 || !atkOpts.length) ? pick(prioOpts) : pick(atkOpts);
         const sp = speedSet(p, f, 'spread');
         return { p, mv, side: k < 2 ? 'Your side' : 'Their side', sp, prio: (mv && mv.p) || 0, v: sp.v };
@@ -249,7 +249,7 @@
       };
       for (let t = 0; t < 40; t++) {
         const am = pick(top), dm = pick(top); if (am === dm) continue;
-        const moves = am.moves.map(x => dex.moves[toId(x[0])]).filter(x => x && x.c !== 'S' && x.bp >= 40);
+        const moves = am.moves.map(x => D().move(x[0], f)).filter(x => x && x.c !== 'S' && x.bp >= 40);
         if (!moves.length) continue;
         const mv = pick(moves);
         try {

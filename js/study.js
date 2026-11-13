@@ -27,7 +27,27 @@
     mon(i, fmt) {
       const s = this.dex.species[i]; if (!s) return null;
       const ov = fmt && fmt.overrides && fmt.overrides[i];
-      return ov ? { ...s, ...(ov.s ? { s: ov.s } : {}), ...(ov.t ? { t: ov.t } : {}), i } : { ...s, i };
+      return ov ? { ...s, ...(ov.s ? { s: ov.s } : {}), ...(ov.t ? { t: ov.t } : {}), ...(ov.a ? { a: ov.a } : {}), i } : { ...s, i };
+    },
+    // item and ability text as it reads in this format's game
+    item(id, fmt) { const it = this.dex.items[id]; if (!it) return null; const d = fmt && fmt.itd && fmt.itd[id]; return d ? { ...it, d } : it; },
+    ability(id, fmt) { const ab = this.dex.abilities[id]; if (!ab) return null; const d = fmt && fmt.abd && fmt.abd[id]; return d ? { ...ab, d } : ab; },
+    // the Mega or Primal form a Pokémon becomes holding this item, or null
+    megaOf(rec, item) {
+      if (!rec || !item) return null; const it = String(item).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const k = this.dex.species.findIndex(x => x.mg && x.ri && x.ri.toLowerCase().replace(/[^a-z0-9]/g, '') === it && (x.bo === rec.n || (!x.bo && x.b === (rec.b || rec.n))));
+      return k >= 0 ? k : null;
+    },
+    // a move as it works in this format's game (power, type, category and priority changed over the years)
+    move(id, fmt) {
+      const k = String(id || '').toLowerCase().replace(/[^a-z0-9]/g, ''); const m = this.dex.moves[k]; if (!m) return null;
+      const ov = fmt && fmt.mv && fmt.mv[k];
+      return ov ? { ...m, ...ov } : m;
+    },
+    // priority moves that exist in this format, with this game's priority
+    prio(fmt) {
+      const ids = fmt && fmt.pm ? fmt.pm : Object.keys(this.dex.priorityMoves);
+      return ids.map(id => { const t = this.dex.priorityMoves[id]; if (!t) return null; const m = this.move(id, fmt); return { ...t, id, p: m ? m.p || 0 : t.p }; }).filter(x => x && x.p);
     },
     find(name) { const i = this.byName.get(toId(name)); return i === undefined ? -1 : i; },
     chart(fmt) { return this.dex.typeCharts[fmt ? fmt.chart : this.dex.typeCharts.length - 1] || this.dex.typeCharts[0]; },
@@ -229,47 +249,47 @@
     },
     items: {
       // Mega Stones, Orbs, Memories and other items locked to one Pokémon name the answer, so they're left out
-      keys: (c) => (c.fmt ? c.fmt.items : Object.keys(D.dex.items)).filter(id => D.dex.items[id] && !/If held by an? |Mega Evolve|Primal Reversion|Ultra Burst|Z-Move/i.test(D.dex.items[id].d)),
+      keys: (c) => (c.fmt ? c.fmt.items : Object.keys(D.dex.items)).filter(id => D.item(id, c.fmt) && !/If held by an? |Mega Evolve|Primal Reversion|Ultra Burst|Z-Move/i.test(D.item(id, c.fmt).d)),
       make(key, c) {
-        const it = D.dex.items[key]; if (!it) return null;
-        const keys = GEN.items.keys(c).filter(k => k !== key && D.dex.items[k].d !== it.d);
+        const it = D.item(key, c.fmt); if (!it) return null;
+        const keys = GEN.items.keys(c).filter(k => k !== key && D.item(k, c.fmt).d !== it.d);
         if (lvl(c) >= 3 && Math.random() < 0.5) {
           // Expert: the effect is given, pick the item, from items that sound alike
-          const descs = similar(it.d, keys.map(k => D.dex.items[k].d), 3);
-          const names = descs.map(d => keys.find(k => D.dex.items[k].d === d)).filter(Boolean).map(k => D.dex.items[k].n);
+          const descs = similar(it.d, keys.map(k => D.item(k, c.fmt).d), 3);
+          const names = descs.map(d => keys.find(k => D.item(k, c.fmt).d === d)).filter(Boolean).map(k => D.item(k, c.fmt).n);
           if (names.length < 3) return null;
           return { q: `Which item does this? <i>${esc(it.d)}</i>`, opts: shuffle([{ label: it.n, ok: true }, ...names.map(n => ({ label: n, ok: false }))]), ex: `<b>${esc(it.n)}</b>: ${esc(it.d)}` };
         }
-        const pool = keys.map(k => D.dex.items[k].d);
+        const pool = [...new Set(keys.map(k => D.item(k, c.fmt).d))];
         const others = lvl(c) >= 2 ? similar(it.d, pool, 3) : shuffle(pool).slice(0, 3);
         if (others.length < 3) return null;
         return { q: `What does <b>${esc(it.n)}</b> do?`, opts: shuffle([{ label: it.d, ok: true }, ...others.map(d => ({ label: d, ok: false }))]), long: true, ex: `<b>${esc(it.n)}</b>: ${esc(it.d)}` };
       },
     },
     abilities: {
-      keys: (c) => { const s = new Set(); for (const i of c.pool) for (const a of (D.mon(i, c.fmt).a || [])) s.add(toId(a)); return [...s].filter(k => D.dex.abilities[k]); },
+      keys: (c) => { const s = new Set(); for (const i of c.pool) for (const a of (D.mon(i, c.fmt).a || [])) s.add(toId(a)); return [...s].filter(k => D.ability(k, c.fmt)); },
       make(key, c) {
-        const ab = D.dex.abilities[key]; if (!ab) return null;
-        const keys = GEN.abilities.keys(c).concat(Object.keys(D.dex.abilities)).filter(k => k !== key && D.dex.abilities[k] && D.dex.abilities[k].d !== ab.d);
+        const ab = D.ability(key, c.fmt); if (!ab) return null;
+        const keys = GEN.abilities.keys(c).concat(Object.keys(D.dex.abilities)).filter(k => k !== key && D.ability(k, c.fmt) && D.ability(k, c.fmt).d !== ab.d);
         const who = c.pool.map(i => D.mon(i, c.fmt)).filter(p => (p.a || []).some(a => toId(a) === key)).slice(0, 5).map(p => p.n);
         const ex = `<b>${esc(ab.n)}</b>: ${esc(ab.d)}${who.length ? `<br><span class="sub">Seen on: ${esc(who.join(', '))}</span>` : ''}`;
         if (lvl(c) >= 3 && Math.random() < 0.5) {
           const uniq = [...new Set(keys)];
-          const descs = similar(ab.d, uniq.map(k => D.dex.abilities[k].d), 3);
-          const names = descs.map(d => uniq.find(k => D.dex.abilities[k].d === d)).filter(Boolean).map(k => D.dex.abilities[k].n);
+          const descs = similar(ab.d, uniq.map(k => D.ability(k, c.fmt).d), 3);
+          const names = descs.map(d => uniq.find(k => D.ability(k, c.fmt).d === d)).filter(Boolean).map(k => D.ability(k, c.fmt).n);
           if (names.length < 3) return null;
           return { q: `Which ability does this? <i>${esc(ab.d)}</i>`, opts: shuffle([{ label: ab.n, ok: true }, ...names.map(n => ({ label: n, ok: false }))]), ex };
         }
-        const pool = [...new Set(keys.map(k => D.dex.abilities[k].d))];
+        const pool = [...new Set(keys.map(k => D.ability(k, c.fmt).d))];
         const others = lvl(c) >= 2 ? similar(ab.d, pool, 3) : shuffle(pool.slice(0, 400)).slice(0, 3);
         if (others.length < 3) return null;
         return { q: `What does <b>${esc(ab.n)}</b> do?`, opts: shuffle([{ label: ab.d, ok: true }, ...others.map(d => ({ label: d, ok: false }))]), long: true, ex };
       },
     },
     priority: {
-      keys: (c) => Object.keys(D.dex.priorityMoves).filter(k => lvl(c) < 2 || !COMMON_PRIO.has(k)),
+      keys: (c) => D.prio(c.fmt).map(m => m.id).filter(k => lvl(c) < 2 || !COMMON_PRIO.has(k)),
       make(key, c) {
-        const m = D.dex.priorityMoves[key]; if (!m) return null;
+        const m = D.prio(c.fmt).find(x => x.id === key); if (!m) return null;
         const vals = new Set([m.p]);
         const order = [-7, -6, -5, -4, -3, -1, 1, 2, 3, 4, 5].filter(v => v !== m.p).sort((x, y) => Math.abs(x - m.p) - Math.abs(y - m.p));
         for (const v of (lvl(c) >= 2 ? order.slice(0, 4) : shuffle(order.slice(0, 5)))) { if (vals.size >= 4) break; vals.add(v); }
@@ -301,7 +321,7 @@
       const moves = m.moves.filter(x => users(x[0]) > 1 && !(L >= 2 && /^(Protect|Detect)$/.test(x[0])));
       const kinds = [];
       if (okItem) kinds.push('item', 'item');
-      if (m.abilities.length > 1 && m.abilities[1][1] >= (L >= 2 ? 3 : 0)) kinds.push('ability');
+      if (m.abilities.length > 1 && m.abilities[1][1] >= (L >= 2 ? 3 : 0) && m.abilities[0][1] - m.abilities[1][1] >= 5) kinds.push('ability');
       if (moves.length >= 4) kinds.push('move', 'move');
       if (L >= 3 && moves.length >= 4) kinds.push('notmove', 'notmove');
       const natures = [...new Set((m.spreads || []).map(s => String(s[0]).split(':')[0]))];
@@ -310,24 +330,26 @@
       const k = pick(kinds);
       if (k === 'item') {
         const right = items[0][0];
-        let wrong = L >= 2 ? items.slice(1, 4).filter(x => x[1] >= 4).map(x => x[0]) : [];
+        // wrong answers must trail the right one clearly, so there's one correct answer
+        let wrong = L >= 2 ? items.slice(1, 4).filter(x => x[1] >= 4 && x[1] <= items[0][1] - 5).map(x => x[0]) : [];
         const fill = shuffle([...new Set(others.map(x => x.items[0] && x.items[0][0]).filter(x => x && x !== right && x !== 'No item' && !forcedItem('', x, 0) && !wrong.includes(x)))]);
         wrong = wrong.concat(fill).slice(0, 3);
         if (wrong.length < 3) return null;
         return { q: `What item does <b>${esc(m.n)}</b> hold most often?`, opts: shuffle([{ label: right, ok: true }, ...wrong.map(x => ({ label: x, ok: false }))]), ex: `Most common items: ${esc(pct(items, 4))}.` };
       }
       if (k === 'ability') {
-        return { q: `Which ability does <b>${esc(m.n)}</b> run most often?`, opts: shuffle(m.abilities.map((a, i) => ({ label: a[0], ok: i === 0 }))), ex: `${esc(pct(m.abilities, 3))}.` };
+        return { q: `Which ability does <b>${esc(m.n)}</b> run most often?`, opts: shuffle(m.abilities.filter((a, i) => i === 0 || a[1] <= m.abilities[0][1] - 5).map((a, i) => ({ label: a[0], ok: i === 0 }))), ex: `${esc(pct(m.abilities, 3))}.` };
       }
       if (k === 'nature') {
         const counts = {}; for (const s of m.spreads) { const n = String(s[0]).split(':')[0]; counts[n] = (counts[n] || 0) + s[1]; }
         const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]); const right = ranked[0][0];
+        if (ranked[1] && ranked[0][1] - ranked[1][1] < 5) return null; // too close to call
         const wrong = ranked.slice(1).map(x => x[0]).concat(shuffle(['Adamant', 'Jolly', 'Modest', 'Timid', 'Bold', 'Calm', 'Careful', 'Impish', 'Brave', 'Quiet', 'Sassy', 'Relaxed'])).filter((x, i, a) => x !== right && a.indexOf(x) === i).slice(0, 3);
         return { q: `What is <b>${esc(m.n)}</b>'s most common nature?`, opts: shuffle([{ label: right, ok: true }, ...wrong.map(x => ({ label: x, ok: false }))]), ex: `Most common spreads: ${esc(m.spreads.slice(0, 3).map(s => `${VL.meta.spreadText(s[0], c.fmt.mod.startsWith('champions'))} (${Math.round(s[1])}%)`).join('; '))}.` };
       }
       if (k === 'notmove') {
         const mine = new Set(m.moves.map(x => x[0]));
-        const decoy = shuffle([...new Set(others.flatMap(x => x.moves.slice(0, 6).map(y => y[0])).filter(x => !mine.has(x) && users(x) > 1))]).find(x => { const mv = D.dex.moves[toId(x)]; return mv && (m.n && D.find(m.n) >= 0 ? D.dex.species[D.find(m.n)].t.includes(mv.t) || mv.c === 'S' : true); });
+        const decoy = shuffle([...new Set(others.flatMap(x => x.moves.slice(0, 6).map(y => y[0])).filter(x => !mine.has(x) && users(x) > 1))]).find(x => { const mv = D.move(x, c.fmt); return mv && (m.n && D.find(m.n) >= 0 ? D.mon(D.find(m.n), c.fmt).t.includes(mv.t) || mv.c === 'S' : true); });
         if (!decoy) return null;
         const real = shuffle(moves.slice(0, 6)).slice(0, 3).map(x => x[0]);
         return { q: `Which of these does <b>${esc(m.n)}</b> NOT usually run?`, opts: shuffle([{ label: decoy, ok: true }, ...real.map(x => ({ label: x, ok: false }))]), ex: `Its usual moves: ${esc(pct(m.moves, 6))}.` };
@@ -335,7 +357,7 @@
       // most-used move: Hard and Expert compare it against its own other moves
       const right = moves[0][0];
       let wrong;
-      if (L >= 2) wrong = moves.slice(1, 7).filter(x => x[1] >= 8).map(x => x[0]);
+      if (L >= 2) wrong = moves.slice(1, 7).filter(x => x[1] >= 8 && x[1] <= moves[0][1] - 5).map(x => x[0]);
       else { const mine = new Set(m.moves.map(x => x[0])); wrong = [...new Set(others.flatMap(x => x.moves.slice(0, 4).map(y => y[0])).filter(x => !mine.has(x)))]; }
       wrong = shuffle(wrong).slice(0, 3);
       if (wrong.length < 3) return null;
@@ -511,7 +533,7 @@
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <b>Abilities</b>
-        ${(p.a || []).map(a => { const ab = D.dex.abilities[toId(a)]; return `<div><b>${esc(a)}</b><div class="sub">${esc(ab ? ab.d : '')}</div></div>`; }).join('')}
+        ${(p.a || []).map(a => { const ab = D.ability(toId(a), fmt); return `<div><b>${esc(a)}</b><div class="sub">${esc(ab ? ab.d : '')}</div></div>`; }).join('')}
         <b style="margin-top:6px">Takes damage</b>
         ${row('4×', g['4'])}${row('2×', g['2'])}${row('½×', g['0.5'])}${row('¼×', g['0.25'])}${row('0×', g['0'])}
         <span class="sub">Type chart only. Abilities like Levitate change this.</span>
@@ -540,15 +562,15 @@
   function renderItems() {
     const fmt = curFmt();
     const qi = $('it-q').value.trim().toLowerCase(), qa = $('ab-q').value.trim().toLowerCase();
-    const items = fmt.items.map(id => D.dex.items[id]).filter(Boolean).filter(it => !qi || it.n.toLowerCase().includes(qi) || it.d.toLowerCase().includes(qi));
+    const items = fmt.items.map(id => D.item(id, fmt)).filter(Boolean).filter(it => !qi || it.n.toLowerCase().includes(qi) || it.d.toLowerCase().includes(qi));
     $('it-out').innerHTML = items.slice(0, 300).map(it => `<div class="it"><b>${esc(it.n)}</b><span>${esc(it.d)}</span></div>`).join('') || '<p class="sub">No match.</p>';
-    const abs = GEN.abilities.keys(ctxFor()).map(k => D.dex.abilities[k]).filter(Boolean).sort((a, b) => a.n.localeCompare(b.n)).filter(a => !qa || a.n.toLowerCase().includes(qa) || a.d.toLowerCase().includes(qa));
+    const abs = GEN.abilities.keys(ctxFor()).map(k => D.ability(k, ctxFor().fmt)).filter(Boolean).sort((a, b) => a.n.localeCompare(b.n)).filter(a => !qa || a.n.toLowerCase().includes(qa) || a.d.toLowerCase().includes(qa));
     $('ab-out').innerHTML = abs.slice(0, 400).map(a => `<div class="it"><b>${esc(a.n)}</b><span>${esc(a.d)}</span></div>`).join('') || '<p class="sub">No match.</p>';
   }
 
   function renderPriority() {
     const by = {};
-    for (const m of Object.values(D.dex.priorityMoves)) (by[m.p] ||= []).push(m);
+    for (const m of D.prio(ctxFor().fmt)) (by[m.p] ||= []).push(m);
     const keys = Object.keys(by).map(Number).sort((a, b) => b - a);
     $('pr-out').innerHTML = keys.map(p => `<div style="padding:10px 0;border-top:1px solid var(--line)"><b class="num">${p > 0 ? '+' : ''}${p}</b> <span class="sub">${by[p].length} moves</span><div class="chips" style="margin-top:6px">${by[p].sort((a, b) => a.n.localeCompare(b.n)).map(m => `<span class="chip" title="${esc(m.d)}" style="cursor:default">${esc(m.n)}</span>`).join('')}</div></div>`).join('') +
       '<p class="sub">Prankster adds +1 to status moves, Gale Wings +1 to Flying moves at full HP, and Grassy Glide gets +1 in Grassy Terrain.</p>';

@@ -73,7 +73,10 @@
     const sec = {};
     const filled = [];
     const team = raw.map(r => {
-      const i = D.find(r.name); const p = i >= 0 ? D.mon(i, fmt) : null;
+      const i = D.find(r.name); let p = i >= 0 ? D.mon(i, fmt) : null;
+      // a Mega Stone holder is analyzed as its Mega form (types, ability and Speed can change)
+      const mk = p ? D.megaOf(p, r.item) : null;
+      if (mk !== null && fmt.species.includes(mk)) { p = D.mon(mk, fmt); r.ability = p.a[0] || r.ability; }
       const m = { ...r, p, known: !!p, name: p ? p.n : r.name };
       if (p) {
         const meta = VL.meta.get(metaE, p.n);
@@ -82,7 +85,7 @@
         if (!m.item && meta && m.guessed) m.item = meta.items[0][0] === 'No item' ? '' : meta.items[0][0];
         if (!m.evs && meta && m.guessed && meta.spreads[0]) { const [nat, nums] = meta.spreads[0][0].split(':'); if (nums) { m.nature = m.nature || nat; m.evs = nums.split('/').map(Number); } }
         m.speed = speedOf(p.s[5], m.evs, m.nature, fmt);
-        m.moveRecs = m.moves.map(n => D.dex.moves[toId(n)]).filter(Boolean);
+        m.moveRecs = m.moves.map(n => D.move(n, fmt)).filter(Boolean);
       }
       return m;
     });
@@ -166,7 +169,7 @@
       const mine = new Set(known.map(m => m.name));
       const threats = metaE.mons.slice(0, 40).filter(x => !mine.has(x.n)).map(x => {
         const i = D.find(x.n); if (i < 0) return null; const p = D.mon(i, fmt);
-        const atks = x.moves.map(mv => D.dex.moves[toId(mv[0])]).filter(mv => mv && mv.c !== 'S' && mv.bp >= 50).slice(0, 4);
+        const atks = x.moves.map(mv => D.move(mv[0], fmt)).filter(mv => mv && mv.c !== 'S' && mv.bp >= 50).slice(0, 4);
         const sp = x.spreads[0] ? x.spreads[0][0].split(':') : null;
         const spe = speedOf(p.s[5], sp && sp[1] ? sp[1].split('/').map(Number) : [0, 0, 0, 0, 0, 32], sp ? sp[0] : 'Jolly', fmt);
         const hits = known.map(m => { let best = null; for (const mv of atks) { const e = defMult(chart, mv.t, m.p.t, m.ability, m.item); if (!best || e > best.e) best = { e, mv }; } return { m, best }; }).filter(h => h.best && h.best.e >= 2);

@@ -119,13 +119,8 @@
   const exportTeam = () => T.sets.filter(s => s && s.species).map(exportSet).join('\n\n');
 
   // ---------- stats ----------
-  function megaName(s, rec) {
-    if (!s.item || !rec) return null;
-    const it = D().dex.items[toId(s.item)]; if (!it || !/Mega Evolve/.test(it.d || '')) return null;
-    const base = rec.b || rec.n;
-    const cand = D().dex.species.find(x => x.mg && x.b === base && toId(s.item).startsWith(toId(base).slice(0, 4)) && (/ X$/.test(s.item) ? /-X$/.test(x.n) : / Y$/.test(s.item) ? /-Y$/.test(x.n) : !/-[XY]$/.test(x.n)));
-    return cand ? cand.n : null;
-  }
+  // the Mega (or Primal) form this Pokémon becomes with its held item, if any
+  function megaName(s, rec) { const k = D().megaOf(rec, s.item); return k === null ? null : D().dex.species[k].n; }
   function statsOf(s, rec) {
     const nat = NATURES[s.nature] || [];
     return STATS.map((k, i) => {
@@ -237,7 +232,7 @@
           <div class="kv" style="margin-top:6px"><button class="btn ghost small" data-bd="pickmon">Change</button>${m ? '<button class="btn ghost small" data-bd="common">Use most common set</button>' : ''}</div></div>
       </div>
       <div class="bd-field"><div class="section-label">Ability${megaRec ? ' (after Mega Evolving it becomes ' + esc(megaRec.a[0]) + ')' : ''}</div>
-        <div class="bd-abils">${rec.a.map(a => { const ab = D().dex.abilities[toId(a)]; const p = m && pct(m.abilities, a); return `<button type="button" class="bd-abil" data-abil="${esc(a)}" aria-pressed="${toId(s.ability) === toId(a)}"><b>${esc(a)}</b>${p !== null && p !== undefined ? `<span class="mini">${p}%</span>` : ''}<span class="sub">${esc(ab ? ab.d : '')}</span></button>`; }).join('')}</div></div>
+        <div class="bd-abils">${rec.a.map(a => { const ab = D().ability(toId(a), fmt()); const p = m && pct(m.abilities, a); return `<button type="button" class="bd-abil" data-abil="${esc(a)}" aria-pressed="${toId(s.ability) === toId(a)}"><b>${esc(a)}</b>${p !== null && p !== undefined ? `<span class="mini">${p}%</span>` : ''}<span class="sub">${esc(ab ? ab.d : '')}</span></button>`; }).join('')}</div></div>
       <div class="bd-grid2">
         <div class="bd-field"><div class="section-label">Item</div><button type="button" class="bd-input" data-bd="pickitem">${s.item ? `${itemIcon(s.item)}<span>${esc(s.item)}</span>` : '<span class="sub">No item</span>'}${m && s.item && pct(m.items, s.item) ? `<span class="mini">${pct(m.items, s.item)}%</span>` : ''}</button></div>
         <div class="bd-field"><div class="section-label">Nature</div><select id="bd-nature">${Object.entries(NATURES).map(([n, [p, q]]) => `<option value="${n}" ${s.nature === n ? 'selected' : ''}>${n}${p ? ` (+${NATNAME[p]}, −${NATNAME[q]})` : ' (no change)'}</option>`).join('')}</select></div>
@@ -245,7 +240,7 @@
       </div>
       <div class="bd-field"><div class="section-label">Moves${LS ? '' : ' <span class="mini">loading legal moves…</span>'}</div>
         <div class="bd-moves">${s.moves.map((mn, k) => {
-          const mv = mn && D().dex.moves[toId(mn)];
+          const mv = mn && D().move(mn, fmt());
           if (!mn) return `<button type="button" class="bd-move empty" data-move="${k}">Move ${k + 1}</button>`;
           const p = m && pct(m.moves, mn);
           return `<div class="bd-move" data-move="${k}" role="button" tabindex="0"><div class="mt"><b>${esc(mv ? mv.n : mn)}</b>${mv ? tyBadge(mv.t) + catIcon(mv.c) : ''}${p ? `<span class="mini">${p}%</span>` : ''}<span class="mini r">${mv && mv.bp ? mv.bp + ' power' : ''}</span></div><div class="sub">${esc(MTX[toId(mn)] || '')}</div><button type="button" class="x" data-mvx="${k}" aria-label="Remove ${esc(mn)}">×</button></div>`;
@@ -296,7 +291,7 @@
     const field = () => new C.Field({ gameType: f.doubles ? 'Doubles' : 'Singles' });
     const mine = calcMon(C, g, s, rec);
     if (!mine) return '<p class="sub">The calculator doesn\'t know this Pokémon yet.</p>';
-    const myMoves = s.moves.map(n => n && D().dex.moves[toId(n)]).filter(mv => mv && mv.c !== 'S' && mv.bp > 0);
+    const myMoves = s.moves.map(n => n && D().move(n, fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0);
     if (offense && !myMoves.length) return '<p class="sub">Add an attacking move to see how much damage it does.</p>';
     const opp = e.mons.slice(0, 16).filter(x => x.n !== rec.n).slice(0, 14);
     const cards = opp.map(x => {
@@ -306,7 +301,7 @@
       const them = calcMon(C, g, set, orec); if (!them) return null;
       let rows;
       if (offense) rows = myMoves.map(mv => row(C, g, mine, them, mv.n, field));
-      else rows = x.moves.map(y => D().dex.moves[toId(y[0])]).filter(mv => mv && mv.c !== 'S' && mv.bp > 0).slice(0, 3).map(mv => row(C, g, them, mine, mv.n, field));
+      else rows = x.moves.map(y => D().move(y[0], fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0).slice(0, 3).map(mv => row(C, g, them, mine, mv.n, field));
       rows = rows.filter(Boolean);
       const best = Math.max(0, ...rows.map(r => r.hi));
       const cls = offense ? (best >= 100 ? 'good' : best >= 50 ? 'mid' : '') : (best >= 100 ? 'bad' : best >= 50 ? 'mid' : 'good');
@@ -395,7 +390,7 @@
     const rec = recOf(name); if (!rec) return;
     // a Mega form is picked as its base Pokémon holding the stone
     let species = rec.n, item = '';
-    if (rec.mg) { species = rec.b; const stone = Object.entries(D().dex.items).find(([id, it]) => fmt().items.includes(id) && /Mega Evolve/.test(it.d || '') && megaName({ item: it.n }, recOf(rec.b)) === rec.n); if (stone) item = stone[1].n; }
+    if (rec.mg) { species = rec.bo || rec.b; item = rec.ri || ''; }
     const s = { ...blank(), species, item, ability: (recOf(species) || rec).a[0] || '' };
     const m = metaOf(rec.n) || metaOf(species);
     if (m) applyCommon(s, m, !!item);
@@ -416,7 +411,7 @@
   }
   function pickItem() {
     const s = T.sets[sel]; const rec = recOf(s.species); const m = metaOf(rec.n);
-    const items = fmt().items.map(id => ({ id, ...D().dex.items[id] })).filter(x => x.n);
+    const items = fmt().items.map(id => ({ id, ...D().item(id, fmt()) })).filter(x => x.n);
     const pop = m ? m.items.filter(x => x[0] !== 'No item').map(([n, p]) => ({ ...(items.find(i => i.n === n) || { n, d: '' }), p })) : [];
     let q = '';
     modal(`<div class="bd-mhead"><input type="search" id="bm-q" placeholder="Search items" autocomplete="off"><button class="x" data-close aria-label="Close">×</button></div><div class="bd-list" id="bm-list"></div>`, (body) => {
@@ -434,7 +429,7 @@
   function pickMove(k) {
     const s = T.sets[sel]; const rec = recOf(s.species); const m = metaOf(rec.n);
     const ids = movesFor(rec);
-    const all = (ids || Object.keys(D().dex.moves)).map(id => ({ id, ...D().dex.moves[id] })).filter(x => x.n);
+    const all = (ids || Object.keys(D().dex.moves)).map(id => ({ id, ...D().move(id, fmt()) })).filter(x => x.n);
     const usage = {}; if (m) for (const [n, p] of m.moves) usage[toId(n)] = p;
     let q = '', cat = '', type = '', sort = 'use';
     modal(`<div class="bd-mhead"><input type="search" id="bm-q" placeholder="Search moves" autocomplete="off"><button class="x" data-close aria-label="Close">×</button></div>

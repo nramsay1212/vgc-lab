@@ -130,7 +130,7 @@
     const mons = f.species.map(i => D.dex.species[i].n);
     ensure('dl-calc-mons').innerHTML = mons.map(n => `<option value="${esc(n)}">`).join('');
     ensure('dl-calc-items').innerHTML = f.items.map(id => D.dex.items[id]).filter(Boolean).map(it => `<option value="${esc(it.n)}">`).join('');
-    ensure('dl-calc-moves').innerHTML = Object.values(D.dex.moves || {}).filter(m => m.c !== 'S').map(m => `<option value="${esc(m.n)}">`).join('');
+    ensure('dl-calc-moves').innerHTML = Object.keys(D.dex.moves || {}).map(id => D.move(id, f)).filter(m => m.c !== 'S').map(m => `<option value="${esc(m.n)}">`).join('');
   }
 
   function commonSet(key) {
@@ -141,7 +141,7 @@
     s.ability = top(m.abilities) || s.ability;
     const spr = top(m.spreads);
     if (spr && spr.includes(':')) { const [nat, nums] = spr.split(':'); s.nature = nat; s.sp = nums.split('/').map(Number).map(v => Math.min(spMax(), v || 0)); }
-    if (key === 'atk') { const dmg = (m.moves || []).map(x => x[0]).filter(n => { const mv = VL.D.dex.moves[toId(n)]; return mv && mv.c !== 'S'; }); s.moves = [0, 1, 2, 3].map(k => dmg[k] || ''); }
+    if (key === 'atk') { const dmg = (m.moves || []).map(x => x[0]).filter(n => { const mv = VL.D.move(n, fmt()); return mv && mv.c !== 'S'; }); s.moves = [0, 1, 2, 3].map(k => dmg[k] || ''); }
     s.mega = true;
     return true;
   }
@@ -155,7 +155,7 @@
       if (f === 'mega') s.mega = t.checked;
       else if (f === 'hp') s.hp = Math.max(1, Math.min(100, +t.value || 100));
       else s[f] = t.value.trim();
-      if (f === 'mon') { const i = VL.D.find(s.mon); if (i >= 0) { const p = VL.D.dex.species[i]; s.mon = p.n; s.ability = p.a[0] || ''; } }
+      if (f === 'mon') { const i = VL.D.find(s.mon); if (i >= 0) { const p = VL.D.mon(i, fmt()); s.mon = p.n; s.ability = p.a[0] || ''; } }
       save(); render(); return;
     }
     if (t.dataset.sp !== undefined) { s.sp[+t.dataset.sp] = Math.max(0, Math.min(spMax(), +t.value || 0)); save(); card.querySelector('[data-sptotal]').textContent = s.sp.reduce((a, b) => a + b, 0); compute(); return; }
@@ -183,7 +183,7 @@
       S.fmt = e ? e.parent : S.fmt;
       const key = side === 'def' ? 'def' : 'atk';
       S[key] = { ...blank(), mon: name };
-      const i = VL.D.find(name); if (i >= 0) S[key].ability = VL.D.dex.species[i].a[0] || '';
+      const i = VL.D.find(name); if (i >= 0) S[key].ability = VL.D.mon(i, fmt()).a[0] || '';
       commonSet(key); save();
       location.hash = 'calc'; render();
     },
