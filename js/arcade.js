@@ -123,7 +123,7 @@
   function renderDuel(flash) {
     const c = G.cur;
     const card = (p, s, side) => `<button class="duelcard ${flash ? (c.ans === side ? 'right' : flash === side ? 'wrong' : '') : ''}" data-duel="${side}" ${flash ? 'disabled' : ''}>
-      <b>${esc(p.n)}</b><span class="kv">${p.t.map(ty).join(' ')}</span><span class="sub">${esc(s.base ? 'Base Speed' : s.label)}</span>
+      ${VL.sprite(p, 'md', false)}<b>${esc(p.n)}</b><span class="kv">${p.t.map(ty).join(' ')}</span><span class="sub">${esc(s.base ? 'Base Speed' : s.label)}</span>
       ${flash ? `<span class="num big2">${side === 'A' ? c.va : c.vb}</span>` : ''}</button>`;
     area().innerHTML = `${header(`<span class="pill n">⏱ <span id="ar-time">${G.left ?? 60}</span>s</span><span class="pill m">${G.score} pts</span>${G.streak > 1 ? `<span class="pill w">streak ${G.streak}</span>` : ''}`)}
       <p class="q2">${c.tr ? 'Trick Room is up. ' : ''}Who moves first?${c.condText && !c.tr ? ` <span class="sub">${esc(c.condText)}.</span>` : ''}</p>
@@ -158,7 +158,7 @@
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/5</span><span class="pill m">${G.score} pts</span>`)}
       <p class="q2">${G.mode === 'tr' ? 'Trick Room is up. Tap them in the order they move: <b>slowest first</b>.' : 'Tap them in order from <b>fastest</b> to <b>slowest</b>.'}</p>
       <div class="sortgrid">${c.mons.map((p, i) => { const pos = c.picked.indexOf(i); const ok = done && correct[pos] === i;
-        return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-sort="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}<b>${esc(p.n)}</b><span class="sub">${esc(G.mode === 'base' ? 'Base Speed' : c.sets[i].label)}</span>${done ? `<span class="num big2">${c.sets[i].v}</span>` : ''}</button>`; }).join('')}</div>
+        return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-sort="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}${VL.sprite(p, 'md', false)}<b>${esc(p.n)}</b><span class="sub">${esc(G.mode === 'base' ? 'Base Speed' : c.sets[i].label)}</span>${done ? `<span class="num big2">${c.sets[i].v}</span>` : ''}</button>`; }).join('')}</div>
       ${done ? `<div class="explain">Correct order: ${correct.map(i => `${esc(c.mons[i].n)} (${c.sets[i].v})`).join(' → ')}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 5 ? 'See results' : 'Next round'}</button></div>`
         : `<div class="row" style="justify-content:flex-end"><button class="btn ghost small" id="ar-undo" ${c.picked.length ? '' : 'disabled'}>Undo</button></div>`}`;
     bindQuit();
@@ -215,7 +215,7 @@
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/8</span><span class="pill m">${G.score} pts</span>`)}
       <p class="q2">Tap the four Pokémon in the order they act this turn.${c.tr ? ' <b>Trick Room is up.</b>' : ''}${c.tw ? ` <b>Tailwind is up on ${c.tw.toLowerCase()}.</b>` : ''}</p>
       <div class="sortgrid four">${c.acts.map((a, i) => { const pos = c.picked.indexOf(i); const ok = done && c.order[pos] === i;
-        return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-ord="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}<span class="mini">${esc(a.side)}</span><b>${esc(a.p.n)}</b><span>uses <b>${esc(a.mv.n)}</b></span><span class="sub">${esc(a.sp.label)}</span>${done ? `<span class="mini">Priority ${fp(a.prio)} · Speed ${a.eff}${a.eff !== a.v ? ' (Tailwind)' : ''}</span>` : ''}</button>`; }).join('')}</div>
+        return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-ord="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}<span class="mini">${esc(a.side)}</span>${VL.sprite(a.p, 'md', false)}<b>${esc(a.p.n)}</b><span>uses <b>${esc(a.mv.n)}</b></span><span class="sub">${esc(a.sp.label)}</span>${done ? `<span class="mini">Priority ${fp(a.prio)} · Speed ${a.eff}${a.eff !== a.v ? ' (Tailwind)' : ''}</span>` : ''}</button>`; }).join('')}</div>
       ${done ? `<div class="explain">Order: ${c.order.map(i => `${esc(c.acts[i].p.n)} (${esc(c.acts[i].mv.n)}, ${fp(c.acts[i].prio)}, ${c.acts[i].eff})`).join(' → ')}. Higher priority always goes first; within a bracket, ${c.tr ? 'Trick Room makes the slower Pokémon go first' : 'the faster Pokémon goes first'}.</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next round'}</button></div>`
         : `<div class="row" style="justify-content:flex-end"><button class="btn ghost small" id="ar-undo" ${c.picked.length ? '' : 'disabled'}>Undo</button></div>`}`;
     bindQuit();
@@ -274,7 +274,7 @@
     const c = G.cur; const done = guess !== undefined;
     const v = done ? guess : (G.lastGuess ?? 50);
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/8</span><span class="pill m">${G.score} pts</span>`)}
-      <p class="q2"><b>${esc(c.A.name)}</b> uses <b>${esc(c.mv.n)}</b> on <b>${esc(c.Dd.name)}</b>. How much of its HP does it take?</p>
+      <div class="vsrow">${VL.sprite(c.A.name, 'lg', false)}<span class="mini">attacks</span>${VL.sprite(c.Dd.name, 'lg', false)}</div><p class="q2"><b>${esc(c.A.name)}</b> uses <b>${esc(c.mv.n)}</b> on <b>${esc(c.Dd.name)}</b>. How much of its HP does it take?</p>
       <div class="grid2"><div class="explain"><b>${esc(c.A.name)}</b><br><span class="sub">${setLine(c.A, c.champ)}</span></div><div class="explain"><b>${esc(c.Dd.name)}</b><br><span class="sub">${setLine(c.Dd, c.champ)}</span></div></div>
       <p class="sub">Level 50, ${c.spread ? 'doubles, hitting both opponents (spread damage)' : 'no field effects'}, full HP, no stat changes. Both use their most common set.</p>
       <div class="dmgslider"><input type="range" min="0" max="150" step="1" value="${v}" id="ar-dmg" ${done ? 'disabled' : ''} aria-label="Your damage guess in percent"><div class="row" style="justify-content:space-between"><span class="mini">0%</span><b class="num" id="ar-dmgv">${v}%${v >= 100 ? ' (knocked out)' : ''}</b><span class="mini">150%</span></div>
@@ -303,7 +303,7 @@
   function renderTypes(flash) {
     const c = G.cur;
     area().innerHTML = `${header(`<span class="pill n">⏱ <span id="ar-time">${G.left ?? 60}</span>s</span><span class="pill m">${G.score} pts</span>${G.streak > 1 ? `<span class="pill w">streak ${G.streak}</span>` : ''}`)}
-      <p class="q2">${ty(c.a)} into <b>${esc(c.p.n)}</b> ${c.p.t.map(ty).join(' ')}</p>
+      <div class="vsrow">${VL.sprite(c.p, 'lg', false)}</div><p class="q2">${ty(c.a)} into <b>${esc(c.p.n)}</b> ${c.p.t.map(ty).join(' ')}</p>
       <div class="opts six">${[0, 0.25, 0.5, 1, 2, 4].map((v, i) => `<button class="opt ${flash !== undefined ? (v === c.m ? 'right' : v === flash ? 'wrong' : '') : ''}" data-ty="${v}" ${flash !== undefined ? 'disabled' : ''}>${i + 1}. ${mult(v)}</button>`).join('')}</div>
       <p class="sub" style="text-align:center">Keys 1–6 answer. Type chart only, abilities not counted.</p>`;
     bindQuit();

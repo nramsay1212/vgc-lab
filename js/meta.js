@@ -31,6 +31,13 @@
       return `${nature} · ${parts.join(' · ') || 'no investment'}${champ ? '' : ' (effort values)'}`;
     },
   });
+  // who is rising and falling compared with the month before, in percentage points of teams
+  M.movers = function (fid, n) {
+    const e = fid && typeof fid === 'object' ? fid : this.forFormat(fid); if (!e || !e.prev || !e.prev.u) return null;
+    const pu = e.prev.u;
+    const all = e.mons.filter(m => m.u >= 2 || (pu[m.n] || 0) >= 2).map(m => ({ n: m.n, u: m.u, d: Math.round((m.u - (pu[m.n] || 0)) * 10) / 10 }));
+    return { month: e.month, prev: e.prev.month, up: all.filter(x => x.d > 0.4).sort((a, b) => b.d - a.d).slice(0, n || 5), down: all.filter(x => x.d < -0.4).sort((a, b) => a.d - b.d).slice(0, n || 5), delta: Object.fromEntries(all.map(x => [x.n, x.d])) };
+  };
   M.ready = fetch('data/meta.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(j => { M.data = j; return j; }).catch(() => null);
 
   // ---------- page ----------
@@ -56,8 +63,9 @@
     const q = $('mt-q').value.trim().toLowerCase();
     const max = e.mons[0] ? e.mons[0].u : 1;
     const rows = e.mons.map((m, i) => ({ m, i })).filter(({ m }) => !q || m.n.toLowerCase().includes(q));
+    const mv = M.movers(e);
     if (!selected || !e.mons.some(m => m.n === selected)) selected = e.mons[0] && e.mons[0].n;
-    $('mt-list').innerHTML = rows.map(({ m, i }) => `<button class="metarow" data-mon="${esc(m.n)}" aria-current="${m.n === selected}"><span class="rk">${i + 1}</span><span>${esc(m.n)}<span class="ub"><span style="width:${Math.round(100 * m.u / max)}%"></span></span></span><span class="pct">${m.u.toFixed(1)}%</span></button>`).join('') || '<p class="sub" style="padding:8px">No match.</p>';
+    $('mt-list').innerHTML = rows.map(({ m, i }) => `<button class="metarow" data-mon="${esc(m.n)}" aria-current="${m.n === selected}"><span class="rk">${i + 1}</span>${VL.sprite(m.n, 'xs', false)}<span>${esc(m.n)}${mv && mv.delta[m.n] !== undefined && Math.abs(mv.delta[m.n]) >= 0.5 ? ` <span class="mini ${mv.delta[m.n] > 0 ? 'good-t' : 'bad-t'}">${mv.delta[m.n] > 0 ? '▲' : '▼'}${Math.abs(mv.delta[m.n]).toFixed(1)}</span>` : ''}<span class="ub"><span style="width:${Math.round(100 * m.u / max)}%"></span></span></span><span class="pct">${m.u.toFixed(1)}%</span></button>`).join('') || '<p class="sub" style="padding:8px">No match.</p>';
     renderDetail(id, e);
   }
   function list(title, rows, fmt) {
@@ -70,7 +78,7 @@
     const D = VL.D; const champ = (id || '').includes('champions');
     const i = D.dex ? D.find(m.n) : -1; const fmt = D.dex ? D.format(e.parent) : null; const p = i >= 0 ? D.mon(i, fmt) : null;
     const rank = e.mons.indexOf(m) + 1;
-    out.innerHTML = `<div class="card-head"><div class="kv"><h2>${esc(m.n)}</h2>${p ? p.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ') : ''}</div><span class="pill n">#${rank} · ${m.u.toFixed(1)}% of teams</span></div>
+    out.innerHTML = `<div class="card-head"><div class="kv">${VL.sprite(m.n, 'md', false)}<h2>${esc(m.n)}</h2>${p ? p.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ') : ''}</div><span class="pill n">#${rank} · ${m.u.toFixed(1)}% of teams</span></div>
       ${p ? `<p class="sub">Base stats ${p.s.join(' / ')} · Speed at Level 50: ${D.speed(p.s[5], 'none', fmt)} uninvested, ${D.speed(p.s[5], 'max+', fmt)} max with a Speed nature</p>` : ''}
       <div class="row" style="gap:8px"><button class="btn small" data-calc="atk">Open in calculator as attacker</button><button class="btn ghost small" data-calc="def">As defender</button><button class="btn ghost small" data-nb>Add to notebook</button></div>
       <div class="meta-sets">
@@ -78,7 +86,7 @@
         ${list('Abilities', m.abilities)}
         ${list('Moves', m.moves)}
         ${list('Spreads', m.spreads, (k) => esc(M.spreadText(k, champ)))}
-        ${list('Common teammates', m.mates, (k) => `<a href="#meta" data-mate="${esc(k)}">${esc(k)}</a>`)}
+        ${list('Common teammates', m.mates, (k) => `<a href="#meta" data-mate="${esc(k)}">${VL.sprite(k, 'xs', false)} ${esc(k)}</a>`)}
         ${m.tera ? list('Tera types', m.tera) : ''}
       </div>
       <p class="sub">Percentages are the share of ${esc(m.n)} using each option. Moves add up to about 400% because each Pokémon has four.</p>`;

@@ -25,9 +25,11 @@
   <nav class="nav" aria-label="Sections">
     <div class="navgroup">Train</div>
     <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
+    <a href="#news"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h3.5"/></svg><span>News</span></a>
     <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log a game</span><kbd>N</kbd></a>
     <a href="#companion"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Battle companion</span></a>
     <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
+    <a href="#replay"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4h4"/><path d="m10.5 9 4.5 3-4.5 3z"/></svg><span>Replay review</span></a>
     <div class="navgroup">Progress</div>
     <a href="#games"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="4"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="15.5" cy="11.5" r=".9"/><circle cx="17.8" cy="13.8" r=".9"/></svg><span>Games</span></a>
     <a href="#test"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l3 3v15H5V3z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><span>Test</span></a>
@@ -35,8 +37,10 @@
     <div class="navgroup">Learn</div>
     <a href="#study"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg><span>Study</span></a>
     <a href="#meta"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Meta</span></a>
+    <a href="#topteams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8.5 20h7"/></svg><span>Top teams</span></a>
     <a href="#calc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg><span>Damage calculator</span></a>
     <a href="#predict"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Prediction practice</span></a>
+    <a href="#sheets"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7.5" height="16" rx="1.5"/><rect x="13" y="4" width="7.5" height="16" rx="1.5"/><path d="M6 8h2.5M6 11.5h2.5M15.5 8H18M15.5 11.5H18"/></svg><span>Team sheet practice</span></a>
     <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
     <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
     <div class="navgroup">Plan</div>
@@ -63,7 +67,7 @@
   <section class="panel" id="p-today">
     <header class="page-head">
       <h1>Today</h1>
-      <p class="lede">Your daily plan. Work down the list: a full session takes about an hour, and each item feeds the rest of the app.</p>
+      <p class="lede">Where you stand right now: your recent results and trends, what's changing in the game, and today's training plan.</p>
       <details class="howto"><summary>How to use this page</summary><ol><li>Set one <b>focus</b> for the week. It's the single habit you'll practice in every game.</li><li>Check that <b>Current format</b> is the game and regulation you're playing, so new games are filed under it.</li><li>Work through the session list. Checking 3 of the first 6 items keeps your streak alive.</li><li>Open <b>Why the session is built this way</b> at the bottom to see the reasoning behind each item.</li></ol></details>
     </header>
     <div class="tiles kpis">
@@ -72,6 +76,7 @@
       <div class="tile"><div class="k">Formats played</div><div class="v" id="cd-formats">0</div></div>
       <div class="tile"><div class="k">Overall rating</div><div class="v" id="cd-drills">–</div></div>
     </div>
+    <div id="td-trends"></div>
     <div class="grid2">
       <div class="card accent">
         <div class="card-head"><h3>Focus this week</h3><button class="linkbtn" id="focus-edit">Edit</button></div>
@@ -610,6 +615,47 @@
     <div id="bd-root"><p class="sub">Loading the Pokémon data…</p></div>
   </section>
 
+
+  <!-- NEWS -->
+  <section class="panel" id="p-news">
+    <header class="page-head">
+      <h1>News</h1>
+      <p class="lede">What's new in competitive Pokémon and in this app: rule and data changes, monthly meta shifts, tournament results, headlines and upcoming events. It updates itself every day.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Check here when you open the app. A dot on <b>News</b> in the menu means something is new since your last visit.</li><li>Use the filters to see just one kind of news.</li><li><b>Game and data changes</b> appear on their own whenever a new regulation, Pokémon, item or balance change reaches the data.</li><li>Headlines link out to the site that wrote them.</li></ol></details>
+    </header>
+    <div id="nw-root"><p class="sub">Loading the news…</p></div>
+  </section>
+
+  <!-- REPLAY REVIEW -->
+  <section class="panel" id="p-replay">
+    <header class="page-head">
+      <h1>Replay review</h1>
+      <p class="lede">Step through a Pokémon Showdown replay one turn at a time. See what happened and everyone's HP, mark the turn the game swung, and write what you'd do differently.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>On Showdown, press <b>Upload and share replay</b> after a game and copy the link.</li><li>Paste the link here and press <b>Load replay</b>. Pick which player you were.</li><li>Step through the turns with the arrows (or your keyboard's arrow keys). Stop where the game turned and press <b>Mark as the key turn</b>.</li><li>Write a note on any turn: what you'd do now. Add a one-line takeaway at the end.</li><li><b>Save review</b> keeps it here. <b>Log this game</b> sends the result, teams, key turn and notes to the game log.</li></ol></details>
+    </header>
+    <div id="rr-root"></div>
+  </section>
+
+  <!-- TOP TEAMS -->
+  <section class="panel wide" id="p-topteams">
+    <header class="page-head">
+      <h1>Top teams</h1>
+      <p class="lede">The teams that placed highest at recent Regionals, Internationals and big online tournaments, with full team sheets. New results are added automatically.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick an event, or look across all of them.</li><li>Filter by style (sun, rain, Trick Room and so on) or by a Pokémon to see how top players build around it.</li><li>Open a team to see every item, ability, nature and move.</li><li><b>Open in builder</b> copies it to your teams so you can study or change it. <b>Practice against it</b> opens it in Team sheet practice.</li></ol></details>
+    </header>
+    <div id="tt-root"><p class="sub">Loading tournament teams…</p></div>
+  </section>
+
+  <!-- TEAM SHEET PRACTICE -->
+  <section class="panel wide" id="p-sheets">
+    <header class="page-head">
+      <h1>Team sheet practice</h1>
+      <p class="lede">At official events both players see each other's full team sheet before the match. Practice that here: read an opponent's sheet against your team, choose what to bring and lead, write a plan, then review it.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick one of your saved teams.</li><li>Pick an opponent: a random top-cut team, a specific one from <b>Top teams</b>, or paste any team.</li><li>Read both sheets and the matchup notes: speed order, who threatens whom, and tools to watch for.</li><li>Tap your Pokémon to choose what you bring and lead. Do the same for what you expect from them. Write your plan.</li><li><b>Save plan</b>. Afterward, come back and note what actually happened, or save the plan to your Notebook.</li></ol></details>
+    </header>
+    <div id="sh-root"></div>
+  </section>
+
   <!-- SETTINGS -->
   <section class="panel" id="p-settings">
     <header class="page-head">
@@ -657,6 +703,7 @@
     <div class="card">
       <div class="card-head"><h3>Pokémon data</h3><span class="pill m" id="app-version">App version 8</span></div>
       <p class="sub" id="data-info"></p>
+      <p class="sub" id="update-info"></p>
     </div>
   </section>
 </div>
@@ -672,13 +719,17 @@
 <div class="sheet-back" id="sheet-back" hidden></div>
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-head"><div class="sheet-grip"></div></div>
+  <a href="#news"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h3.5"/></svg><span>News</span></a>
   <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
+    <a href="#replay"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4h4"/><path d="m10.5 9 4.5 3-4.5 3z"/></svg><span>Replay review</span></a>
   <a href="#games"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="4"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="15.5" cy="11.5" r=".9"/><circle cx="17.8" cy="13.8" r=".9"/></svg><span>Games</span></a>
   <a href="#test"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l3 3v15H5V3z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><span>Test</span></a>
   <a href="#progress"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M5 16l4-5 4 3 6-8"/><circle cx="19" cy="6" r="1.5"/></svg><span>Progress</span></a>
   <a href="#meta"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Meta</span></a>
+    <a href="#topteams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8.5 20h7"/></svg><span>Top teams</span></a>
   <a href="#calc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg><span>Damage calculator</span></a>
   <a href="#predict"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Prediction practice</span></a>
+    <a href="#sheets"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7.5" height="16" rx="1.5"/><rect x="13" y="4" width="7.5" height="16" rx="1.5"/><path d="M6 8h2.5M6 11.5h2.5M15.5 8H18M15.5 11.5H18"/></svg><span>Team sheet practice</span></a>
   <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
   <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
   <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
@@ -734,6 +785,7 @@
 <script src="js/store.js?v=8"></script>
 <script src="js/content.js?v=8"></script>
 <script src="js/study.js?v=8"></script>
+<script src="js/sprites.js?v=8"></script>
 <script src="js/help.js?v=8"></script>
 <script src="js/meta.js?v=8"></script>
 <script src="js/calc.js?v=8"></script>
@@ -741,6 +793,11 @@
 <script src="js/teamcheck.js?v=8"></script>
 <script src="js/builder.js?v=8"></script>
 <script src="js/plan.js?v=8"></script>
+<script src="js/topteams.js?v=8"></script>
+<script src="js/news.js?v=8"></script>
+<script src="js/replay.js?v=8"></script>
+<script src="js/sheets.js?v=8"></script>
+<script src="js/trends.js?v=8"></script>
 <script src="js/progress.js?v=8"></script>
 <script src="js/arcade.js?v=8"></script>
 <script src="js/test.js?v=8"></script>

@@ -1,20 +1,22 @@
 name: Update data and publish
 
-# Runs on every push, every Monday, and whenever you press "Run workflow"
-# on the Actions tab. On the schedule and manual runs it first pulls the
-# latest Pokémon data from Pokémon Showdown, so new games, regulations,
-# Pokémon and items show up without anyone touching the code.
+# Runs on every push, once a day, and whenever you press "Run workflow" on
+# the Actions tab. The daily and manual runs first pull the latest Pokémon
+# data, usage stats, sprites and tournament teams, so new games, regulations,
+# Pokémon and results show up without anyone touching the code. Every run
+# refreshes the news and publishes the site.
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '23 10 * * 1'
+    - cron: '23 10 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
   id-token: write
+  actions: write
 
 concurrency:
   group: pages
@@ -28,29 +30,41 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 200
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
+      # Each refresh step may fail (a website being down, for example) without
+      # stopping the others or the publish. Problems are written to
+      # data/status.json and shown in the app under Account, backup & theme.
       - name: Refresh Pokémon data from Showdown
+        id: dex
         if: github.event_name != 'push'
+        continue-on-error: true
         run: |
           git clone --depth 1 https://github.com/smogon/pokemon-showdown.git /tmp/ps
           (cd /tmp/ps && npm install --no-audit --no-fund && node build)
           node scripts/build-data.js /tmp/ps data/dex.json
 
       - name: Refresh usage stats from Smogon
+        id: meta
         if: github.event_name != 'push'
-        run: node scripts/build-meta.js /tmp/ps data/dex.json data/meta.json || echo "Usage stats not updated this time"
+        continue-on-error: true
+        run: node scripts/build-meta.js /tmp/ps data/dex.json data/meta.json
 
       - name: Update the damage calculator engine
+        id: calc
         if: github.event_name != 'push'
+        continue-on-error: true
         run: |
           latest=$(npm view @smogon/calc version)
           current=$(cat vendor/smogon-calc/VERSION 2>/dev/null || echo none)
           if [ "$latest" != "$current" ]; then
             mkdir -p /tmp/calcpkg && (cd /tmp/calcpkg && npm pack "@smogon/calc@$latest" >/dev/null && tar xzf smogon-calc-*.tgz)
+            test -s /tmp/calcpkg/package/dist/production.min.js && test -s /tmp/calcpkg/package/dist/data/production.min.js
             cp /tmp/calcpkg/package/dist/production.min.js vendor/smogon-calc/calc.min.js
             cp /tmp/calcpkg/package/dist/data/production.min.js vendor/smogon-calc/data.min.js
             echo "$latest" > vendor/smogon-calc/VERSION
@@ -59,25 +73,73 @@ jobs:
             echo "Calculator already on $current"
           fi
 
-      - name: Save new data
+      - name: Refresh Pokémon sprites
+        id: sprites
         if: github.event_name != 'push'
+        continue-on-error: true
+        run: node scripts/build-sprites.js
+
+      - name: Refresh tournament teams
+        id: teams
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: node scripts/build-teams.js
+
+      - name: Refresh news
+        id: news
+        continue-on-error: true
+        run: node scripts/build-news.js
+
+      - name: Check the data files are readable
+        run: |
+          for f in data/dex.json data/meta.json data/sprites.json data/teams.json data/news.json data/movetext.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || { echo "$f is broken, restoring the last good copy"; git checkout -- "$f"; }
+          done
+          node -e "const d=require('./data/dex.json'); if (!(d.species.length > 1000 && d.formats.length > 10 && Object.keys(d.moves).length > 500)) { console.error('dex.json looks incomplete'); process.exit(1); }" || git checkout -- data/dex.json data/learnsets
+
+      - name: Save new data
         run: |
           if [ -n "$(git status --porcelain data vendor)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add data vendor
-            git commit -m "Weekly update: Pokémon data, usage stats and calculator"
-            git push
+            git commit -m "Daily update: Pokémon data, usage stats, sprites, teams and news"
+            git push || echo "Could not save this time (someone pushed at the same moment). The next run will."
           else
-            echo "Nothing changed this week"
+            echo "Nothing changed"
           fi
+
+      # GitHub switches off scheduled runs in repositories with no activity for 60 days. This resets that clock.
+      - name: Keep the daily schedule switched on
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/deploy.yml/enable" && echo "Schedule kept alive"
 
       - name: Stamp this version on the app's files
         run: |
-          v="${GITHUB_SHA::7}"
+          v="$(git rev-parse --short=7 HEAD)"
           sed -i -E "s/\?v=[0-9a-z]+\"/?v=$v\"/g; s/App version [0-9a-z]+/App version $v/" index.html
           sed -i -E "s/const CACHE = 'vgclab-[^']+'/const CACHE = 'vgclab-$v'/" sw.js
           grep -o "app.js?v=[0-9a-z]*" index.html
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          checked="$now"; problems=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # a push only publishes code, so keep the time and result of the last full data check
+            prev="$(curl -sf --max-time 15 "https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY#*/}/data/status.json" || echo '{}')"
+            checked="$(node -e "try{const j=JSON.parse(process.argv[1]);process.stdout.write(j.checked||'')}catch(e){}" "$prev")"
+            problems="$(node -e "try{const j=JSON.parse(process.argv[1]);process.stdout.write((j.problems||[]).join('|'))}catch(e){}" "$prev")"
+          else
+            [ "${{ steps.dex.outcome }}" = "failure" ] && problems="$problems|Pokémon data"
+            [ "${{ steps.meta.outcome }}" = "failure" ] && problems="$problems|usage stats"
+            [ "${{ steps.calc.outcome }}" = "failure" ] && problems="$problems|damage calculator"
+            [ "${{ steps.sprites.outcome }}" = "failure" ] && problems="$problems|sprites"
+            [ "${{ steps.teams.outcome }}" = "failure" ] && problems="$problems|tournament teams"
+          fi
+          [ "${{ steps.news.outcome }}" = "failure" ] && problems="$problems|news"
+          node -e "const [v,now,checked,p]=process.argv.slice(1);require('fs').writeFileSync('data/status.json',JSON.stringify({version:v,published:now,checked:checked||null,problems:[...new Set(p.split('|').filter(Boolean))]}))" "$v" "$now" "$checked" "$problems"
+          cat data/status.json
 
       - uses: actions/configure-pages@v5
 

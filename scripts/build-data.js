@@ -291,6 +291,65 @@ for (const [fid, data] of learnsets) if (writeIfChanged(path.join(lsDir, fid + '
 if (writeIfChanged(path.join(path.dirname(OUT), 'movetext.json'), Object.fromEntries([...moveText.entries()].sort()))) lsChanged++;
 console.log(`Learnsets: ${learnsets.size} formats, ${lsChanged} files updated`);
 
+// ---------- what changed since last time, for the News page ----------
+function describeChanges(old, now) {
+  const out = []; const today = new Date().toISOString().slice(0, 10);
+  const add = (k, t, x) => out.push({ d: today, k, t, ...(x ? { x } : {}) });
+  const list = (arr, n = 14) => arr.slice(0, n).join(', ') + (arr.length > n ? ` and ${arr.length - n} more` : '');
+  const oldF = new Map((old.formats || []).map(f => [f.id, f]));
+  for (const f of now.formats) {
+    const o = oldF.get(f.id);
+    if (!o) { add('format', `New format: ${f.name}`, `${f.game}, ${f.doubles ? 'doubles' : 'singles'}. ${f.species.length} Pokémon and ${f.items.length} items are legal.${f.current ? ' It is a current format.' : ''}`); continue; }
+    if (f.current && !o.current) add('format', `${f.name} is now a current format`, f.game);
+    if (!f.current && o.current) add('format', `${f.name} is no longer a current format`, f.game);
+    if (!f.current) continue;
+    const names = (idxs, table) => idxs.map(i => table[i] && table[i].n).filter(Boolean);
+    const oldLegal = new Set(names(o.species, old.species)), nowLegal = new Set(names(f.species, now.species));
+    const inn = [...nowLegal].filter(n => !oldLegal.has(n)), gone = [...oldLegal].filter(n => !nowLegal.has(n));
+    if (inn.length) add('pokemon', `${inn.length} Pokémon now legal in ${f.name}`, list(inn));
+    if (gone.length) add('pokemon', `${gone.length} Pokémon no longer legal in ${f.name}`, list(gone));
+    const oi = new Set(o.items), ni = new Set(f.items);
+    const iin = f.items.filter(i => !oi.has(i)).map(i => now.items[i] && now.items[i].n).filter(Boolean), igone = o.items.filter(i => !ni.has(i)).map(i => old.items[i] && old.items[i].n).filter(Boolean);
+    if (iin.length) add('item', `${iin.length} item${iin.length === 1 ? '' : 's'} now legal in ${f.name}`, list(iin));
+    if (igone.length) add('item', `${igone.length} item${igone.length === 1 ? '' : 's'} no longer legal in ${f.name}`, list(igone));
+  }
+  const oldSp = new Map((old.species || []).map(s => [s.id, s]));
+  const fresh = now.species.filter(s => !oldSp.has(s.id)).map(s => s.n);
+  if (fresh.length && oldSp.size) add('pokemon', `${fresh.length} new Pokémon or forms added to the data`, list(fresh));
+  const SN = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed']; const tweaks = [];
+  for (const s of now.species) { const o = oldSp.get(s.id); if (!o) continue;
+    s.s.forEach((v, k) => { if (o.s[k] !== v) tweaks.push(`${s.n} ${SN[k]} ${o.s[k]} → ${v}`); });
+    if (o.t.join('/') !== s.t.join('/')) tweaks.push(`${s.n} type ${o.t.join('/')} → ${s.t.join('/')}`);
+    if (o.a.slice().sort().join() !== s.a.slice().sort().join()) tweaks.push(`${s.n} abilities: ${s.a.join(', ')}`);
+  }
+  if (tweaks.length) add('balance', `Pokémon changes: ${tweaks.length}`, list(tweaks, 20));
+  const newMoves = Object.keys(now.moves).filter(id => old.moves && !old.moves[id]).map(id => now.moves[id].n);
+  if (newMoves.length && old.moves) add('move', `${newMoves.length} new move${newMoves.length === 1 ? '' : 's'}`, list(newMoves));
+  const mt = [];
+  for (const [id, m] of Object.entries(now.moves)) { const o = old.moves && old.moves[id]; if (!o) continue;
+    if (o.bp !== m.bp) mt.push(`${m.n} power ${o.bp || '–'} → ${m.bp || '–'}`);
+    if (o.t !== m.t) mt.push(`${m.n} type ${o.t} → ${m.t}`);
+    if ('a' in o || 'pp' in o) { if ((o.a || 0) !== (m.a || 0)) mt.push(`${m.n} accuracy ${o.a || 'never misses'} → ${m.a || 'never misses'}`); }
+    if ((o.p || 0) !== (m.p || 0)) mt.push(`${m.n} priority ${o.p || 0} → ${m.p || 0}`);
+  }
+  if (mt.length) add('balance', `Move changes: ${mt.length}`, list(mt, 20));
+  for (const [kind, label] of [['items', 'Item'], ['abilities', 'Ability']]) {
+    const added = [], changed = [];
+    for (const [id, v] of Object.entries(now[kind])) { const o = old[kind] && old[kind][id]; if (!o) added.push(v.n); else if (o.d !== v.d) changed.push(`${v.n}: ${v.d}`); }
+    if (added.length && old[kind] && Object.keys(old[kind]).length) add(kind === 'items' ? 'item' : 'ability', `${added.length} new ${kind === 'items' ? (added.length === 1 ? 'item' : 'items') : (added.length === 1 ? 'ability' : 'abilities')}`, list(added));
+    if (changed.length) add('balance', `${label} changes: ${changed.length}`, list(changed, 8));
+  }
+  return out;
+}
+function saveChanges(entries) {
+  if (!entries.length) return;
+  const file = path.join(path.dirname(OUT), 'news.json');
+  let news = {}; try { news = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { news = {}; }
+  news.changes = [...entries, ...(news.changes || [])].slice(0, 150);
+  fs.writeFileSync(file, JSON.stringify({ v: 1, generated: new Date().toISOString(), changes: news.changes, headlines: news.headlines || [], app: news.app || [], calendar: news.calendar || [] }));
+  console.log(`News: ${entries.length} change${entries.length === 1 ? '' : 's'} recorded`); for (const e of entries) console.log(`  ${e.t}`);
+}
+
 // Only rewrite the file when the Pokémon data itself changed, so the weekly
 // job doesn't make a commit just because the timestamp moved.
 const comparable = (o) => JSON.stringify({ ...o, generated: null, source: { ...o.source, commit: null } });
@@ -298,6 +357,7 @@ if (fs.existsSync(OUT)) {
   try {
     const old = JSON.parse(fs.readFileSync(OUT, 'utf8'));
     if (comparable(old) === comparable(out)) { console.log('No data changes since ' + old.generated); process.exit(0); }
+    try { saveChanges(describeChanges(old, out)); } catch (e) { console.log('Could not work out what changed: ' + e.message); }
   } catch (e) { /* unreadable old file: overwrite */ }
 }
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

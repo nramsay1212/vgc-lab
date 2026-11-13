@@ -21,27 +21,8 @@
   const NATURES = { Hardy: [], Lonely: ['atk', 'def'], Brave: ['atk', 'spe'], Adamant: ['atk', 'spa'], Naughty: ['atk', 'spd'], Bold: ['def', 'atk'], Docile: [], Relaxed: ['def', 'spe'], Impish: ['def', 'spa'], Lax: ['def', 'spd'], Timid: ['spe', 'atk'], Hasty: ['spe', 'def'], Serious: [], Jolly: ['spe', 'spa'], Naive: ['spe', 'spd'], Modest: ['spa', 'atk'], Mild: ['spa', 'def'], Quiet: ['spa', 'spe'], Bashful: [], Rash: ['spa', 'spd'], Calm: ['spd', 'atk'], Gentle: ['spd', 'def'], Sassy: ['spd', 'spe'], Careful: ['spd', 'spa'], Quirky: [] };
   const NATNAME = { atk: 'Atk', def: 'Def', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
 
-  // ---------- images (Pokémon Showdown) ----------
-  const SD = 'https://play.pokemonshowdown.com/sprites/';
-  const spriteId = (rec) => (rec && (rec.sp || rec.id)) || '';
-  VL.sprite = function (nameOrRec, cls) {
-    const rec = typeof nameOrRec === 'string' ? (() => { const i = D().find(nameOrRec); return i >= 0 ? D().dex.species[i] : null; })() : nameOrRec;
-    if (!rec) return `<span class="spr none ${cls || ''}"></span>`;
-    const id = spriteId(rec);
-    return `<img class="spr ${cls || ''}" src="${SD}home-centered/${esc(id)}.png" data-sid="${esc(id)}" data-ini="${esc(rec.n.slice(0, 2))}" alt="" loading="lazy" decoding="async" onerror="VL.spriteFail(this)">`;
-  };
-  VL.spriteFail = function (img) {
-    const step = +(img.dataset.step || 0) + 1; img.dataset.step = step;
-    if (step === 1) { img.src = `${SD}gen5/${img.dataset.sid}.png`; img.classList.add('pix'); return; }
-    if (step === 2) { img.src = `${SD}dex/${img.dataset.sid}.png`; return; }
-    const s = document.createElement('span'); s.className = img.className + ' none'; s.textContent = img.dataset.ini || '?'; img.replaceWith(s);
-  };
-  const itemIcon = (id) => {
-    const it = id && D().dex.items[toId(id)]; const n = it && it.sn;
-    if (!n) return '<span class="iicon blank"></span>';
-    return `<span class="iicon" style="background-position:-${(n % 16) * 24}px -${Math.floor(n / 16) * 24}px"></span>`;
-  };
-  const tyBadge = (t) => `<span class="ty ${esc(t)}">${esc(t)}</span>`;
+  const itemIcon = (name) => VL.itemIcon(name);
+  const tyBadge = VL.typeBadge;
   const catIcon = (c) => `<span class="cat ${c === 'P' ? 'phys' : c === 'S' ? 'stat' : 'spec'}" title="${c === 'P' ? 'Physical' : c === 'S' ? 'Status' : 'Special'}">${c === 'P' ? 'Phys' : c === 'S' ? 'Status' : 'Spec'}</span>`;
 
   // ---------- format helpers ----------
@@ -251,7 +232,9 @@
         <div class="bd-sliders">${STATS.map((k, i) => `<label class="bd-slider"><span>${LABEL[i]}</span><input type="range" min="0" max="${spMax()}" step="${spStep()}" value="${s.evs[i]}" data-ev="${i}" aria-label="${LABEL[i]} ${champ ? 'Stat Points' : 'effort values'}"><input type="number" min="0" max="${spMax()}" step="${spStep()}" value="${s.evs[i]}" data-evn="${i}" aria-label="${LABEL[i]}"></label>`).join('')}</div>
         <div class="kv bd-presets">${[['Max Atk/Spe', [0, 1, 0, 0, 0, 1]], ['Max SpA/Spe', [0, 0, 0, 1, 0, 1]], ['Max HP/Def', [1, 0, 1, 0, 0, 0]], ['Max HP/SpD', [1, 0, 0, 0, 1, 0]], ['Max HP/Atk', [1, 1, 0, 0, 0, 0]], ['Max HP/SpA', [1, 0, 0, 1, 0, 0]]].map(([l, v]) => `<button class="chipbtn" data-preset="${v.join('')}">${l}</button>`).join('')}<button class="chipbtn" data-preset="000000">Reset</button></div>
         ${m && m.spreads && m.spreads.length ? `<div class="kv bd-presets"><span class="mini">Common spreads:</span>${m.spreads.slice(0, 4).map(([sp, p]) => `<button class="chipbtn" data-spread="${esc(sp)}">${esc(sp.replace(':', ' '))} <span class="mini">${p}%</span></button>`).join('')}</div>` : ''}
-      </div>`;
+      </div>
+      <details class="bd-helper" id="bd-helper" ${H.open ? 'open' : ''}><summary>${champ ? 'Stat Points' : 'Effort value'} helper <span class="sub">Find the least investment that outspeeds, survives or knocks out a specific Pokémon</span></summary><div id="bd-help"></div></details>`;
+    renderHelper();
     renderSide();
   }
 
@@ -341,6 +324,150 @@
   const analysisSoon = () => { clearTimeout(anTimer); anTimer = setTimeout(renderAnalysis, 250); };
   let sideTimer = null;
   const sideSoon = () => { clearTimeout(sideTimer); sideTimer = setTimeout(renderSide, 300); };
+
+  // ---------- Stat Points helper ----------
+  // Finds the smallest investment that reaches a benchmark against one target Pokémon.
+  const H = { open: false, goal: 'outspeed', target: '', tspread: 'common', tscarf: false, ttw: false, mtw: false, tmove: '', mymove: '', hits: 1, intim: false, tbulk: 'common' };
+  const unitName = () => (isChamp() ? 'Stat Points' : 'effort values');
+  function targetList() {
+    const e = metaE(); if (e) return e.mons.slice(0, 60).map(x => x.n);
+    return fmt().species.map(i => D().mon(i, fmt())).filter(p => p.fe).map(p => p.n).sort();
+  }
+  // the target's set: its most common one, or a preset
+  function targetSet(name, kind, category) {
+    const m = metaOf(name); const rec = recOf(name); if (!rec) return null;
+    const set = { ...blank(), species: name, nature: 'Hardy' };
+    if (m) { set.item = m.items[0] && m.items[0][0] !== 'No item' ? m.items[0][0] : ''; set.ability = m.abilities[0] ? m.abilities[0][0] : ''; }
+    const max = spMax();
+    if (kind === 'common' && m && m.spreads[0]) { const [nat, nums] = m.spreads[0][0].split(':'); set.nature = nat; const ev = (nums || '').split('/').map(Number); if (ev.length === 6) set.evs = ev; }
+    else if (kind === 'maxspe+') { set.nature = 'Timid'; set.evs = [0, 0, 0, 0, 0, max]; }
+    else if (kind === 'maxspe') { set.nature = 'Hardy'; set.evs = [0, 0, 0, 0, 0, max]; }
+    else if (kind === 'nospe') { set.nature = 'Hardy'; set.evs = [0, 0, 0, 0, 0, 0]; }
+    else if (kind === 'maxatk') { set.nature = category === 'P' ? 'Adamant' : 'Modest'; set.evs = category === 'P' ? [0, max, 0, 0, 0, 0] : [0, 0, 0, max, 0, 0]; }
+    else if (kind === 'nobulk') { set.evs = [0, 0, 0, 0, 0, 0]; }
+    else if (kind === 'maxbulk') { set.nature = category === 'P' ? 'Bold' : 'Calm'; set.evs = category === 'P' ? [max, 0, max, 0, 0, 0] : [max, 0, 0, 0, max, 0]; }
+    return set;
+  }
+  const speedWith = (set, rec, scarf, tw) => { const mega = megaName(set, rec); let v = statsOf(set, mega ? recOf(mega) : rec)[5]; if (scarf) v = Math.floor(v * 1.5); if (tw) v *= 2; return v; };
+  const steps = () => { const out = []; for (let v = 0; v <= spMax(); v += spStep()) out.push(v); return out; };
+  const budgetFor = (s, idxs) => spTotal() - s.evs.reduce((a, v, i) => a + (idxs.includes(i) ? 0 : v), 0);
+
+  function renderHelper() {
+    const box = $('bd-help'); if (!box) return;
+    const s = T.sets[sel]; const rec = s && s.species ? recOf(s.species) : null; if (!rec) { box.innerHTML = ''; return; }
+    const names = targetList(); if (!H.target || !names.includes(H.target)) H.target = names.find(n => n !== rec.n) || names[0] || '';
+    const tm = metaOf(H.target);
+    const tmoves = tm ? tm.moves.map(x => D().move(x[0], fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0) : Object.keys(D().dex.moves).map(id => D().move(id, fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp >= 80).slice(0, 80);
+    if (!tmoves.some(mv => mv.n === H.tmove)) H.tmove = tmoves[0] ? tmoves[0].n : '';
+    const mine = s.moves.map(n => n && D().move(n, fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0);
+    if (!mine.some(mv => mv.n === H.mymove)) H.mymove = mine.length ? mine.slice().sort((a, b) => b.bp - a.bp)[0].n : '';
+    const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button type="button" data-h="${key}" data-v="${v}" aria-pressed="${String(H[key]) === String(v)}">${l}</button>`).join('')}</div>`;
+    const chk = (key, label) => `<label class="inline"><input type="checkbox" data-hc="${key}" ${H[key] ? 'checked' : ''}> ${label}</label>`;
+    const spreadOpts = [['common', tm ? 'its most common spread' : null], ['maxspe+', 'max Speed with a Speed nature'], ['maxspe', 'max Speed, neutral nature'], ['nospe', 'no Speed investment']].filter(x => x[1]);
+    if (!spreadOpts.some(x => x[0] === H.tspread)) H.tspread = spreadOpts[0][0];
+    let opts = '';
+    if (H.goal === 'outspeed' || H.goal === 'underspeed') opts = `<label>Their Speed<select data-hs="tspread">${spreadOpts.map(([v, l]) => `<option value="${v}" ${H.tspread === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="kv" style="flex-wrap:wrap">${chk('tscarf', 'They hold a Choice Scarf')}${chk('ttw', 'Their Tailwind is up')}${chk('mtw', 'My Tailwind is up')}</div>`;
+    if (H.goal === 'survive') opts = `<label>Their attack<select data-hs="tmove">${tmoves.map(mv => `<option ${mv.n === H.tmove ? 'selected' : ''}>${esc(mv.n)}</option>`).join('')}</select></label>
+      <label>Their set<select data-hs="tspread">${[['common', tm ? 'its most common set' : null], ['maxatk', 'max attack with a boosting nature']].filter(x => x[1]).map(([v, l]) => `<option value="${v}" ${H.tspread === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="kv">${chk('intim', 'After my Intimidate (−1 Attack)')}</div>`;
+    if (H.goal === 'ko') opts = mine.length ? `<label>My attack<select data-hs="mymove">${mine.map(mv => `<option ${mv.n === H.mymove ? 'selected' : ''}>${esc(mv.n)}</option>`).join('')}</select></label>
+      <label>Their bulk<select data-hs="tbulk">${[['common', tm ? 'its most common spread' : null], ['nobulk', 'no investment'], ['maxbulk', 'max HP and defense with a boosting nature']].filter(x => x[1]).map(([v, l]) => `<option value="${v}" ${H.tbulk === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="kv"><span class="sub">Knock out in</span>${seg('hits', [[1, 'one hit'], [2, 'two hits']])}</div>` : '<p class="sub">Add an attacking move first.</p>';
+    box.innerHTML = `${seg('goal', [['outspeed', 'Outspeed'], ['underspeed', 'Move after it'], ['survive', 'Survive a hit'], ['ko', 'Knock it out']])}
+      <div class="bd-hgrid"><label>Target Pokémon<select data-hs="target">${names.map(n => `<option ${n === H.target ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>${opts}</div>
+      <div class="bd-hout" id="bd-help-out"><span class="sub">Working it out…</span></div>`;
+    solveHelper();
+  }
+  let helpToken = 0, helpApply = null, helpTimer = null;
+  function solveHelper() {
+    const out = $('bd-help-out'); if (!out) return;
+    const s = T.sets[sel]; const rec = recOf(s.species); const trec = recOf(H.target);
+    helpApply = null;
+    const show = (html, apply, label) => { helpApply = apply || null; out.innerHTML = html + (apply ? ` <button class="btn small" data-bd="helpapply">${label || 'Apply'}</button>` : ''); };
+    if (!rec || !trec) { show('<span class="sub">Pick a target.</span>'); return; }
+    const unit = unitName();
+    if (H.goal === 'outspeed' || H.goal === 'underspeed') {
+      const tset = targetSet(H.target, H.tspread); const theirs = speedWith(tset, trec, H.tscarf || toId(tset.item) === 'choicescarf' && H.tspread === 'common', H.ttw);
+      const scarfNote = toId(tset.item) === 'choicescarf' && H.tspread === 'common' && !H.tscarf ? ' (its usual Choice Scarf included)' : '';
+      const myScarf = toId(s.item) === 'choicescarf';
+      const at = (ev, nature) => speedWith({ ...s, nature: nature || s.nature, evs: s.evs.map((v, i) => i === 5 ? ev : v) }, rec, myScarf, H.mtw);
+      const avail = budgetFor(s, [5]);
+      const mods = `${myScarf ? ' with your Choice Scarf' : ''}${H.mtw ? ' under your Tailwind' : ''}`;
+      if (H.goal === 'outspeed') {
+        const need = steps().find(ev => at(ev) > theirs);
+        if (need === undefined) {
+          const natUp = (NATURES[s.nature] || [])[0] === 'spe'; const alt = !natUp && steps().find(ev => at(ev, 'Jolly') > theirs);
+          return show(`<b>Can't outspeed it.</b> ${esc(H.target)} reaches <b>${theirs}</b> Speed${scarfNote}; your max is ${at(spMax())}${mods}.${alt !== undefined && alt !== false ? ` With a Speed-boosting nature you'd need ${alt} Speed ${unit}.` : ''}`);
+        }
+        if (need <= s.evs[5]) return show(`<b>You already outspeed it.</b> You're at ${at(s.evs[5])}${mods} and ${esc(H.target)} is at <b>${theirs}</b>${scarfNote}.${need < s.evs[5] ? ` You'd still outspeed with ${need} Speed ${unit} (${at(need)}), which frees ${s.evs[5] - need}.` : ''}`, need < s.evs[5] ? () => { s.evs[5] = need; } : null, 'Use the minimum');
+        const msg = `<b>${need} Speed ${unit}</b> gets you to <b>${at(need)}</b>${mods}, just past ${esc(H.target)}'s <b>${theirs}</b>${scarfNote}. You have ${s.evs[5]} now.`;
+        if (need > avail) return show(`${msg} <span class="bad-t">You only have ${Math.max(0, avail)} free, so take ${need - avail} out of another stat first.</span>`);
+        return show(msg, need === s.evs[5] ? null : () => { s.evs[5] = need; });
+      }
+      // underspeed: the most Speed you can keep while still moving after it (for Trick Room)
+      const ok = steps().filter(ev => at(ev) < theirs); 
+      if (!ok.length) {
+        const natDown = (NATURES[s.nature] || [])[1] === 'spe'; const low = at(0, 'Brave');
+        return show(`<b>Still faster with nothing invested.</b> You're at ${at(0)}${mods} and ${esc(H.target)} is at <b>${theirs}</b>.${!natDown && low < theirs ? ` A Speed-lowering nature (Brave, Quiet, Relaxed or Sassy) drops you to ${low}.` : ''}${!isChamp() ? ' A Speed individual value of 0 lowers it further.' : ''}`);
+      }
+      const keep = ok[ok.length - 1];
+      return show(`You can keep up to <b>${keep} Speed ${unit}</b> (${at(keep)} Speed${mods}) and still move after ${esc(H.target)} at <b>${theirs}</b>${scarfNote}, so you go first under Trick Room. You have ${s.evs[5]} now.`, s.evs[5] > keep ? () => { s.evs[5] = keep; } : null);
+    }
+    out.innerHTML = '<span class="sub">Working it out…</span>';
+    const tok = ++helpToken;
+    VL.calc.engine().then(() => {
+      if (tok !== helpToken || !$('bd-help-out')) return;
+      const C = window.calc; const f = fmt(); const g = C.Generations.get(isChamp() ? 0 : f.gen);
+      const field = new C.Field({ gameType: f.doubles ? 'Doubles' : 'Singles' });
+      const dmg = (a, d, move) => { const r = C.calculate(g, a, d, new C.Move(g, move), field); const [lo, hi] = r.range(); return { lo, hi }; };
+      try {
+        if (H.goal === 'survive') {
+          const mv = D().move(H.tmove, f); if (!mv) return show('<span class="sub">Pick their attack.</span>');
+          const tset = targetSet(H.target, H.tspread, mv.c); const atk = calcMon(C, g, tset, trec); if (!atk) return show('<span class="sub">The calculator doesn\'t know that Pokémon yet.</span>');
+          if (H.intim && mv.c === 'P') atk.boosts.atk = -1;
+          const di = mv.c === 'P' ? 2 : 4; const dn = mv.c === 'P' ? 'Defense' : 'Sp. Def';
+          const avail = budgetFor(s, [0, di]);
+          const mk = (h, d) => calcMon(C, g, { ...s, evs: s.evs.map((v, i) => i === 0 ? h : i === di ? d : v) }, rec);
+          let best = null, bestAny = null;
+          for (const d of steps()) {
+            const me = mk(0, d); const hit = dmg(atk, me, mv.n).hi;
+            for (const h of steps()) {
+              const hp = mk(h, d).maxHP(); if (hp <= hit) continue;
+              const cand = { h, d, total: h + d, hp, hit };
+              if (!bestAny || cand.total < bestAny.total) bestAny = cand;
+              if (cand.total <= avail && (!best || cand.total < best.total || (cand.total === best.total && cand.hp - cand.hit > best.hp - best.hit))) best = cand;
+              break; // smallest HP for this defense
+            }
+          }
+          const now = mk(s.evs[0], s.evs[di]); const cur = dmg(atk, now, mv.n); const pct = (x, hp) => Math.round(1000 * x / hp) / 10;
+          const curTxt = `Right now ${esc(H.tmove)} does ${pct(cur.lo, now.maxHP())}–${pct(cur.hi, now.maxHP())}%.`;
+          const setTxt = `${esc(H.target)}${tset.item ? ' (' + esc(tset.item) + ')' : ''}, ${H.tspread === 'common' ? 'most common set' : 'max attack'}${H.intim && mv.c === 'P' ? ', at −1 Attack' : ''}`;
+          if (!bestAny) { const top = mk(spMax(), spMax()); const w = dmg(atk, top, mv.n); return show(`<b>${w.lo < top.maxHP() ? 'Can\'t be sure of surviving it' : 'Can\'t survive it'}.</b> Even with max HP and ${dn}, ${esc(H.tmove)} from ${setTxt} does ${pct(w.lo, top.maxHP())}–${pct(w.hi, top.maxHP())}%${w.lo < top.maxHP() ? ', so you only live on a low roll' : ''}. ${curTxt}`); }
+          if (cur.hi < now.maxHP()) { const free = best ? s.evs[0] + s.evs[di] - best.total : 0; return show(`<b>You already survive it.</b> ${esc(H.tmove)} from ${setTxt} does ${pct(cur.lo, now.maxHP())}–${pct(cur.hi, now.maxHP())}%.${free > 0 ? ` The least that still survives is ${best.h} HP and ${best.d} ${dn}, which frees ${free} ${unit}.` : ''}`, free > 0 ? () => { s.evs[0] = best.h; s.evs[di] = best.d; } : null, 'Use the minimum'); }
+          if (!best) return show(`<b>${bestAny.h} HP and ${bestAny.d} ${dn}</b> ${unit} would survive ${esc(H.tmove)} from ${setTxt}, but that's ${bestAny.total} and you only have ${Math.max(0, avail)} free. <span class="bad-t">Take ${bestAny.total - avail} out of other stats first.</span> ${curTxt}`);
+          return show(`<b>${best.h} HP and ${best.d} ${dn}</b> ${unit} always survives ${esc(H.tmove)} from ${setTxt}: it does at most ${pct(best.hit, best.hp)}%. ${curTxt}`, () => { s.evs[0] = best.h; s.evs[di] = best.d; });
+        }
+        if (H.goal === 'ko') {
+          const mv = D().move(H.mymove, f); if (!mv) return show('<span class="sub">Add an attacking move first.</span>');
+          const tset = targetSet(H.target, H.tbulk, mv.c); const def = calcMon(C, g, tset, trec); if (!def) return show('<span class="sub">The calculator doesn\'t know that Pokémon yet.</span>');
+          const ai = mv.c === 'P' ? 1 : 3; const an = mv.c === 'P' ? 'Attack' : 'Sp. Atk';
+          const avail = budgetFor(s, [ai]); const hp = def.maxHP();
+          const mk = (a) => calcMon(C, g, { ...s, evs: s.evs.map((v, i) => i === ai ? a : v) }, rec);
+          const res = steps().map(a => ({ a, ...dmg(mk(a), def, mv.n) }));
+          const need = res.find(r => r.lo * H.hits >= hp); const cur = res.find(r => r.a === s.evs[ai]) || res[0];
+          const pct = (x) => Math.round(1000 * x / hp) / 10; const hitsTxt = H.hits === 1 ? 'in one hit' : 'in two hits';
+          const setTxt = `${esc(H.target)} (${H.tbulk === 'common' ? 'most common spread' : H.tbulk === 'nobulk' ? 'no investment' : 'max bulk'})`;
+          const curTxt = `Right now ${esc(mv.n)} does ${pct(cur.lo)}–${pct(cur.hi)}%.`;
+          if (!need) { const top = res[res.length - 1]; return show(`<b>Can't guarantee the knockout ${hitsTxt}.</b> With max ${an}, ${esc(mv.n)} does ${pct(top.lo)}–${pct(top.hi)}% to ${setTxt}${top.hi * H.hits >= hp ? ', so it only knocks out on a high roll' : ''}. ${curTxt}`); }
+          if (need.a <= s.evs[ai]) return show(`<b>You already knock it out ${hitsTxt}.</b> ${curTxt}${need.a < s.evs[ai] ? ` You'd still do it with ${need.a} ${an} ${unit}, which frees ${s.evs[ai] - need.a}.` : ''}`, need.a < s.evs[ai] ? () => { s.evs[ai] = need.a; } : null, 'Use the minimum');
+          const msg = `<b>${need.a} ${an} ${unit}</b> always knocks out ${setTxt} ${hitsTxt} with ${esc(mv.n)} (${pct(need.lo)}–${pct(need.hi)}% each hit). ${curTxt}`;
+          if (need.a > avail) return show(`${msg} <span class="bad-t">You only have ${Math.max(0, avail)} free, so take ${need.a - avail} out of another stat first.</span>`);
+          return show(msg, () => { s.evs[ai] = need.a; });
+        }
+      } catch (e) { show('<span class="sub">The calculator couldn\'t work this one out.</span>'); }
+    }).catch(() => show('<span class="sub">Couldn\'t load the damage calculator.</span>'));
+  }
 
   // ---------- pickers ----------
   function modal(html, onReady) {
@@ -497,6 +624,7 @@
       const b = e.target.closest('[data-bd]');
       if (b) {
         const k = b.dataset.bd;
+        if (k === 'helpapply' && helpApply) { helpApply(); H.open = true; renderEditor(); analysisSoon(); save(); VL.toast('Applied'); return; }
         if (k === 'pickmon') pickMon();
         if (k === 'pickitem') pickItem();
         if (k === 'common') { const s = T.sets[sel]; const rec = recOf(s.species); const m = metaOf(megaName(s, rec) || rec.n) || metaOf(rec.n); if (m) { const keep = s.ability; applyCommon(s, m, false); if (!rec.a.some(a => toId(a) === toId(s.ability))) s.ability = rec.a.some(a => toId(a) === toId(keep)) ? keep : rec.a[0]; renderSlots(); renderEditor(); analysisSoon(); save(); } }
@@ -507,6 +635,7 @@
         if (k === 'del') VL.armDelete(b, () => { if (T.id) store().del('teams', T.id); try { localStorage.removeItem(LAST); } catch (x) { /* ignore */ } T = null; openTeam((teamsList()[0] || {}).id); render(); VL.toast('Team deleted'); });
         return;
       }
+      const hb = e.target.closest('[data-h]'); if (hb) { const v = hb.dataset.v; H[hb.dataset.h] = hb.dataset.h === 'hits' ? +v : v; if (hb.dataset.h === 'goal') H.tspread = 'common'; renderHelper(); return; }
       const ab = e.target.closest('[data-abil]'); if (ab) { T.sets[sel].ability = ab.dataset.abil; renderEditor(); analysisSoon(); save(); return; }
       const mx = e.target.closest('[data-mvx]'); if (mx) { e.stopPropagation(); T.sets[sel].moves[+mx.dataset.mvx] = ''; renderEditor(); analysisSoon(); save(); return; }
       const mv = e.target.closest('[data-move]'); if (mv) { pickMove(+mv.dataset.move); return; }
@@ -526,17 +655,20 @@
         v = Math.min(v, Math.max(0, spTotal() - others)); v -= v % spStep();
         s.evs[i] = v;
         if (t.dataset.ev !== undefined) { const n = root.querySelector(`[data-evn="${i}"]`); if (n) n.value = v; t.value = v; } else { const r = root.querySelector(`[data-ev="${i}"]`); if (r) r.value = v; }
-        updateStats(); analysisSoon(); sideSoon(); save();
+        updateStats(); analysisSoon(); sideSoon(); if (H.open) { clearTimeout(helpTimer); helpTimer = setTimeout(solveHelper, 250); } save();
       }
     });
     root.addEventListener('change', (e) => {
       const t = e.target;
+      if (t.dataset.hs) { H[t.dataset.hs] = t.value; renderHelper(); return; }
+      if (t.dataset.hc) { H[t.dataset.hc] = t.checked; renderHelper(); return; }
       if (t.id === 'bd-fmt') { T.fmt = t.value; save(); render(); return; }
       if (t.id === 'bd-pick') { const v = t.value; if (!v) return; save(true); if (v === '__new') { T = null; openTeam(null); } else { T = null; openTeam(v); } render(); return; }
       if (t.id === 'bd-nature') { T.sets[sel].nature = t.value; renderEditor(); analysisSoon(); save(); return; }
       if (t.id === 'bd-tera') { T.sets[sel].tera = t.value; save(); return; }
       if (t.dataset.evn !== undefined) renderEditor();
     });
+    root.addEventListener('toggle', (e) => { if (e.target.id === 'bd-helper') H.open = e.target.open; }, true);
     $('bd-modal').addEventListener('click', (e) => { if (e.target.id === 'bd-modal' || e.target.closest('[data-close]')) closeModal(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('bd-modal').hidden) closeModal(); });
   }
@@ -551,6 +683,7 @@
   let bound = false;
   VL.builder = {
     render() { if (!D().dex) return; if (!bound) { bind(); bound = true; } render(); },
+    open(id) { try { localStorage.setItem(LAST, id); } catch (e) { /* ignore */ } T = null; if (bound && location.hash === '#teams') render(); },
     refreshSide() { /* the builder saves its own changes; nothing to redraw from outside */ },
     parsePaste, statsOf,
   };

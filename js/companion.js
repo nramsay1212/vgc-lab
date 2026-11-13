@@ -76,7 +76,7 @@
       const prot = o.protectTurn ? (o.protectTurn === B.turn - 1 ? `<span class="togg warn">Protected last turn: another Protect works only 1 time in 3</span>` : o.protectTurn === B.turn ? `<span class="togg warn">Protected this turn</span>` : `<span class="mini">Last Protect: turn ${o.protectTurn}</span>`) : '';
       const abil = p ? p.a : [];
       return `<div class="oppcard ${o.fnt ? 'fnt' : ''} ${o.lead ? 'lead' : ''}" data-i="${i}">
-        <div class="h"><div class="kv"><b>${esc(o.n)}</b>${p ? p.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ') : ''}</div>
+        <div class="h"><div class="kv">${VL.sprite(o.n, 'sm', false)}<b>${esc(o.n)}</b>${p ? p.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ') : ''}</div>
           <div class="kv"><button class="togg" data-t="lead" aria-pressed="${!!o.lead}">Lead</button><button class="togg" data-t="mega" aria-pressed="${!!o.mega}">Mega</button><button class="togg" data-t="fnt" aria-pressed="${!!o.fnt}">Fainted</button></div></div>
         ${speed}${usual}
         <div class="row" style="gap:6px"><label style="flex:1 1 120px">Item<input type="text" data-r="item" value="${esc(o.item || '')}" list="dl-cp-items" placeholder="Not seen"></label>
@@ -91,7 +91,7 @@
     $('cp-mine-card').hidden = !B.mine.length;
     $('cp-mine').innerHTML = B.mine.map((o, i) => {
       const warn = o.protectTurn === B.turn - 1;
-      return `<button class="togg ${warn ? 'warn' : ''}" data-mine="${i}">${esc(o.n)}${o.protectTurn ? (warn ? ' · Protected last turn' : o.protectTurn === B.turn ? ' · Protected this turn' : ` · last Protect turn ${o.protectTurn}`) : ' · tap when it Protects'}</button>`;
+      return `<button class="togg ${warn ? 'warn' : ''}" data-mine="${i}">${VL.sprite(o.n, 'xs', false)} ${esc(o.n)}${o.protectTurn ? (warn ? ' · Protected last turn' : o.protectTurn === B.turn ? ' · Protected this turn' : ` · last Protect turn ${o.protectTurn}`) : ' · tap when it Protects'}</button>`;
     }).join('');
     if (document.activeElement !== $('cp-notes')) $('cp-notes').value = B.notes || '';
     fillLists();

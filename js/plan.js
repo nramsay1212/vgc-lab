@@ -132,7 +132,7 @@
   function stateOk(st) { return st.filter(x => x > 0).length === P.nb && st.filter(x => x === 2).length === P.nl; }
   function picker(label, names, st, key) {
     const brought = st.filter(x => x > 0).length, leads = st.filter(x => x === 2).length;
-    return `<div><div class="section-label">${esc(label)} · ${brought}/${P.nb} brought · ${leads}/${P.nl} leading</div><div class="chips">${names.map((n, i) => `<button type="button" class="chip" data-pk="${key}" data-i="${i}" aria-pressed="${st[i] > 0}" style="${st[i] === 2 ? 'border-color:var(--hot);background:var(--hot-soft)' : ''}">${esc(n)}${st[i] === 2 ? ' · lead' : st[i] === 1 ? ' · back' : ''}</button>`).join('')}</div></div>`;
+    return `<div><div class="section-label">${esc(label)} · ${brought}/${P.nb} brought · ${leads}/${P.nl} leading</div><div class="chips">${names.map((n, i) => `<button type="button" class="chip" data-pk="${key}" data-i="${i}" aria-pressed="${st[i] > 0}" style="${st[i] === 2 ? 'border-color:var(--hot);background:var(--hot-soft)' : ''}">${VL.sprite(n, 'xs', false)} ${esc(n)}${st[i] === 2 ? ' · lead' : st[i] === 1 ? ' · back' : ''}</button>`).join('')}</div></div>`;
   }
   function renderPredict() {
     const el = $('pr-live');

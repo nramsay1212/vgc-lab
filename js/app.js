@@ -163,7 +163,7 @@
       g.slice(0, 40).map(x => `<tr>
         <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span></td>
         <td class="mono" style="white-space:nowrap">${esc((x.day || '').slice(5))}${Number.isFinite(x.rating) ? `<br><span class="sub">${x.rating}</span>` : ''}<br><span class="sub">${esc(x.fmtName || fmtName(x.fmt))}</span></td>
-        <td>${esc((x.opp || []).join(', ')) || '<span class="sub">–</span>'}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
+        <td>${(x.opp || []).length ? `<span class="sprrow" title="${esc((x.opp || []).join(', '))}">${(x.opp || []).map(n => VL.sprite(n, 'xs')).join('')}</span>` : '<span class="sub">–</span>'}${/^https:\/\/replay\.pokemonshowdown\.com\//.test(x.source || '') ? `<br><button class="linkbtn" data-review="${esc(x.source)}">Review replay</button>` : ''}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
         <td>${esc(x.mylead || '–')} / ${esc(x.opplead || '–')}</td>
         <td>${(x.tags || []).map(t => `<span class="pill m">${esc(TAGMAP[t] || t)}</span>`).join(' ')}</td>
         <td style="max-width:280px">${esc(x.note || '')}${x.turn ? ` <span class="sub">(T${x.turn})</span>` : ''}</td>
@@ -223,7 +223,7 @@
     $('rv-tags').innerHTML = tagRows.length ? barList(tagRows, { fmt: r => `${r.v} · ${pct(r.v, losses.length)}%` }) + `<p class="sub">Percent of ${losses.length} losses. Bad luck is included so you can see how often it really decides games.</p>`
       : '<div class="empty">Tag your losses when you log them. The biggest bar here is usually your next weekly focus.</div>';
     const mons = monStats(list).filter(m => m.n >= 3).sort((a, b) => (a.w / a.n) - (b.w / b.n) || b.n - a.n).slice(0, 8);
-    $('rv-mons').innerHTML = mons.length ? `<div class="bars">${mons.map(m => `<div class="bar"><span>${esc(m.name)} <button class="linkbtn" style="text-decoration:none;color:var(--accent)" data-addnb="${esc(m.name)}">+ notebook</button></span><span class="track"><span class="fill acc" style="display:block;width:${pct(m.w, m.n)}%"></span></span><span class="n">${pct(m.w, m.n)}% · ${m.n}</span></div>`).join('')}</div><p class="sub">Your win rate in games where they brought it to team preview, and how many games.</p>`
+    $('rv-mons').innerHTML = mons.length ? `<div class="bars">${mons.map(m => ` <div class="bar"><span>${VL.sprite(m.name, 'xs', false)} ${esc(m.name)} <button class="linkbtn" style="text-decoration:none;color:var(--accent)" data-addnb="${esc(m.name)}">+ notebook</button></span><span class="track"><span class="fill acc" style="display:block;width:${pct(m.w, m.n)}%"></span></span><span class="n">${pct(m.w, m.n)}% · ${m.n}</span></div>`).join('')}</div><p class="sub">Your win rate in games where they brought it to team preview, and how many games.</p>`
       : '<div class="empty">Fill in "Their 6" when you log. After a dozen games this shows which Pokémon you lose to most.</div>';
     const arch = {}; for (const g of list) { if (!g.arch) continue; (arch[g.arch] ||= { n: 0, w: 0 }); arch[g.arch].n++; if (g.result === 'W') arch[g.arch].w++; }
     const ar = wrRows(Object.entries(arch));
@@ -380,11 +380,11 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const extra = { m100: ` <span class="meta">${Math.min(total, 100)}/100</span>`, mfmt3: ` <span class="meta">${Math.min(fmts, 3)}/3</span>`, mtypes: typeAcc !== null ? ` <span class="meta">${typeAcc}%</span>` : '' };
     $('milestones').innerHTML = VL.MILESTONES.map(([id, label]) => `<li class="${isDone(id) ? 'done' : ''}"><input type="checkbox" id="ms-${id}" data-ms="${id}" ${isDone(id) ? 'checked' : ''} ${auto[id] ? 'disabled' : ''}><label for="ms-${id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(label)}${extra[id] || ''}</span></label></li>`).join('');
     const today = dayKey(); let nextShown = false;
-    $('timeline').innerHTML = (VL.isSingles() ? '<p class="sub" style="margin:0 0 8px">Official Play! Pokémon events, including the World Championships, are played in doubles. Singles is played on the ranked ladder and in online competitions. Switch to Doubles at the top if you want to aim for these.</p>' : '') + VL.EVENTS.map(([d, name, note]) => {
+    $('timeline').innerHTML = (VL.isSingles() ? '<p class="sub" style="margin:0 0 8px">Official Play! Pokémon events, including the World Championships, are played in doubles. Singles is played on the ranked ladder and in online competitions. Switch to Doubles at the top if you want to aim for these.</p>' : '') + (VL.upcoming ? VL.upcoming() : VL.EVENTS.map(([d, n, note]) => ({ d, n, note }))).map(({ d, n: name, note, c }) => {
       const past = d < today; let chip = '';
       if (!past && !nextShown) { chip = '<span class="pill n">next</span>'; nextShown = true; } else if (past) chip = '<span class="pill m">done</span>';
       const dt = new Date(d + 'T12:00:00'); const days = Math.round((dt - new Date()) / 864e5);
-      return `<div class="ev ${past ? 'past' : ''}"><span class="date">${dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span><span><span class="name">${esc(name)}</span>${note ? `<br><span class="sub">${esc(note)}</span>` : ''}</span><span>${chip}${!past ? ` <span class="sub mono">${days}d</span>` : ''}</span></div>`;
+      return `<div class="ev ${past ? 'past' : ''}"><span class="date">${dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span><span><span class="name">${esc(name)}${c ? ` <span class="mini">${esc(c)}</span>` : ''}</span>${note ? `<br><span class="sub">${esc(note)}</span>` : ''}</span><span>${chip}${!past ? ` <span class="sub mono">${days}d</span>` : ''}</span></div>`;
     }).join('');
   }
 
@@ -410,7 +410,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     requestAnimationFrame(() => {
       queued = false;
       const inside = (id) => { const el = $(id); return el && el.contains(document.activeElement) && document.activeElement !== document.body; };
-      renderHeader(); renderToday(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderSettings();
+      renderHeader(); renderToday(); if (VL.trends) VL.trends.render(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderSettings();
       if (VL.builder && location.hash === '#teams') VL.builder.refreshSide();
       VL.study.render();
       if (VL.teamcheck) VL.teamcheck.render();
@@ -425,7 +425,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   store.onChange(renderAll);
 
   // ---------- routing ----------
-  const TABS = ['today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
+  const TABS = ['news', 'replay', 'topteams', 'sheets', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
@@ -440,6 +440,10 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (tab === 'companion' && VL.companion) VL.companion.render();
     if (tab === 'meta' && VL.meta.render) VL.meta.render();
     if (tab === 'teams' && VL.builder) VL.builder.render();
+    if (tab === 'news' && VL.news) VL.news.render();
+    if (tab === 'topteams' && VL.topteams) VL.topteams.render();
+    if (tab === 'replay' && VL.replay) VL.replay.render();
+    if (tab === 'sheets' && VL.sheets) VL.sheets.render();
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
   // phone "More" sheet
@@ -570,6 +574,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (o.team) $('lf-team').value = o.team;
     if (o.note) $('lf-note').value = o.note;
     if (o.rating) $('lf-rating').value = o.rating;
+    if (o.turn) $('lf-turn').value = o.turn;
     pendingSource = o.source || null;
     $('lf-msg').textContent = 'Filled in for you. Add your tags and what you\'d do differently, then save.';
     setTimeout(() => { window.scrollTo(0, 0); }, 30);
@@ -617,7 +622,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   };
   $('rp-logo').onclick = () => importReplay($('rp-log').value, '');
 
-  $('recent').addEventListener('click', e => { const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
+  $('recent').addEventListener('click', e => { if (e.target.dataset.review && VL.replay) { VL.replay.open(e.target.dataset.review); return; } const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
 
   $('rv-scope').onchange = renderAll;
   $('rv-mons').addEventListener('click', e => { const n = e.target.dataset.addnb; if (!n) return; location.hash = 'notebook'; clearNb(); $('nb-name').value = n; $('nb-plan').focus(); });

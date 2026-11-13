@@ -39,7 +39,11 @@ const top = (obj, n, total, name) => Object.entries(obj || {})
   const dex = JSON.parse(fs.readFileSync(DEX, 'utf8'));
   const listing = await get('');
   if (!listing) { console.log('Could not read the Smogon stats index; keeping the old meta file.'); return; }
-  const months = [...new Set([...listing.matchAll(/href="(\d{4}-\d{2})\/"/g)].map(m => m[1]))].sort().reverse().slice(0, 3);
+  const allMonths = [...new Set([...listing.matchAll(/href="(\d{4}-\d{2})\/"/g)].map(m => m[1]))].sort().reverse();
+  const months = allMonths.slice(0, 3);
+  let oldMeta = null; try { oldMeta = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch (e) { oldMeta = null; }
+  const newsEntries = [];
+  const monthName = (m) => new Date(m + '-15T12:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   console.log('Months available:', months.join(', '));
 
   const targets = [];
@@ -87,6 +91,26 @@ const top = (obj, n, total, name) => Object.entries(obj || {})
         return rec;
       });
     out[t.id] = { label: t.label, parent: t.parent || t.id, bo3: !!t.bo3, month: picked.month, rating: picked.cut, battles: picked.battles, mons };
+    // last month's usage, so the app can show who is rising and falling
+    const was = oldMeta && oldMeta.formats && oldMeta.formats[t.id];
+    let prev = null;
+    if (was && was.month === picked.month && was.prev) prev = was.prev;
+    else if (was && was.month && was.month < picked.month) prev = { month: was.month, u: Object.fromEntries(was.mons.map(m => [m.n, m.u])) };
+    else {
+      const before = allMonths.find(m => m < picked.month);
+      if (before) for (const cut of [picked.cut, ...CUTOFFS.filter(c => c !== picked.cut)]) {
+        const txt = await get(`${before}/chaos/${t.id}-${cut}.json`); if (!txt) continue;
+        try { const j = JSON.parse(txt); const d = j.data || {}; if ((j.info && j.info['number of battles'] || 0) < 300) continue;
+          prev = { month: before, u: Object.fromEntries(Object.entries(d).map(([n, v]) => [n, Math.round(10000 * (v.usage || 0)) / 100]).sort((a, b) => b[1] - a[1]).slice(0, 150)) }; break; } catch (e) { /* try the next slice */ }
+      }
+    }
+    if (prev) out[t.id].prev = prev;
+    if (was && was.month && was.month !== picked.month && !t.bo3) {
+      const pu = prev ? prev.u : {}; const moves = mons.filter(m => m.u >= 2 || (pu[m.n] || 0) >= 2).map(m => ({ n: m.n, d: Math.round((m.u - (pu[m.n] || 0)) * 10) / 10 }));
+      const up = moves.filter(x => x.d >= 1).sort((a, b) => b.d - a.d).slice(0, 5), down = moves.filter(x => x.d <= -1).sort((a, b) => a.d - b.d).slice(0, 5);
+      const fmtList = (arr) => arr.map(x => `${x.n} ${x.d > 0 ? '+' : ''}${x.d}`).join(', ');
+      newsEntries.push({ d: new Date().toISOString().slice(0, 10), k: 'meta', t: `${monthName(picked.month)} usage stats are in for ${t.label}`, x: `${picked.battles.toLocaleString('en-US')} battles counted.${up.length ? ' Rising: ' + fmtList(up) + '.' : ''}${down.length ? ' Falling: ' + fmtList(down) + '.' : ''} Numbers are the change in the share of teams, in percentage points.`, f: t.id });
+    }
     console.log(`  ${t.id}: ${picked.month}, rating ${picked.cut}+, ${picked.battles} battles, ${mons.length} Pokémon`);
   }
 
@@ -98,4 +122,10 @@ const top = (obj, n, total, name) => Object.entries(obj || {})
   }
   fs.writeFileSync(OUT, JSON.stringify(result));
   console.log(`Wrote ${OUT} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
+  if (newsEntries.length) {
+    const file = path.join(path.dirname(OUT), 'news.json');
+    let news = {}; try { news = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { news = {}; }
+    fs.writeFileSync(file, JSON.stringify({ v: 1, generated: new Date().toISOString(), changes: [...newsEntries, ...(news.changes || [])].slice(0, 150), headlines: news.headlines || [], app: news.app || [], calendar: news.calendar || [] }));
+    for (const e of newsEntries) console.log('News: ' + e.t);
+  }
 })();
