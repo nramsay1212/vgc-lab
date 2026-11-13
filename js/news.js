@@ -141,6 +141,7 @@
     el.innerHTML = `${statusHtml()}<br>Usage stats: ${esc(d(metaD))}. Tournament teams: ${esc(d(TEAMS && TEAMS.generated))}. News: ${esc(d(NEWS.generated))}.`;
   }
 
-  VL.news = { render, load, items: () => (NEWS ? items() : []), unread, calendarHtml, moversHtml, isReady: () => !!NEWS, niceDay, daysUntil, kinds: KINDS };
+  VL.news = {
+    badge: dot, render, load, items: () => (NEWS ? items() : []), unread, calendarHtml, moversHtml, isReady: () => !!NEWS, niceDay, daysUntil, kinds: KINDS };
   load().then(() => { dot(); settingsLine(); if (location.hash === '#news') render(); VL.onNews && VL.onNews(); setTimeout(checkVersion, 4000); });
 })();
