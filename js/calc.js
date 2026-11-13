@@ -179,8 +179,8 @@
     render,
     engine: loadEngine,
     load(metaKey, name, side) {
-      const e = VL.meta.data && VL.meta.data.formats[metaKey];
-      S.fmt = e ? e.parent : S.fmt;
+      const e = VL.meta.lookup(metaKey);
+      S.fmt = e && VL.D.format(e.parent).id === e.parent ? e.parent : S.fmt;
       const key = side === 'def' ? 'def' : 'atk';
       S[key] = { ...blank(), mon: name };
       const i = VL.D.find(name); if (i >= 0) S[key].ability = VL.D.mon(i, fmt()).a[0] || '';

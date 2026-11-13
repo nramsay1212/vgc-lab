@@ -321,7 +321,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       const share = losses.length ? pct(hits, losses.length) : 0;
       const r = ratings[s.id] || 0;
       const accs = (s.study || []).map(id => { const a = VL.study.accuracy(id); const d = VL.study.DRILLS.find(x => x.id === id); return a === null ? null : `${d.name} ${a}%`; }).filter(Boolean);
-      return `<div class="skill"><div><h4>${esc(s.name)}</h4><p>${s.what}</p><p class="drill">Practice: ${esc(s.drill)}</p>${accs.length ? `<p class="sub">Drill accuracy: ${esc(accs.join(' · '))}</p>` : ''}</div>
+      return `<div class="skill"><div><h4>${esc(s.name)}</h4><p>${s.what}</p><p class="drill">Practice: ${esc(s.drill)}</p>${(s.study || []).length ? `<div class="kv" style="flex-wrap:wrap;gap:4px">${s.study.map(id => { const d = VL.study.DRILLS.find(x => x.id === id); return d ? `<button class="linkbtn ms-go" data-drill-go="${esc(id)}">Start ${esc(d.name)} →</button>` : ''; }).join('')}</div>` : ''}${accs.length ? `<p class="sub">Drill accuracy: ${esc(accs.join(' · '))}</p>` : ''}</div>
         <div class="skill-side"><div class="dots" role="group" aria-label="Rate ${esc(s.name)}">${[1, 2, 3, 4, 5].map(v => `<button data-skill="${s.id}" data-v="${v}" class="${v <= r ? 'on' : ''}" aria-label="${v} of 5">${v}</button>`).join('')}</div>
         ${s.tags.length ? `<div class="costbar" title="${hits} of ${losses.length} losses"><span style="width:${share}%"></span></div><span class="sub">${losses.length ? `${hits} of ${losses.length} losses` : 'no losses logged'}</span>` : `<span class="sub">${s.id === 'formats' ? 'See the Formats tab' : ''}</span>`}</div></div>`;
     }).join('');
@@ -369,6 +369,25 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
 
   // ---------- roadmap ----------
+  // where to go to work on each milestone
+  const MS_GO = {
+    m100: ['log', 'Log a game'], mfmt3: ['log', 'Log a game'], mtypes: ['drill:typemon', 'Practice it'],
+    mpeak: ['ladder', 'Update your ladder rank'], mtop: ['ladder', 'Update your ladder rank'], stop100: ['ladder', 'Update your ladder rank'], stop10: ['ladder', 'Update your ladder rank'], srank1: ['ladder', 'Update your ladder rank'],
+    mcup: ['tournaments', 'Add an event'], mwin: ['tournaments', 'Add an event'], mday2: ['tournaments', 'Add an event'], mrcut: ['tournaments', 'Add an event'], minv: ['tournaments', 'See your Championship Points'],
+    mwday2: ['tournaments', 'Add an event'], mworlds: ['tournaments', 'Add an event'], mchamp: ['tournaments', 'Add an event'], sonline: ['tournaments', 'Add an event'],
+  };
+  $('sk-list').addEventListener('click', (e) => { const b = e.target.closest('[data-drill-go]'); if (b) VL.study.drill(b.dataset.drillGo); });
+  $('milestones').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-go]'); if (!b) return; e.preventDefault();
+    const go = b.dataset.go;
+    if (go.startsWith('drill:')) { VL.study.drill(go.slice(6)); return; }
+    location.hash = go === 'ladder' ? 'today' : go; // best ladder rank is kept with the current format on Today
+    setTimeout(() => {
+      if (go === 'ladder' && $('fmt-form').hidden) $('fmt-edit').click();
+      const focus = { log: null, ladder: 'fmt-peak', tournaments: b.textContent.startsWith('Add') ? 'tn-date' : null }[go];
+      if (focus && $(focus)) setTimeout(() => { $(focus).scrollIntoView({ behavior: 'smooth', block: 'center' }); $(focus).focus({ preventScroll: true }); }, 60);
+    }, 80);
+  });
   function renderRoadmap() {
     const ms = (store.get('meta', 'milestones') || {}).done || {};
     const total = games().length; const fmts = new Set(games().map(g => g.fmt).filter(Boolean)).size;
@@ -378,7 +397,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     let curStage = VL.STAGES.findIndex(s => !s.ms.every(isDone)); if (curStage < 0) curStage = VL.STAGES.length - 1;
     $('stages').innerHTML = VL.STAGES.map((s, i) => `<div class="stage ${i === curStage ? 'cur' : ''}"><span class="sn">${i + 1}</span><div><h4>${esc(s.n)} ${i < curStage ? '<span class="pill w">done</span>' : i === curStage ? '<span class="pill n">you are here</span>' : ''}</h4><p>${esc(s.d)}</p></div></div>`).join('');
     const extra = { m100: ` <span class="meta">${Math.min(total, 100)}/100</span>`, mfmt3: ` <span class="meta">${Math.min(fmts, 3)}/3</span>`, mtypes: typeAcc !== null ? ` <span class="meta">${typeAcc}%</span>` : '' };
-    $('milestones').innerHTML = VL.MILESTONES.map(([id, label]) => `<li class="${isDone(id) ? 'done' : ''}"><input type="checkbox" id="ms-${id}" data-ms="${id}" ${isDone(id) ? 'checked' : ''} ${auto[id] ? 'disabled' : ''}><label for="ms-${id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(label)}${extra[id] || ''}</span></label></li>`).join('');
+    $('milestones').innerHTML = VL.MILESTONES.map(([id, label]) => { const go = MS_GO[id]; return `<li class="${isDone(id) ? 'done' : ''}"><input type="checkbox" id="ms-${id}" data-ms="${id}" ${isDone(id) ? 'checked' : ''} ${auto[id] ? 'disabled' : ''}><label for="ms-${id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(label)}${extra[id] || ''}</span></label>${go && !isDone(id) ? `<button class="linkbtn ms-go" data-go="${esc(go[0])}">${esc(go[1])} →</button>` : ''}</li>`; }).join('');
     const today = dayKey(); let nextShown = false;
     $('timeline').innerHTML = (VL.isSingles() ? '<p class="sub" style="margin:0 0 8px">Official Play! Pokémon events, including the World Championships, are played in doubles. Singles is played on the ranked ladder and in online competitions. Switch to Doubles at the top if you want to aim for these.</p>' : '') + (VL.upcoming ? VL.upcoming() : VL.EVENTS.map(([d, n, note]) => ({ d, n, note }))).map(({ d, n: name, note, c }) => {
       const past = d < today; let chip = '';
@@ -700,6 +719,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       fillFormatSelect(); fillDatalist(); VL.study.fill(curFormatId().startsWith('custom:') ? '' : curFormatId());
       renderAll(); route();
       VL.meta.ready.then(() => { renderAll(); if (location.hash === '#meta') VL.meta.render(); });
+      // usage stats for an older format arrive after the first render
+      window.addEventListener('vl-meta', () => { renderAll(); if (VL.calc && location.hash === '#calc') VL.calc.render(); });
     });
   }).catch(() => banner('Couldn\'t load the Pokémon data. The log still works; Study needs the data file. Check your connection and reload.'));
 })();

@@ -604,6 +604,8 @@
   VL.study = {
     render,
     DRILLS,
+    // open the Study page straight into one drill (used by Roadmap milestones)
+    drill(id) { if (!GEN[id] || !D.dex) { location.hash = 'study'; return; } location.hash = 'study'; startQuiz(id); window.scrollTo(0, 0); },
     // used by the Test page: questions without spaced repetition
     ctxFor(fmtId, poolKind, level) {
       const fmt = D.format(fmtId); let pool = D.pool(fmt, poolKind);

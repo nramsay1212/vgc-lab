@@ -7,7 +7,8 @@
  * Official events (Regionals, Internationals, Worlds) come from Pokédata's
  * published standings, which include each player's open team sheet. Large
  * online tournaments come from the Limitless tournament platform. Run on a
- * schedule, so new results appear on their own.
+ * schedule, so new results appear on their own. Every finished official event
+ * is also kept by season in data/teams/<season>.json.
  */
 'use strict';
 const fs = require('fs');
@@ -74,25 +75,95 @@ function formatFor(teams, hint) {
   for (const f of dbl) { const legal = new Set(f.species); const share = idx.filter(i => legal.has(i)).length / idx.length; if (share >= 0.97) return f.id; if (!best || share > best.share) best = { id: f.id, share }; }
   return best.id;
 }
+// The rules official events were played under, by date (Victory Road's regulation list). Team
+// sheets don't say, and newer rules allow nearly everything older ones did, so the date decides.
+// fmt is a format the app has full data for (base stats, calculator); meta is the usage stats to
+// match, which for rules Showdown no longer lists is a separate archived file.
+const RULES = [
+  ['2023-01-02', '2023-01-31', 'Regulation A', 'gen9vgc2023regc', 'gen9vgcseries1'],
+  ['2023-02-01', '2023-03-31', 'Regulation B', 'gen9vgc2023regc', 'gen9vgcseries2'],
+  ['2023-04-01', '2023-06-30', 'Regulation C', 'gen9vgc2023regc'],
+  ['2023-07-01', '2023-09-30', 'Regulation D', 'gen9vgc2023regd'],
+  ['2023-10-01', '2024-01-03', 'Regulation E', 'gen9vgc2025regi', 'gen9vgcrege'],
+  ['2024-01-04', '2024-04-30', 'Regulation F', 'gen9vgc2025regi', 'gen9vgcregf'],
+  ['2024-05-01', '2024-08-31', 'Regulation G', 'gen9vgc2024regg'],
+  ['2024-09-01', '2025-01-05', 'Regulation H', 'gen9vgc2025regi', 'gen9vgcregh'],
+  ['2025-01-06', '2025-04-30', 'Regulation G', 'gen9vgc2024regg'],
+  ['2025-05-01', '2025-08-31', 'Regulation I', 'gen9vgc2025regi'],
+  ['2025-09-01', '2025-11-30', 'Regulation H', 'gen9vgc2025regi', 'gen9vgcregh'],
+  ['2025-12-01', '2026-03-31', 'Regulation F', 'gen9vgc2025regi', 'gen9vgcregf'],
+  ['2026-04-01', '2026-05-28', 'Regulation I', 'gen9vgc2025regi'],
+  ['2026-05-29', '2026-06-16', 'Regulation M-A', 'gen9championsvgc2026regmb'],
+  ['2026-06-17', '2026-09-02', 'Regulation M-B', 'gen9championsvgc2026regmb'],
+  ['2026-09-03', '2026-12-02', 'Regulation M-C', 'gen9championsvgc2026regmc'],
+];
+function ruleFor(ev) {
+  const d = String(ev.date).slice(0, 10); const r = RULES.find(x => x[0] <= d && d <= x[1]);
+  if (!r || !dex.formats.some(f => f.id === r[3])) return false;
+  ev.fmt = r[3]; ev.rule = r[2]; if (r[4]) ev.meta = r[4]; else delete ev.meta;
+  return true;
+}
 const daysAgo = (d) => (Date.now() - new Date(d).getTime()) / 864e5;
 
+// one official event's top teams from Pokédata, or null if its standings can't be read
+async function officialEvent(t) {
+  const st = await getJSON(`https://www.pokedata.ovh/standingsVGC/${t.id}/masters/${t.id}_Masters.json`);
+  if (!Array.isArray(st)) { console.log(`  ${t.name}: no standings`); return null; }
+  const teams = st.filter(p => p.placing && p.placing <= OFFICIAL_TOP && Array.isArray(p.decklist) && p.decklist.length >= 4)
+    .sort((a, b) => a.placing - b.placing)
+    .map(p => ({ p: p.placing, who: String(p.name || '').replace(/\s*\[[A-Z]{2}\]\s*$/, ''), c: (String(p.name || '').match(/\[([A-Z]{2})\]\s*$/) || [])[1] || '', rec: p.record ? `${p.record.wins}-${p.record.losses}${p.record.ties ? '-' + p.record.ties : ''}` : '', mons: p.decklist.slice(0, 6).map(mon) }));
+  if (!teams.length) { console.log(`  ${t.name}: no team sheets in the top ${OFFICIAL_TOP}`); return { id: 'o' + t.id, teams: [] }; }
+  const ev = { id: 'o' + t.id, src: 'official', name: t.name.replace(/Pokémon VGC /, '').replace(/\s+/g, ' ').trim(), date: t.date.start, players: (t.players && +t.players.masters) || st.length, live: t.tournamentStatus !== 'finished' ? 1 : undefined, url: `https://www.pokedata.ovh/standingsVGC/${t.id}/masters/`, fmt: formatFor(teams), teams };
+  ruleFor(ev);
+  console.log(`  ${ev.date} ${ev.name}: ${teams.length} teams, ${ev.players} players, ${ev.rule || ev.fmt}`);
+  return ev;
+}
+let officialList = null;
 async function official() {
   const j = await getJSON('https://www.pokedata.ovh/apiv2/vg/tournaments');
   const list = j && j.vg && j.vg.data; if (!Array.isArray(list)) { console.log('Official events: could not read the list'); return null; }
-  const recent = list.filter(t => t.decklists > 0 && t.date && daysAgo(t.date.start) <= OFFICIAL_DAYS && daysAgo(t.date.start) >= 0)
+  officialList = list;
+  const recent = list.filter(t => t.decklists > 0 && !/\bTCG\b/.test(t.name) && t.date && daysAgo(t.date.start) <= OFFICIAL_DAYS && daysAgo(t.date.start) >= 0)
     .sort((a, b) => String(b.date.start).localeCompare(String(a.date.start))).slice(0, OFFICIAL_EVENTS);
   const out = [];
-  for (const t of recent) {
-    const st = await getJSON(`https://www.pokedata.ovh/standingsVGC/${t.id}/masters/${t.id}_Masters.json`);
-    if (!Array.isArray(st)) { console.log(`  ${t.name}: no standings`); continue; }
-    const teams = st.filter(p => p.placing && p.placing <= OFFICIAL_TOP && Array.isArray(p.decklist) && p.decklist.length >= 4)
-      .sort((a, b) => a.placing - b.placing)
-      .map(p => ({ p: p.placing, who: String(p.name || '').replace(/\s*\[[A-Z]{2}\]\s*$/, ''), c: (String(p.name || '').match(/\[([A-Z]{2})\]\s*$/) || [])[1] || '', rec: p.record ? `${p.record.wins}-${p.record.losses}${p.record.ties ? '-' + p.record.ties : ''}` : '', mons: p.decklist.slice(0, 6).map(mon) }));
-    if (!teams.length) { console.log(`  ${t.name}: no team sheets in the top ${OFFICIAL_TOP}`); continue; }
-    const ev = { id: 'o' + t.id, src: 'official', name: t.name.replace(/Pokémon VGC /, '').replace(/\s+/g, ' ').trim(), date: t.date.start, players: (t.players && +t.players.masters) || st.length, live: t.tournamentStatus !== 'finished' ? 1 : undefined, url: `https://www.pokedata.ovh/standingsVGC/${t.id}/masters/`, fmt: formatFor(teams), teams };
-    out.push(ev); console.log(`  ${ev.date} ${ev.name}: ${teams.length} teams, ${ev.players} players, ${ev.fmt}`);
-  }
+  for (const t of recent) { const ev = await officialEvent(t); if (ev && ev.teams.length) out.push(ev); }
   return out;
+}
+
+// Every finished official event with team sheets, one file per season (data/teams/<season>.json,
+// a season runs from September to the World Championships in August). A finished event never
+// changes, so each is downloaded once; the app loads a season when it's picked.
+async function archive() {
+  if (!officialList) return;
+  const DIR = path.join(path.dirname(OUT), 'teams'); fs.mkdirSync(DIR, { recursive: true });
+  const IDX = path.join(DIR, 'index.json');
+  let idx = {}; try { idx = JSON.parse(fs.readFileSync(IDX, 'utf8')); } catch (e) { idx = {}; }
+  const done = new Set(idx.done || []); const seasons = idx.seasons || {};
+  const seasonOf = (d) => { const [y, m] = String(d).split('-').map(Number); return String(m >= 9 ? y + 1 : y); };
+  const todo = officialList.filter(t => t.decklists > 0 && !/\bTCG\b/.test(t.name) && t.date && t.date.start && t.tournamentStatus === 'finished' && daysAgo(t.date.start) > 0 && !done.has(String(t.id)));
+  console.log(`Past seasons: ${todo.length} finished events to add.`);
+  // rules can be corrected later, so saved events are relabelled every run
+  for (const k of Object.keys(seasons)) {
+    const file = path.join(DIR, k + '.json'); let cur; try { cur = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { continue; }
+    const before = JSON.stringify(cur); cur.events = cur.events.filter(e => !/\bTCG\b/.test(e.name)); cur.events.forEach(ruleFor);
+    if (JSON.stringify(cur) !== before) { fs.writeFileSync(file, JSON.stringify(cur)); seasons[k] = { ...seasons[k], events: cur.events.length, teams: cur.events.reduce((a, e) => a + e.teams.length, 0) }; console.log(`  ${k} season: rules updated`); }
+  }
+  const bySeason = new Map(); for (const t of todo) { const k = seasonOf(t.date.start); if (!bySeason.has(k)) bySeason.set(k, []); bySeason.get(k).push(t); }
+  for (const [k, list] of bySeason) {
+    const file = path.join(DIR, k + '.json');
+    let cur = { v: 1, season: k, events: [] }; try { cur = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { /* new season */ }
+    for (const t of list) {
+      const ev = await officialEvent(t); if (!ev) continue; // try again next time
+      done.add(String(t.id)); if (!ev.teams.length) continue;
+      delete ev.live; cur.events = cur.events.filter(e => e.id !== ev.id).concat(ev);
+    }
+    cur.events.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (!cur.events.length) continue;
+    fs.writeFileSync(file, JSON.stringify(cur));
+    seasons[k] = { events: cur.events.length, teams: cur.events.reduce((a, e) => a + e.teams.length, 0), from: cur.events[cur.events.length - 1].date, to: cur.events[0].date };
+    console.log(`  ${k} season: ${seasons[k].events} events, ${seasons[k].teams} teams, ${(fs.statSync(file).size / 1024).toFixed(0)} KB`);
+  }
+  fs.writeFileSync(IDX, JSON.stringify({ v: 1, generated: new Date().toISOString(), seasons, done: [...done].sort() }));
 }
 async function online() {
   const list = await getJSON('https://play.limitlesstcg.com/api/tournaments?game=VGC&limit=250');
@@ -119,6 +190,7 @@ async function online() {
   let old = null; try { old = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch (e) { old = null; }
   console.log('Official events:'); let off = await official();
   console.log('Online events:'); let on = await online();
+  try { await archive(); } catch (e) { console.log('Past seasons: ' + e.message); }
   // if a source is down, keep what we had from it
   if (!off) off = old ? old.events.filter(e => e.src === 'official') : [];
   if (!on) on = old ? old.events.filter(e => e.src === 'online') : [];

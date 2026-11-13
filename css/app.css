@@ -151,6 +151,9 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .checklist .meta{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-left:8px;font-weight:400}
 .checklist .d{color:var(--muted);font-size:13px}
 .checklist li.done .t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+#milestones li{grid-template-columns:26px 1fr auto;align-items:center}
+#milestones .ms-go,.skill .ms-go{color:var(--accent);white-space:nowrap;font-weight:500}
+@media (max-width:560px){#milestones li{grid-template-columns:26px 1fr}#milestones .ms-go{grid-column:2;justify-self:start;padding-left:0}}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:500;font-family:var(--mono);line-height:18px;white-space:nowrap}
 .pill.w{background:var(--win-soft);color:var(--win)}
 .pill.l{background:var(--loss-soft);color:var(--loss)}
