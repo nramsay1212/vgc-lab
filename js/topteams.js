@@ -80,8 +80,12 @@
     const pick = (v) => !inSeason && S.scope === v ? 'selected' : '';
     const opt = (ev) => `<option value="${esc(ev.id)}" ${pick(ev.id)}>${esc(ev.name)} · ${dateText(ev.date)}</option>`;
     const seasons = Object.entries(ARCH.index || {}).sort((a, b) => b[0].localeCompare(a[0]));
-    const seasonOpts = seasons.length ? `<optgroup label="Past seasons, every official event">${seasons.map(([k, v]) => `<option value="season:${esc(k)}" ${inSeason && S.season === k && S.scope === 'official' ? 'selected' : ''}>${esc(seasonLabel(+k))} · ${v.events} events</option>`).join('')}</optgroup>` : '';
-    const seasonEvents = inSeason ? `<optgroup label="Events in the ${esc(S.season)} season">${pool().map(ev => `<option value="S:${esc(ev.id)}" ${S.scope === ev.id ? 'selected' : ''}>${esc(ev.name)} · ${dateText(ev.date)}</option>`).join('')}</optgroup>` : '';
+    const seasonOpts = seasons.length ? `<optgroup label="Past seasons">${seasons.map(([k, v]) => `<option value="season:${esc(k)}" ${inSeason && S.season === k && S.scope === 'all' ? 'selected' : ''}>${esc(seasonLabel(+k))} · ${v.events} events</option>`).join('')}</optgroup>` : '';
+    const pOff = pool().filter(e => e.src === 'official'), pOn = pool().filter(e => e.src === 'online');
+    const sOpt = (ev) => `<option value="S:${esc(ev.id)}" ${S.scope === ev.id ? 'selected' : ''}>${esc(ev.name)} · ${dateText(ev.date)}</option>`;
+    const seasonEvents = !inSeason ? '' : (pOff.length && pOn.length ? `<optgroup label="In the ${esc(S.season)} season"><option value="S:official" ${S.scope === 'official' ? 'selected' : ''}>Only official events (${pOff.length})</option><option value="S:online" ${S.scope === 'online' ? 'selected' : ''}>Only online tournaments (${pOn.length})</option></optgroup>` : '')
+      + (pOff.length ? `<optgroup label="Official events in the ${esc(S.season)} season">${pOff.map(sOpt).join('')}</optgroup>` : '')
+      + (pOn.length ? `<optgroup label="Online tournaments in the ${esc(S.season)} season">${pOn.map(sOpt).join('')}</optgroup>` : '');
     root.innerHTML = `${VL.isSingles && VL.isSingles() ? '<div class="banner" style="background:var(--accent-soft)">Official tournaments are played in doubles, so every team here is a doubles team.</div>' : ''}
       <div class="card"><div class="row">
         <label for="tt-scope">Event<select id="tt-scope"><optgroup label="Recent"><option value="official" ${pick('official')}>Recent official events (${off.length})</option><option value="online" ${pick('online')}>Recent online tournaments (${on.length})</option><option value="all" ${pick('all')}>Everything recent</option></optgroup>
@@ -134,7 +138,7 @@
   document.addEventListener('change', (e) => {
     if (e.target.id === 'tt-scope') {
       const v = e.target.value;
-      if (v.startsWith('season:')) { S.season = v.slice(7); S.scope = 'official'; } else if (v.startsWith('S:')) S.scope = v.slice(2); else { S.season = ''; S.scope = v; }
+      if (v.startsWith('season:')) { S.season = v.slice(7); S.scope = 'all'; } else if (v.startsWith('S:')) S.scope = v.slice(2); else { S.season = ''; S.scope = v; }
       S.tag = ''; S.mon = ''; S.shown = 40; render();
     }
     if (e.target.id === 'tt-top') { S.top = +e.target.value; S.shown = 40; render(); }
@@ -142,8 +146,39 @@
   let qTimer = null;
   document.addEventListener('input', (e) => { if (e.target.id !== 'tt-q') return; S.q = e.target.value; clearTimeout(qTimer); qTimer = setTimeout(() => { const pos = e.target.selectionStart; render(); const el = $('tt-q'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) { /* ignore */ } } }, 200); });
 
+  // every saved event played in one format (a format id from the Meta page; best-of-3 ids count as the same format)
+  async function eventsFor(fid) {
+    await load(); await loadIndex();
+    await Promise.all(Object.keys(ARCH.index || {}).map(loadSeason));
+    const id = String(fid || '').replace(/bo3$/, ''); const seen = new Set(); const out = [];
+    for (const evs of [DATA.events, ...Object.values(ARCH.got)]) for (const ev of evs || []) {
+      if (seen.has(ev.id) || (ev.meta ? ev.meta !== id : ev.fmt !== id)) continue;
+      seen.add(ev.id); out.push(ev);
+    }
+    return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+  // usage from team sheets, in the same shape as the Smogon entries on the Meta page
+  async function usageFor(fid, label) {
+    const evs = await eventsFor(fid); const teams = evs.flatMap(ev => ev.teams);
+    if (!teams.length) return null;
+    const by = new Map();
+    const bump = (o, k) => { if (k) o[k] = (o[k] || 0) + 1; };
+    for (const t of teams) {
+      const names = [...new Set(t.mons.map(shownName))];
+      t.mons.forEach((m, k) => {
+        const n = names[k] || shownName(m); if (!by.has(n)) by.set(n, { n, c: 0, items: {}, abilities: {}, moves: {}, tera: {}, mates: {} });
+        const r = by.get(n); r.c++; bump(r.items, m.i || 'No item'); bump(r.abilities, m.a); bump(r.tera, m.t);
+        for (const x of m.m || []) bump(r.moves, x);
+        for (const o of names) if (o !== n) bump(r.mates, o);
+      });
+    }
+    const pct = (o, c, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => [k, Math.round(1000 * v / c) / 10]);
+    const mons = [...by.values()].sort((a, b) => b.c - a.c).map(r => ({ n: r.n, u: Math.round(1000 * r.c / teams.length) / 10, items: pct(r.items, r.c, 8), abilities: pct(r.abilities, r.c, 4), moves: pct(r.moves, r.c, 12), mates: pct(r.mates, r.c, 10), ...(Object.keys(r.tera).length ? { tera: pct(r.tera, r.c, 6) } : {}) }));
+    return { label: label || '', parent: evs[0].fmt, tournament: true, teams: teams.length, events: evs.length, official: evs.filter(e => e.src === 'official').length, from: evs[evs.length - 1].date, to: evs[0].date, month: String(evs[0].date).slice(0, 7), battles: 0, rating: 0, mons };
+  }
+
   VL.topteams = {
-    render, load,
+    render, load, eventsFor, usageFor,
     show(eventId) { S.season = ''; S.scope = eventId || 'official'; S.tag = ''; S.mon = ''; S.q = ''; location.hash = 'topteams'; render(); },
     random(fmtDoubles) { if (!DATA) return null; const pool = DATA.events.filter(e => e.src === 'official').flatMap(e => e.teams.filter(t => t.p <= 16)); const all = pool.length ? pool : DATA.events.flatMap(e => e.teams); return all.length ? all[Math.floor(Math.random() * all.length)] : null; },
     place, shownName,

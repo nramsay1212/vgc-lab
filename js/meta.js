@@ -10,6 +10,7 @@
   const STAT_NAMES = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed'];
 
   const A = { index: null, got: {}, wait: {} };
+  const TOUR = { wait: {} }; // tournament usage per format, worked out on the page from saved team sheets
   const M = (VL.meta = {
     data: null,
     ready: null,
@@ -80,7 +81,22 @@
   }
   function render() {
     fillSelect();
-    const id = $('mt-format').value; const e = M.lookup(id);
+    const id = $('mt-format').value; const fromEvents = $('mt-from').value === 'events';
+    if (fromEvents) {
+      const t = TOUR[id];
+      if (t === undefined) {
+        $('mt-src').textContent = 'Counting the team sheets from every saved tournament in this format…';
+        $('mt-list').innerHTML = '<div class="empty">Loading…</div>'; $('mt-detail').innerHTML = '';
+        if (!TOUR.wait[id] && VL.topteams) TOUR.wait[id] = VL.topteams.usageFor(id).then(x => { TOUR[id] = x || null; if ($('mt-format').value === id) render(); }).catch(() => { TOUR[id] = null; render(); });
+        return;
+      }
+      if (!t) {
+        $('mt-src').textContent = '';
+        $('mt-list').innerHTML = '<div class="empty">No tournament team sheets saved for this format. Official open team sheets start in 2023, so older formats only have Showdown numbers. Switch Numbers from to Showdown ladder.</div>';
+        $('mt-detail').innerHTML = ''; return;
+      }
+    }
+    const e = fromEvents ? TOUR[id] : M.lookup(id);
     if (!e && M.has(id)) {
       $('mt-src').textContent = 'Loading usage stats for this format…';
       $('mt-list').innerHTML = '<div class="empty">Loading…</div>'; $('mt-detail').innerHTML = '';
@@ -94,8 +110,13 @@
       return;
     }
     const month = new Date(e.month + '-15').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    if (e.tournament) {
+      const d = (x) => new Date(x + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      $('mt-src').innerHTML = `From ${e.teams.toLocaleString()} top-cut team sheets at ${e.events} tournament${e.events === 1 ? '' : 's'} (${[e.official ? `${e.official} official, top 32` : '', e.events - e.official ? `${e.events - e.official} online, top 8` : ''].filter(Boolean).join('; ')}), ${esc(d(e.from))} to ${esc(d(e.to))}. This is what wins events, not what's popular on ladder. Team sheets don't show spreads: switch to Showdown ladder for those.`;
+    } else {
     const url = e.archived ? `https://www.smogon.com/stats/${e.month}/` : (M.data && M.data.source && M.data.source.url) || 'https://www.smogon.com/stats/';
     $('mt-src').innerHTML = `From <a href="${esc(url)}" target="_blank" rel="noopener">Smogon's usage statistics</a> for ${esc(month)}: ${e.battles.toLocaleString()} battles on Pokémon Showdown's ${e.bo3 ? 'best-of-3' : 'ladder'}, players rated ${e.rating ? e.rating + ' and up' : 'at any rating'}. ${e.archived ? 'This format has finished, so these are the numbers from its busiest month on Showdown.' : 'Showdown play is a close guide to the in-game ladder, not an exact copy.'}`;
+    }
     const q = $('mt-q').value.trim().toLowerCase();
     const max = e.mons[0] ? e.mons[0].u : 1;
     const rows = e.mons.map((m, i) => ({ m, i })).filter(({ m }) => !q || m.n.toLowerCase().includes(q));
@@ -134,6 +155,7 @@
     if (e.target.closest('[data-nb]')) { location.hash = 'notebook'; setTimeout(() => { $('nb-name').value = selected; $('nb-plan').focus(); }, 50); }
   });
   $('mt-format').addEventListener('change', () => { selected = null; render(); });
+  $('mt-from').addEventListener('change', () => { selected = null; render(); });
   $('mt-q').addEventListener('input', render);
   M.render = render;
 })();

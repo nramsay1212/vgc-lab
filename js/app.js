@@ -435,6 +435,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       if (VL.teamcheck) VL.teamcheck.render();
       if (VL.arcade) VL.arcade.render();
       if (VL.test) VL.test.render();
+      if (VL.compare && location.hash === '#review') VL.compare.render();
       if (VL.progress && location.hash === '#progress') VL.progress.render();
       if (VL.plan && !inside('op-list')) VL.plan.render();
       if (VL.companion && location.hash === '#companion' && !inside('cp-live')) VL.companion.render();
@@ -550,8 +551,16 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   function setResult(r) { lfResult = r; $('lf-w').setAttribute('aria-pressed', r === 'W'); $('lf-l').setAttribute('aria-pressed', r === 'L'); }
   $('lf-w').onclick = () => setResult('W'); $('lf-l').onclick = () => setResult('L');
   const tagChips = () => { $('lf-tags').innerHTML = VL.TAGS.map(([id, l]) => `<button type="button" class="chip" data-tag="${id}" aria-pressed="false">${esc(l)}</button>`).join(''); };
-  tagChips(); store.ready.then(tagChips);
-  $('lf-tags').addEventListener('click', e => { const b = e.target.closest('[data-tag]'); if (b) b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); });
+  // the question helper and the chips stay in step: a Yes ticks the tag, and ticking a chip marks its question
+  const tagLabel = (id) => (VL.TAGS.find(t => t[0] === id) || [])[1] || id;
+  const tagQs = () => {
+    $('lf-tagq-list').innerHTML = (VL.TAGQ || []).filter(([id]) => VL.TAGS.some(t => t[0] === id)).map(([id, q]) =>
+      `<div class="tagq-row"><span>${esc(q)}<span class="mini"> · ${esc(tagLabel(id))}</span></span><button type="button" class="chip" data-tagq="${id}" aria-pressed="false">Yes</button></div>`).join('');
+  };
+  const syncQs = () => document.querySelectorAll('#lf-tagq-list [data-tagq]').forEach(q => { const c = document.querySelector(`#lf-tags [data-tag="${q.dataset.tagq}"]`); q.setAttribute('aria-pressed', c ? c.getAttribute('aria-pressed') : 'false'); });
+  tagChips(); tagQs(); store.ready.then(() => { tagChips(); tagQs(); });
+  $('lf-tags').addEventListener('click', e => { const b = e.target.closest('[data-tag]'); if (b) { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); syncQs(); } });
+  $('lf-tagq-list').addEventListener('click', e => { const q = e.target.closest('[data-tagq]'); if (!q) return; const c = document.querySelector(`#lf-tags [data-tag="${q.dataset.tagq}"]`); if (c) c.click(); });
   $('log-form').addEventListener('submit', e => {
     e.preventDefault();
     if (!lfResult) { $('lf-msg').textContent = 'Pick WIN or LOSS first.'; return; }
@@ -570,6 +579,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const res = lfResult; setResult(null);
     for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    syncQs(); $('lf-tagq').open = false;
     $('lf-msg').textContent = 'Saved. Next game.';
     VL.markDone('log');
     VL.toast(res === 'W' ? 'Win logged' : 'Loss logged');
@@ -595,6 +605,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (o.rating) $('lf-rating').value = o.rating;
     if (o.turn) $('lf-turn').value = o.turn;
     pendingSource = o.source || null;
+    if (o.result === 'L') $('lf-tagq').open = true; // after a loss, offer the questions straight away
     $('lf-msg').textContent = 'Filled in for you. Add your tags and what you\'d do differently, then save.';
     setTimeout(() => { window.scrollTo(0, 0); }, 30);
   };

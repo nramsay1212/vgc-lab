@@ -164,6 +164,10 @@
       <div>
         <div class="sub" style="margin-bottom:6px">What lost the game, or nearly did? Pick any that apply.</div>
         <div class="chips" id="lf-tags"></div>
+        <details class="tagq" id="lf-tagq"><summary>Not sure which it was? Answer a few questions</summary>
+          <p class="sub">Think about the turn the game turned against you. Tap Yes for anything that happened, and the matching mistake gets picked above. Most games come down to one or two.</p>
+          <div id="lf-tagq-list"></div>
+        </details>
       </div>
       <label for="lf-note">What I'd do differently
         <textarea id="lf-note" placeholder="Turn 3: I should have protected and doubled into the Trick Room setter instead of going for the knockout."></textarea>
@@ -218,6 +222,10 @@
     <div class="grid2">
       <div class="card"><div class="card-head"><h3>By their style</h3></div><div id="rv-arch"></div></div>
       <div class="card"><div class="card-head"><h3>By your lead</h3><span class="sub">Leads used 3+ times</span></div><div id="rv-leads"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Compared with top players</h3><span class="sub">Tournament team sheets in your format</span></div>
+      <div id="rv-top"></div>
     </div>
     <div class="card">
       <div class="card-head"><h3>When you play your best</h3><span class="sub">From the times you logged games</span></div>
@@ -397,7 +405,7 @@
       <p class="lede">What people are actually playing: the most-used Pokémon in a format and how they&#39;re usually built. Updated every week from Smogon&#39;s usage statistics.</p>
       <details class="howto"><summary>How to use this page</summary><ol><li>Pick a format. Ladder data is from best-of-1 games; best-of-3 data is closer to tournament play.</li><li>Tap a Pokémon to see its common items, abilities, moves, spreads and teammates.</li><li>Use <b>Open in calculator</b> to load its most common set into the damage calculator.</li><li>In Study, choose the pool <b>Top 50 in the meta</b> to drill exactly what you&#39;ll face.</li></ol></details>
     </header>
-    <div class="card"><div class="row"><label for="mt-format">Format<select id="mt-format"></select></label><label for="mt-q">Find<input type="text" id="mt-q" placeholder="Name"></label></div><p class="sub" id="mt-src"></p></div>
+    <div class="card"><div class="row"><label for="mt-format">Format<select id="mt-format"></select></label><label for="mt-from">Numbers from<select id="mt-from"><option value="ladder">Showdown ladder</option><option value="events">Tournament team sheets</option></select></label><label for="mt-q">Find<input type="text" id="mt-q" placeholder="Name"></label></div><p class="sub" id="mt-src"></p></div>
     <div class="grid-meta"><div class="card" style="padding:8px"><div id="mt-list" class="metalist"></div></div><div class="card" id="mt-detail"></div></div>
   </section>
 
@@ -801,6 +809,7 @@
 <script src="js/progress.js?v=8"></script>
 <script src="js/arcade.js?v=8"></script>
 <script src="js/test.js?v=8"></script>
+<script src="js/compare.js?v=8"></script>
 <script src="js/app.js?v=8"></script>
 <script src="js/firebase-config.js?v=8"></script>
 <script src="js/account.js?v=8"></script>

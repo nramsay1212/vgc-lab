@@ -18,7 +18,7 @@ const OUT = path.resolve(process.argv[3] || path.join(__dirname, '..', 'data', '
 const UA = { 'User-Agent': 'toxicroak-vgc-lab (github.com/nramsay1212/vgc-lab)' };
 const toId = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const OFFICIAL_EVENTS = 8, OFFICIAL_TOP = 32, OFFICIAL_DAYS = 240;
-const ONLINE_EVENTS = 6, ONLINE_TOP = 8, ONLINE_DAYS = 28, ONLINE_MIN_PLAYERS = 48;
+const ONLINE_EVENTS = 6, ONLINE_TOP = 8, ONLINE_DAYS = 28, ONLINE_MIN_PLAYERS = 48, ONLINE_ARCHIVE_PER_RUN = 40;
 
 async function getJSON(url) {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -134,13 +134,13 @@ async function official() {
 // a season runs from September to the World Championships in August). A finished event never
 // changes, so each is downloaded once; the app loads a season when it's picked.
 async function archive() {
-  if (!officialList) return;
+  if (!officialList && !onlineList) return;
   const DIR = path.join(path.dirname(OUT), 'teams'); fs.mkdirSync(DIR, { recursive: true });
   const IDX = path.join(DIR, 'index.json');
   let idx = {}; try { idx = JSON.parse(fs.readFileSync(IDX, 'utf8')); } catch (e) { idx = {}; }
   const done = new Set(idx.done || []); const seasons = idx.seasons || {};
   const seasonOf = (d) => { const [y, m] = String(d).split('-').map(Number); return String(m >= 9 ? y + 1 : y); };
-  const todo = officialList.filter(t => t.decklists > 0 && !/\bTCG\b/.test(t.name) && t.date && t.date.start && t.tournamentStatus === 'finished' && daysAgo(t.date.start) > 0 && !done.has(String(t.id)));
+  const todo = (officialList || []).filter(t => t.decklists > 0 && !/\bTCG\b/.test(t.name) && t.date && t.date.start && t.tournamentStatus === 'finished' && daysAgo(t.date.start) > 0 && !done.has(String(t.id)));
   console.log(`Past seasons: ${todo.length} finished events to add.`);
   // rules can be corrected later, so saved events are relabelled every run
   for (const k of Object.keys(seasons)) {
@@ -149,10 +149,23 @@ async function archive() {
     if (JSON.stringify(cur) !== before) { fs.writeFileSync(file, JSON.stringify(cur)); seasons[k] = { ...seasons[k], events: cur.events.length, teams: cur.events.reduce((a, e) => a + e.teams.length, 0) }; console.log(`  ${k} season: rules updated`); }
   }
   const bySeason = new Map(); for (const t of todo) { const k = seasonOf(t.date.start); if (!bySeason.has(k)) bySeason.set(k, []); bySeason.get(k).push(t); }
+  // large online tournaments too, kept from now on (Limitless lists only the latest few hundred)
+  const doneOnline = new Set(idx.doneOnline || []);
+  const onlineTodo = (onlineList || []).filter(t => t.players >= ONLINE_MIN_PLAYERS && daysAgo(t.date) > 1 && !doneOnline.has(String(t.id)))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, ONLINE_ARCHIVE_PER_RUN);
+  console.log(`Past seasons: ${onlineTodo.length} online tournaments to add.`);
+  for (const t of onlineTodo) { const k = seasonOf(String(t.date).slice(0, 10)); if (!bySeason.has(k)) bySeason.set(k, []); bySeason.get(k).push({ online: t }); }
   for (const [k, list] of bySeason) {
     const file = path.join(DIR, k + '.json');
     let cur = { v: 1, season: k, events: [] }; try { cur = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { /* new season */ }
     for (const t of list) {
+      if (t.online) {
+        const ev = await onlineEvent(t.online);
+        // a finished event with hidden team sheets never gets them, so it's only retried while it's recent
+        if (ev || daysAgo(t.online.date) > 7) doneOnline.add(String(t.online.id));
+        if (ev) cur.events = cur.events.filter(e => e.id !== ev.id).concat(ev);
+        continue;
+      }
       const ev = await officialEvent(t); if (!ev) continue; // try again next time
       done.add(String(t.id)); if (!ev.teams.length) continue;
       delete ev.live; cur.events = cur.events.filter(e => e.id !== ev.id).concat(ev);
@@ -160,27 +173,33 @@ async function archive() {
     cur.events.sort((a, b) => String(b.date).localeCompare(String(a.date)));
     if (!cur.events.length) continue;
     fs.writeFileSync(file, JSON.stringify(cur));
-    seasons[k] = { events: cur.events.length, teams: cur.events.reduce((a, e) => a + e.teams.length, 0), from: cur.events[cur.events.length - 1].date, to: cur.events[0].date };
+    seasons[k] = { events: cur.events.length, official: cur.events.filter(e => e.src === 'official').length, online: cur.events.filter(e => e.src === 'online').length, teams: cur.events.reduce((a, e) => a + e.teams.length, 0), from: cur.events[cur.events.length - 1].date, to: cur.events[0].date };
     console.log(`  ${k} season: ${seasons[k].events} events, ${seasons[k].teams} teams, ${(fs.statSync(file).size / 1024).toFixed(0)} KB`);
   }
-  fs.writeFileSync(IDX, JSON.stringify({ v: 1, generated: new Date().toISOString(), seasons, done: [...done].sort() }));
+  fs.writeFileSync(IDX, JSON.stringify({ v: 1, generated: new Date().toISOString(), seasons, done: [...done].sort(), doneOnline: [...doneOnline].sort() }));
 }
+// one online tournament's top teams from Limitless, or null if it isn't finished or its team sheets are hidden
+async function onlineEvent(t) {
+  const st = await getJSON(`https://play.limitlesstcg.com/api/tournaments/${t.id}/standings`);
+  if (!Array.isArray(st)) return null;
+  const teams = st.filter(p => p.placing && p.placing <= ONLINE_TOP && Array.isArray(p.decklist) && p.decklist.length >= 4)
+    .sort((a, b) => a.placing - b.placing)
+    .map(p => ({ p: p.placing, who: String(p.name || ''), c: p.country || '', rec: p.record ? `${p.record.wins}-${p.record.losses}${p.record.ties ? '-' + p.record.ties : ''}` : '', mons: p.decklist.slice(0, 6).map(mon) }));
+  if (teams.length < 4) return null;
+  const name = String(t.name || '').normalize('NFKC').replace(/[^\p{L}\p{N}\p{P}\p{Zs}$+|]/gu, '').replace(/\s+/g, ' ').trim();
+  return { id: 'l' + t.id, src: 'online', name, date: String(t.date).slice(0, 10), players: t.players, url: `https://play.limitlesstcg.com/tournament/${t.id}/standings`, fmt: formatFor(teams, t.format), teams };
+}
+let onlineList = null;
 async function online() {
   const list = await getJSON('https://play.limitlesstcg.com/api/tournaments?game=VGC&limit=250');
   if (!Array.isArray(list)) { console.log('Online events: could not read the list'); return null; }
+  onlineList = list;
   const pick = list.filter(t => t.players >= ONLINE_MIN_PLAYERS && daysAgo(t.date) <= ONLINE_DAYS && daysAgo(t.date) > 0.5)
     .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, ONLINE_EVENTS * 2);
   const out = [];
   for (const t of pick) {
     if (out.length >= ONLINE_EVENTS) break;
-    const st = await getJSON(`https://play.limitlesstcg.com/api/tournaments/${t.id}/standings`);
-    if (!Array.isArray(st)) continue;
-    const teams = st.filter(p => p.placing && p.placing <= ONLINE_TOP && Array.isArray(p.decklist) && p.decklist.length >= 4)
-      .sort((a, b) => a.placing - b.placing)
-      .map(p => ({ p: p.placing, who: String(p.name || ''), c: p.country || '', rec: p.record ? `${p.record.wins}-${p.record.losses}${p.record.ties ? '-' + p.record.ties : ''}` : '', mons: p.decklist.slice(0, 6).map(mon) }));
-    if (teams.length < 4) continue; // not finished, or team sheets hidden
-    const name = String(t.name || '').normalize('NFKC').replace(/[^\p{L}\p{N}\p{P}\p{Zs}$+|]/gu, '').replace(/\s+/g, ' ').trim();
-    const ev = { id: 'l' + t.id, src: 'online', name, date: String(t.date).slice(0, 10), players: t.players, url: `https://play.limitlesstcg.com/tournament/${t.id}/standings`, fmt: formatFor(teams, t.format), teams };
+    const ev = await onlineEvent(t); if (!ev) continue; // not finished, or team sheets hidden
     out.push(ev); console.log(`  ${ev.date} ${ev.name}: ${teams.length} teams, ${ev.players} players, ${ev.fmt}`);
   }
   return out;

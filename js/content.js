@@ -175,7 +175,38 @@
     PLAYBOOK_D[7],
   ];
 
+  // plain questions for players who aren't sure which mistake it was; each "yes" ticks its tag
+  const TAGQ_D = [
+    ['matchup', 'At team preview, did it feel like you had almost no good way to win?'],
+    ['preview', 'Once the game got going, did you wish you\'d brought or led with different Pokémon?'],
+    ['speed', 'Did something move before you, or after you, when you didn\'t expect it? (Tailwind, Trick Room, priority moves, a faster set)'],
+    ['calc', 'Did an attack do much more or much less damage than you thought it would?'],
+    ['overpredict', 'Did you Protect, switch or target a slot expecting something that never happened?'],
+    ['predictable', 'Did they seem to know exactly what you were going to do?'],
+    ['mega', 'Did you Mega Evolve, Terastallize or use your gimmick on a bad turn, or save it too long?'],
+    ['wincon', 'Did you lose the Pokémon you needed to win, earlier than you had to?'],
+    ['endgame', 'Near the end, did you think you were winning and then run out of Pokémon or moves?'],
+    ['info', 'Did their item or ability catch you out after they had already shown it?'],
+    ['knowledge', 'Did something happen that you didn\'t know the game could do?'],
+    ['tilt', 'Were you playing fast, frustrated or tired instead of thinking each turn through?'],
+    ['bo3', 'In game 2 or 3, did you play the same way that lost the game before?'],
+    ['luck', 'Did a critical hit, a miss or a speed tie decide it after you\'d made the right play?'],
+  ];
+  const TAGQ_S = [
+    ['matchup', TAGQ_D[0][1]],
+    ['preview', 'Once the game got going, did you wish you\'d brought or led with different Pokémon?'],
+    ['speed', 'Did something move before you when you didn\'t expect it? (Choice Scarf, priority moves, a faster set)'],
+    ['calc', TAGQ_D[3][1]],
+    ['switch', 'Did a Pokémon you switched in take a huge hit, or did they keep getting free turns?'],
+    ['setup', 'Did their Pokémon boost its stats and sweep, or did you boost at a bad time?'],
+    ['hazards', 'Did Stealth Rock, Spikes or chip damage decide who survived?'],
+    ['overpredict', 'Did you switch or attack expecting something that never happened?'],
+    ['predictable', TAGQ_D[5][1]], ['mega', TAGQ_D[6][1]], ['wincon', TAGQ_D[7][1]], ['endgame', TAGQ_D[8][1]],
+    ['info', TAGQ_D[9][1]], ['knowledge', TAGQ_D[10][1]], ['tilt', TAGQ_D[11][1]], ['luck', TAGQ_D[13][1]],
+  ];
+
   byStyle('TAGS', TAGS_D, TAGS_S);
+  byStyle('TAGQ', TAGQ_D, TAGQ_S);
   byStyle('SESSION', SESSION_D, SESSION_S);
   byStyle('SKILLS', SKILLS_D, SKILLS_S);
   byStyle('MILESTONES', MILESTONES_D, MILESTONES_S);
