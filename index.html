@@ -728,12 +728,20 @@
     </div>
     <form id="auth-form" autocomplete="on" style="display:flex;flex-direction:column;gap:12px">
       <label for="auth-user">Username<input type="text" id="auth-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" required></label>
-      <label for="auth-pass">Password<input type="password" id="auth-pass" autocomplete="current-password" required></label>
+      <label for="auth-rcode" id="auth-rcode-wrap" hidden>Recovery code<input type="text" id="auth-rcode" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="20" placeholder="XXXX-XXXX-XXXX"></label>
+      <label for="auth-pass"><span id="auth-pass-label">Password</span><input type="password" id="auth-pass" autocomplete="current-password" required></label>
       <label for="auth-confirm" id="auth-confirm-wrap" hidden>Type the password again<input type="password" id="auth-confirm" autocomplete="new-password"></label>
       <p class="sub" id="auth-note"></p>
       <p id="auth-err" role="alert" style="color:var(--loss);font-size:13.5px;min-height:1em"></p>
       <button class="btn" id="auth-go" type="submit" style="height:40px">Sign in</button>
+      <button type="button" class="linkbtn" id="auth-forgot" style="align-self:center">Forgot password?</button>
     </form>
+    <div id="auth-code-view" hidden style="display:flex;flex-direction:column;gap:12px">
+      <h3 style="margin:0;font-size:16px">Save your recovery code</h3>
+      <p class="sub" style="margin:0">If you ever forget your password, this code is the only way back into your account. Screenshot it, write it down, or save it in your notes. It won't be shown again.</p>
+      <div class="rcode" id="auth-code" aria-live="polite"></div>
+      <div class="row" style="gap:8px"><button type="button" class="btn ghost" id="auth-code-copy">Copy code</button><button type="button" class="btn" id="auth-code-done">I saved it</button></div>
+    </div>
     <button type="button" class="linkbtn" id="auth-skip" style="align-self:center">Use without an account on this device</button>
   </div>
 </div>
