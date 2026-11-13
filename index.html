@@ -238,6 +238,7 @@
     <div class="card">
       <div class="row">
         <label for="st-format">Study format<select id="st-format"></select></label>
+<label for="st-level">Difficulty<select id="st-level"><option value="1" selected>Standard</option><option value="2">Hard</option><option value="3">Expert</option></select></label>
         <label for="st-pool">Pokémon pool
           <select id="st-pool">
             <option value="fe">Fully evolved, legal in this format</option>
@@ -323,11 +324,12 @@
     <header class="page-head">
       <h1>Test</h1>
       <p class="lede">An exam over everything in Study: type matchups, speed, priority, items, abilities, mechanics and common sets. No feedback until the end, so it measures what you actually know.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Take a <b>Full test</b> now to set a baseline. Retake it every couple of weeks to measure real improvement.</li><li>Use a <b>Quick test</b> when you're short on time, and an <b>area test</b> to dig into your weakest area.</li><li>At the end you get a grade, a breakdown by category, your rating changes, and a review of every question you missed.</li><li>Every test updates your ratings on the Progress page.</li></ol></details>
+      <details class="howto"><summary>How to use this page</summary><ol><li><b>Difficulty</b>: Standard checks the basics. Hard uses close calls, look-alike answers and tricky mechanics. Expert adds exact Speed numbers, abilities that change type matchups, and questions like "which move does it NOT run". Harder tests count for more in your ratings.</li><li>Take a <b>Full test</b> now to set a baseline. Retake it every couple of weeks to measure real improvement.</li><li>Use a <b>Quick test</b> when you're short on time, and an <b>area test</b> to dig into your weakest area.</li><li>At the end you get a grade, a breakdown by category, your rating changes, and a review of every question you missed.</li><li>Every test updates your ratings on the Progress page.</li></ol></details>
     </header>
     <div id="te-setup" style="display:flex;flex-direction:column;gap:16px">
       <div class="card"><div class="row">
         <label for="te-format">Format<select id="te-format"></select></label>
+<label for="te-level">Difficulty<select id="te-level"><option value="1">Standard</option><option value="2" selected>Hard</option><option value="3">Expert</option></select></label>
         <label for="te-pool">Pokémon to test on<select id="te-pool"><option value="meta">Top 50 in the meta</option><option value="fe">Fully evolved, legal in this format</option><option value="all">Every Pokémon, any game</option></select></label>
       </div></div>
       <div class="drills" id="te-types"></div>

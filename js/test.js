@@ -17,7 +17,9 @@
 
   let T = null; let clock = null;
 
-  function ctx() { return VL.study.ctxFor($('te-format').value, $('te-pool').value); }
+  const LEVELS = { 1: 'Standard', 2: 'Hard', 3: 'Expert' };
+  const level = () => +$('te-level').value || 2;
+  function ctx() { return VL.study.ctxFor($('te-format').value, $('te-pool').value, level()); }
   function build(plan, label) {
     const c = ctx(); const used = new Set(); const qs = [];
     for (const [kind, count] of plan) {
@@ -25,13 +27,14 @@
       for (let i = 0; i < count; i++) { const q = VL.study.randomQuestion(kind, c, used); if (!q) break; used.add(kind + ':' + q.key); qs.push({ kind, q }); }
     }
     if (!qs.length) { VL.toast('No questions available for this format and pool'); return; }
-    T = { label, fmt: c.fmt, items: shuffle(qs), i: 0, answers: [], t0: Date.now() };
+    T = { label: `${label} · ${LEVELS[c.level]}`, base: label, level: c.level, fmt: c.fmt, items: shuffle(qs), i: 0, answers: [], t0: Date.now() };
     $('te-setup').hidden = true; $('te-run').hidden = false;
     clearInterval(clock); clock = setInterval(tick, 1000);
     renderQ();
     $('te-run').scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
-  const kindsAvailable = () => { const c = ctx(); return Object.keys(KIND_AREA).filter(k => VL.study.hasQuestions(k, c)); };
+  // the plain type chart is too easy for Hard and Expert
+  const kindsAvailable = () => { const c = ctx(); return Object.keys(KIND_AREA).filter(k => VL.study.hasQuestions(k, c) && !(k === 'typebasic' && c.level >= 2)); };
   function startFull() { build(kindsAvailable().map(k => [k, 4]), 'Full test'); }
   function startQuick() { build(kindsAvailable().map(k => [k, 2]), 'Quick test'); }
   function startArea(area) {
@@ -72,19 +75,20 @@
     });
     let changes = null;
     if (n) {
-      VL.store.put('tests', VL.newId('t'), { ts: Date.now(), label: T.label, fmt: T.fmt.id, fmtName: T.fmt.name, n, correct, pct, secs, byKind, misses: misses.slice(0, 50) });
-      changes = VL.progress.apply(T.answers.map(a => ({ a: KIND_AREA[a.kind], d: KIND_DIFF[a.kind] || 1150, s: a.ok ? 1 : 0 })), { src: 'test', label: T.label, points: correct * 10 });
+      VL.store.put('tests', VL.newId('t'), { ts: Date.now(), label: T.label, level: T.level, fmt: T.fmt.id, fmtName: T.fmt.name, n, correct, pct, secs, byKind, misses: misses.slice(0, 50) });
+      // harder tests count for more: +175 difficulty per level above Standard
+      changes = VL.progress.apply(T.answers.map(a => ({ a: KIND_AREA[a.kind], d: (KIND_DIFF[a.kind] || 1150) + (T.level - 1) * 175, s: a.ok ? 1 : 0 })), { src: 'test', label: T.label, points: correct * 10 * T.level });
       VL.markDone && VL.markDone('drill');
     }
     const g = VL.progress.grade(pct);
     const prev = VL.store.list('tests').filter(t => t.label === T.label && t.fmt === T.fmt.id).sort((a, b) => b.ts - a.ts)[1];
     $('te-run').innerHTML = `<div class="card-head"><h3>${esc(T.label)}: ${correct}/${n}</h3><span class="pill ${pct >= 80 ? 'w' : pct >= 60 ? 'n' : 'l'}" style="font-size:14px">Grade ${g} · ${pct}%</span></div>
-      <div class="tiles"><div class="tile"><div class="k">Score</div><div class="v">${pct}%</div>${prev ? `<div class="mini">Last time: ${prev.pct}% (${pct - prev.pct >= 0 ? '+' : ''}${pct - prev.pct})</div>` : ''}</div><div class="tile"><div class="k">Grade</div><div class="v">${g}</div></div><div class="tile"><div class="k">Time</div><div class="v">${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</div></div><div class="tile"><div class="k">Points</div><div class="v">${correct * 10}</div></div></div>
+      <div class="tiles"><div class="tile"><div class="k">Score</div><div class="v">${pct}%</div>${prev ? `<div class="mini">Last time: ${prev.pct}% (${pct - prev.pct >= 0 ? '+' : ''}${pct - prev.pct})</div>` : ''}</div><div class="tile"><div class="k">Grade</div><div class="v">${g}</div></div><div class="tile"><div class="k">Time</div><div class="v">${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</div></div><div class="tile"><div class="k">Points</div><div class="v">${correct * 10 * T.level}</div></div></div>
       <div><div class="section-label">By category</div><div class="bars">${Object.entries(byKind).sort((a, b) => a[1].c / a[1].n - b[1].c / b[1].n).map(([k, v]) => `<div class="bar"><span>${esc(kindName(k))}</span><span class="track"><span class="fill acc" style="display:block;width:${Math.round(100 * v.c / v.n)}%"></span></span><span class="n">${v.c}/${v.n}</span></div>`).join('')}</div></div>
       ${VL.progress.changesHtml(changes)}
       ${misses.length ? `<div><div class="section-label">Review your misses</div><div class="misses">${misses.map(m => `<div class="miss">${m.q}<br><span class="sub">You answered: ${m.yours} · Correct: <b>${m.right}</b></span><br><span class="sub">${m.ex}</span></div>`).join('')}</div></div>` : (n ? '<p>Perfect score.</p>' : '')}
       <div class="row"><button class="btn" id="te-again">Take it again</button><button class="btn ghost" id="te-back">Back to tests</button><a class="btn ghost" href="#progress">See progress</a></div>`;
-    $('te-again').onclick = () => { const l = T.label; T = null; if (l === 'Full test') startFull(); else if (l === 'Quick test') startQuick(); else { const a = VL.progress.AREAS.find(x => `${x.n} test` === l); if (a) startArea(a.id); } };
+    $('te-again').onclick = () => { const l = T.base; T = null; if (l === 'Full test') startFull(); else if (l === 'Quick test') startQuick(); else { const a = VL.progress.AREAS.find(x => `${x.n} test` === l); if (a) startArea(a.test || a.id); } };
     $('te-back').onclick = close;
   }
   function close() { clearInterval(clock); T = null; $('te-run').hidden = true; $('te-setup').hidden = false; render(); }
@@ -103,7 +107,7 @@
     if (!$('te-pool').dataset.init) { $('te-pool').dataset.init = '1'; if (VL.meta.forFormat(fs.value)) $('te-pool').value = 'meta'; }
     const avail = kindsAvailable();
     const tests = VL.store.list('tests');
-    const best = (label) => { const t = tests.filter(x => x.label === label && x.fmt === fs.value); return t.length ? Math.max(...t.map(x => x.pct)) : null; };
+    const best = (label) => { const full = `${label} · ${LEVELS[level()]}`; const t = tests.filter(x => x.label === full && x.fmt === fs.value); return t.length ? Math.max(...t.map(x => x.pct)) : null; };
     const areas = VL.progress.AREAS.filter(a => a.test && (AREA_KINDS[a.test] || []).some(k => avail.includes(k)));
     $('te-types').innerHTML = `
       <div class="drill-card gamecard"><h4>Full test</h4><span class="sub">About ${avail.length * 4} questions across every category. The best measure of where you stand. About 15 minutes.</span><div class="kv"><button class="btn small" data-te="full">Start full test</button>${best('Full test') !== null ? `<span class="mini">Best ${best('Full test')}%</span>` : ''}</div></div>
@@ -116,6 +120,7 @@
   });
   $('te-format').addEventListener('change', render);
   $('te-pool').addEventListener('change', render);
+  $('te-level').addEventListener('change', render);
 
   VL.test = { render, startArea, stop() { clearInterval(clock); } };
 })();
