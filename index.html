@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=8">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -666,7 +666,7 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><h3>Pokémon data</h3></div>
+      <div class="card-head"><h3>Pokémon data</h3><span class="pill m" id="app-version">App version 8</span></div>
       <p class="sub" id="data-info"></p>
     </div>
   </section>
@@ -715,22 +715,22 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js"></script>
-<script src="js/content.js"></script>
-<script src="js/study.js"></script>
-<script src="js/help.js"></script>
-<script src="js/meta.js"></script>
-<script src="js/calc.js"></script>
-<script src="js/companion.js"></script>
-<script src="js/teamcheck.js"></script>
-<script src="js/plan.js"></script>
-<script src="js/progress.js"></script>
-<script src="js/arcade.js"></script>
-<script src="js/test.js"></script>
-<script src="js/app.js"></script>
+<script src="js/store.js?v=8"></script>
+<script src="js/content.js?v=8"></script>
+<script src="js/study.js?v=8"></script>
+<script src="js/help.js?v=8"></script>
+<script src="js/meta.js?v=8"></script>
+<script src="js/calc.js?v=8"></script>
+<script src="js/companion.js?v=8"></script>
+<script src="js/teamcheck.js?v=8"></script>
+<script src="js/plan.js?v=8"></script>
+<script src="js/progress.js?v=8"></script>
+<script src="js/arcade.js?v=8"></script>
+<script src="js/test.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
 }
 </script>
 </body>

@@ -448,6 +448,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     $('sheet').hidden = false; $('sheet-back').hidden = false; $('more-btn').setAttribute('aria-expanded', 'true');
     $('sheet').scrollTop = 0;
   };
+  // while the menu is open, swipes anywhere outside it do nothing
+  document.addEventListener('touchmove', e => { if (locked && !e.target.closest('#sheet')) e.preventDefault(); }, { passive: false });
   // when the menu can't scroll any further, stop the swipe from reaching the page
   let touchY = 0;
   $('sheet').addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });

@@ -72,6 +72,13 @@ jobs:
             echo "Nothing changed this week"
           fi
 
+      - name: Stamp this version on the app's files
+        run: |
+          v="${GITHUB_SHA::7}"
+          sed -i -E "s/\?v=[0-9a-z]+\"/?v=$v\"/g; s/App version [0-9a-z]+/App version $v/" index.html
+          sed -i -E "s/const CACHE = 'vgclab-[^']+'/const CACHE = 'vgclab-$v'/" sw.js
+          grep -o "app.js?v=[0-9a-z]*" index.html
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
