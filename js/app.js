@@ -194,7 +194,8 @@
   function ratingChart(list) {
     const pts = list.filter(x => Number.isFinite(x.rating)).slice().reverse();
     if (pts.length < 2) return '<div class="empty">Add "Rating after" to a few games to see your rating line.</div>';
-    const W = 900, H = 200, pl = 44, pr = 14, pt = 12, pb = 24;
+    // drawn at the box's real width, so the labels stay the same size on a wide screen
+    const W = Math.max(600, Math.min(2600, ($('rv-chart') && $('rv-chart').clientWidth) || ((document.querySelector('.wrap') || {}).clientWidth || 990) - 90)), H = 200, pl = 44, pr = 14, pt = 12, pb = 24;
     const ys = pts.map(p => p.rating); let lo = Math.min(...ys), hi = Math.max(...ys);
     const span = Math.max(hi - lo, 40); const step = span > 400 ? 100 : span > 160 ? 50 : 20;
     lo = Math.floor((lo - 5) / step) * step; hi = Math.ceil((hi + 5) / step) * step;
@@ -443,6 +444,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     });
   }
   store.onChange(renderAll);
+  let rsz = null; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderAll, 250); });
 
   // ---------- routing ----------
   const TABS = ['news', 'replay', 'topteams', 'sheets', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];

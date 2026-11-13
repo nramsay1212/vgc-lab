@@ -73,7 +73,7 @@
   function lineChart(series, opts) {
     const pts = series.flatMap(s => s.pts);
     if (pts.length < 2) return '<div class="empty">Play a few games or take a test, and your ratings over time will appear here.</div>';
-    const W = 960, H = 280, pl = 46, pr = 190, pt = 14, pb = 28;
+    const W = Math.max(640, Math.min(2600, ($('pg-chart') && $('pg-chart').clientWidth) || ((document.querySelector('.wrap') || {}).clientWidth || 1050) - 90)), H = 280, pl = 46, pr = 190, pt = 14, pb = 28;
     const t0 = Math.min(...pts.map(p => p.t)), t1 = Math.max(...pts.map(p => p.t)) || t0 + 1;
     let lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v));
     const span = Math.max(hi - lo, 60); const step = span > 600 ? 200 : span > 240 ? 100 : 50;
