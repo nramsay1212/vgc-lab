@@ -302,7 +302,7 @@ label .term{font-size:12px}
   .bottombar a[aria-current="page"]{color:var(--ink)}
   .bottombar a[aria-current="page"] .ic{color:var(--accent-2)}
   .sheet-back{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55}
-  .sheet{display:flex;flex-direction:column;gap:2px;position:fixed;left:0;right:0;bottom:0;z-index:56;background:var(--panel);border-top:1px solid var(--line-2);border-radius:16px 16px 0 0;padding:8px 10px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--shadow)}
+  .sheet{display:flex;flex-direction:column;gap:2px;position:fixed;left:0;right:0;bottom:0;z-index:56;max-height:min(78vh,78dvh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:var(--panel);border-top:1px solid var(--line-2);border-radius:16px 16px 0 0;padding:8px 10px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--shadow)}
   .sheet a,.sheet .navbtn{display:flex;align-items:center;gap:12px;height:46px;padding:0 12px;border-radius:8px;color:var(--ink);font-size:15px;font-weight:500;background:none;border:0;width:100%;text-align:left}
   .sheet a[aria-current="page"]{background:var(--accent-soft)}
   .sheet .ic{width:18px;height:18px}
@@ -457,3 +457,9 @@ table.matrix tr.flag td,table.matrix tr.flag th{box-shadow:inset 0 0 0 999px rgb
 .weekbars{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:170px}
 .weekbars .wb{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
 .weekbars .bar3{width:100%;max-width:28px;min-height:2px;background:linear-gradient(180deg,var(--accent-2),var(--accent));border-radius:4px 4px 2px 2px}
+
+/* lock the page behind the phone menu */
+html.sheet-open,html.sheet-open body{overflow:hidden;overscroll-behavior:none}
+.sheet .sheet-grip{position:sticky;top:0;flex:0 0 auto;margin:0 auto 6px;padding:0}
+.sheet-head{position:sticky;top:-8px;z-index:1;background:var(--panel);padding:8px 0 4px;margin:-8px 0 2px}
+.sheet a,.sheet .navbtn{flex:0 0 auto}

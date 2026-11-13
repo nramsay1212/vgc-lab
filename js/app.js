@@ -426,8 +426,15 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
   // phone "More" sheet
-  VL.closeSheet = function () { $('sheet').hidden = true; $('sheet-back').hidden = true; $('more-btn').setAttribute('aria-expanded', 'false'); };
-  $('more-btn').onclick = () => { const open = $('sheet').hidden; $('sheet').hidden = !open; $('sheet-back').hidden = !open; $('more-btn').setAttribute('aria-expanded', String(open)); };
+  VL.closeSheet = function () { $('sheet').hidden = true; $('sheet-back').hidden = true; $('more-btn').setAttribute('aria-expanded', 'false'); document.documentElement.classList.remove('sheet-open'); };
+  $('more-btn').onclick = () => {
+    const open = $('sheet').hidden;
+    $('sheet').hidden = !open; $('sheet-back').hidden = !open; $('more-btn').setAttribute('aria-expanded', String(open));
+    document.documentElement.classList.toggle('sheet-open', open);
+    if (open) $('sheet').scrollTop = 0;
+  };
+  // swipes on the dimmed background shouldn't scroll the page behind the menu
+  $('sheet-back').addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   $('sheet-back').onclick = VL.closeSheet;
   // theme (saved per device)
   function applyTheme(t) {
