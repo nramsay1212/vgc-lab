@@ -426,13 +426,36 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
   // phone "More" sheet
-  VL.closeSheet = function () { $('sheet').hidden = true; $('sheet-back').hidden = true; $('more-btn').setAttribute('aria-expanded', 'false'); document.documentElement.classList.remove('sheet-open'); };
+  // iPhone Safari ignores overflow:hidden on the page, so the page is pinned
+  // in place with position:fixed while the menu is open, then restored.
+  let locked = false, lockY = 0;
+  function lockPage() {
+    if (locked) return; locked = true; lockY = window.scrollY;
+    const b = document.body.style; b.position = 'fixed'; b.top = `-${lockY}px`; b.left = '0'; b.right = '0'; b.width = '100%';
+    document.documentElement.classList.add('sheet-open');
+  }
+  function unlockPage() {
+    if (!locked) return; locked = false;
+    const b = document.body.style; b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
+    document.documentElement.classList.remove('sheet-open');
+    window.scrollTo(0, lockY);
+  }
+  VL.closeSheet = function () { $('sheet').hidden = true; $('sheet-back').hidden = true; $('more-btn').setAttribute('aria-expanded', 'false'); unlockPage(); };
   $('more-btn').onclick = () => {
     const open = $('sheet').hidden;
-    $('sheet').hidden = !open; $('sheet-back').hidden = !open; $('more-btn').setAttribute('aria-expanded', String(open));
-    document.documentElement.classList.toggle('sheet-open', open);
-    if (open) $('sheet').scrollTop = 0;
+    if (!open) { VL.closeSheet(); return; }
+    lockPage();
+    $('sheet').hidden = false; $('sheet-back').hidden = false; $('more-btn').setAttribute('aria-expanded', 'true');
+    $('sheet').scrollTop = 0;
   };
+  // when the menu can't scroll any further, stop the swipe from reaching the page
+  let touchY = 0;
+  $('sheet').addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+  $('sheet').addEventListener('touchmove', e => {
+    const s = $('sheet'); const dy = e.touches[0].clientY - touchY;
+    const atTop = s.scrollTop <= 0, atBottom = s.scrollTop + s.clientHeight >= s.scrollHeight - 1;
+    if ((atTop && dy > 0) || (atBottom && dy < 0)) e.preventDefault();
+  }, { passive: false });
   // swipes on the dimmed background shouldn't scroll the page behind the menu
   $('sheet-back').addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   $('sheet-back').onclick = VL.closeSheet;
