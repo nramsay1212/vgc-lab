@@ -66,7 +66,7 @@
     $('cd-games').textContent = g.length;
     $('cd-formats').textContent = new Set(g.map(x => x.fmt).filter(Boolean)).size;
     $('cd-streak').textContent = streak();
-    $('cd-drills').textContent = store.list('drills').reduce((a, d) => a + (d.n || 0), 0);
+    { const cur = VL.progress ? VL.progress.current() : {}; const ov = VL.progress ? VL.progress.overallOf(Object.fromEntries(Object.entries(cur).map(([k, v]) => [k, [v.r, v.n]]))) : null; $('cd-drills').textContent = ov === null ? '–' : Math.round(ov); }
   }
 
   // ---------- today ----------
@@ -399,6 +399,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       VL.study.render();
       if (VL.teamcheck) VL.teamcheck.render();
       if (VL.arcade) VL.arcade.render();
+      if (VL.test) VL.test.render();
+      if (VL.progress && location.hash === '#progress') VL.progress.render();
       if (VL.plan && !inside('op-list')) VL.plan.render();
       if (VL.companion && location.hash === '#companion' && !inside('cp-live')) VL.companion.render();
       if (VL.meta.render && location.hash === '#meta' && !inside('mt-detail')) VL.meta.render();
@@ -407,7 +409,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   store.onChange(renderAll);
 
   // ---------- routing ----------
-  const TABS = ['today', 'log', 'companion', 'review', 'study', 'games', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
+  const TABS = ['today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
@@ -417,6 +419,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (was && was.id !== 'p-' + tab) window.scrollTo(0, 0);
     if (tab === 'calc' && VL.calc) VL.calc.render();
     if (tab === 'games' && VL.arcade) VL.arcade.render(); else if (VL.arcade) VL.arcade.stop();
+    if (tab === 'test' && VL.test) VL.test.render();
+    if (tab === 'progress' && VL.progress) VL.progress.render();
     if (tab === 'companion' && VL.companion) VL.companion.render();
     if (tab === 'meta' && VL.meta.render) VL.meta.render();
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';

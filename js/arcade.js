@@ -22,6 +22,11 @@
     { id: 'types', name: 'Type Rush', desc: 'Attacking type into a real Pokémon\'s typing. 60 seconds, keep the streak going.', modes: [['rush', '60 seconds']] },
   ];
 
+  // Each answer updates the rating for its skill area. Harder levels count for more.
+  const AREA = { duel: 'speed', sort: 'speed', order: 'order', damage: 'damage', types: 'types' };
+  const DIFF = { duel: { base: 1000, spread: 1200, control: 1400 }, sort: { base: 1050, spread: 1250, tr: 1300 }, order: { normal: 1300, field: 1450 }, damage: { guess: 1300 }, types: { rush: 1100 } };
+  const rate = (s) => { if (G) G.res.push({ a: AREA[G.id], d: DIFF[G.id][G.mode], s }); };
+
   // ---------- settings: format and pool ----------
   const fmt = () => D().format($('ar-format').value || (VL.curFormatId && VL.curFormatId()));
   function pool() {
@@ -60,7 +65,7 @@
   function bindQuit() { const q = $('ar-quit'); if (q) q.onclick = () => finish(); }
   function start(id, mode) {
     stopTimer();
-    G = { id, mode, score: 0, streak: 0, best: 0, n: 0, right: 0, misses: [], round: 0, t0: Date.now() };
+    G = { id, mode, score: 0, streak: 0, best: 0, n: 0, right: 0, misses: [], round: 0, t0: Date.now(), res: [] };
     $('ar-list').hidden = true; area().hidden = false;
     ({ duel: duelNext, sort: sortNext, order: orderNext, damage: damageNext, types: typesNext })[id]();
     if (id === 'duel' || id === 'types') {
@@ -70,7 +75,7 @@
     area().scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
   function scoreHit(ok, miss) {
-    G.n++;
+    G.n++; rate(ok ? 1 : 0);
     if (ok) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); G.score += 10 + Math.min(G.streak, 10) * 2; }
     else { G.streak = 0; if (miss) G.misses.push(miss); }
   }
@@ -82,9 +87,11 @@
     const isBest = G.score > (rec.best || 0);
     if (G.n) VL.store.put('arcade', key, { best: Math.max(rec.best || 0, G.score), plays: (rec.plays || 0) + 1, hist: (rec.hist || []).concat([{ s: G.score, a: G.n ? Math.round(100 * G.right / G.n) : 0, t: Date.now() }]).slice(-30) });
     if (G.n && VL.markDone) VL.markDone('drill');
+    const changes = G.n && VL.progress ? VL.progress.apply(G.res, { src: 'game', label: `${g.name} · ${g.modes.find(m => m[0] === G.mode)[1]}`, points: G.score }) : null;
     const acc = G.n ? Math.round(100 * G.right / G.n) : 0;
     area().innerHTML = `<div class="card-head"><h3>${esc(g.name)}: ${G.score} points</h3>${isBest && G.n ? '<span class="pill w">New best</span>' : `<span class="pill m">Best ${rec.best || 0}</span>`}</div>
       <div class="tiles"><div class="tile"><div class="k">Correct</div><div class="v">${G.right}/${G.n}</div></div><div class="tile"><div class="k">Accuracy</div><div class="v">${acc}%</div></div><div class="tile"><div class="k">Best streak</div><div class="v hot">${G.best}</div></div><div class="tile"><div class="k">Points</div><div class="v">${G.score}</div></div></div>
+      ${VL.progress ? VL.progress.changesHtml(changes) : ''}
       ${G.misses.length ? `<div><div class="section-label">Review your misses</div><div class="misses">${G.misses.slice(0, 25).map(m => `<div class="miss">${m}</div>`).join('')}</div></div>` : (G.n ? '<p class="sub">No misses. Try a harder level.</p>' : '')}
       <div class="row"><button class="btn" id="ar-again">Play again</button><button class="btn ghost" id="ar-back">All games</button></div>`;
     $('ar-again').onclick = () => start(G.id, G.mode);
@@ -163,6 +170,7 @@
     if (c.picked.length < 5) return renderSort();
     const correct = sortCorrect(); let hits = 0; c.picked.forEach((x, k) => { if (correct[k] === x) hits++; });
     G.n += 5; G.right += hits; G.score += hits * 10 + (hits === 5 ? 20 : 0);
+    c.picked.forEach((x, k) => rate(correct[k] === x ? 1 : 0));
     if (hits === 5) { G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`Round ${G.round}: you had ${hits}/5 in place. Correct: ${correct.map(i => `${esc(c.mons[i].n)} ${c.sets[i].v}`).join(' → ')}`); }
     renderSort(true);
   }
@@ -280,7 +288,7 @@
       const x = +$('ar-dmg').value; G.lastGuess = x;
       const dist = x < c.lo ? c.lo - x : x > c.hi ? x - c.hi : 0;
       const pts = Math.max(0, Math.round(100 - dist * 4)); G.lastPts = pts;
-      G.n++; G.score += pts; if (dist <= 5) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`${esc(c.A.name)} ${esc(c.mv.n)} into ${esc(c.Dd.name)}: actual ${c.lo}–${c.hi}%, you guessed ${x}%.`); }
+      G.n++; G.score += pts; rate(pts / 100); if (dist <= 5) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`${esc(c.A.name)} ${esc(c.mv.n)} into ${esc(c.Dd.name)}: actual ${c.lo}–${c.hi}%, you guessed ${x}%.`); }
       renderDamage(x);
     };
   }
@@ -336,5 +344,6 @@
   $('ar-format').addEventListener('change', () => { if (G && !G.done) close(); renderList(); });
   $('ar-pool').addEventListener('change', () => { if (G && !G.done) close(); });
 
-  VL.arcade = { render() { if (!G || G.done) renderList(); }, stop: stopTimer };
+  VL.arcadeGames = GAMES;
+  VL.arcade = { render() { if (!G || G.done) renderList(); }, stop: stopTimer, start };
 })();

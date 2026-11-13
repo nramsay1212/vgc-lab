@@ -451,3 +451,9 @@ table.matrix tr.flag td,table.matrix tr.flag th{box-shadow:inset 0 0 0 999px rgb
 .misses{display:flex;flex-direction:column;gap:6px;max-height:360px;overflow:auto}
 .miss{font-size:13.5px;padding:8px 10px;border-radius:var(--r-sm);background:var(--bg-2);border:1px solid var(--line);color:var(--ink-2)}
 @media (max-width:520px){.duel{grid-template-columns:1fr}.duel .vs{justify-self:center}.sortgrid.four{grid-template-columns:1fr 1fr}.duelcard{min-height:96px;padding:14px}}
+
+/* progress */
+.areacard{gap:8px}
+.weekbars{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:170px}
+.weekbars .wb{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.weekbars .bar3{width:100%;max-width:28px;min-height:2px;background:linear-gradient(180deg,var(--accent-2),var(--accent));border-radius:4px 4px 2px 2px}

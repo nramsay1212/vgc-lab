@@ -475,6 +475,18 @@
   VL.study = {
     render,
     DRILLS,
+    // used by the Test page: questions without spaced repetition
+    ctxFor(fmtId, poolKind) {
+      const fmt = D.format(fmtId); let pool = D.pool(fmt, poolKind);
+      if (pool.length < 12) pool = D.pool(fmt, 'fe');
+      return { fmt, chart: D.chart(fmt), pool };
+    },
+    hasQuestions(kind, ctx) { return GEN[kind].keys(ctx).length > 0; },
+    randomQuestion(kind, ctx, used) {
+      const keys = GEN[kind].keys(ctx).filter(k => !used.has(kind + ':' + k));
+      for (let t = 0; t < 40 && keys.length; t++) { const k = pick(keys); const q = GEN[kind].make(k, ctx); if (q && !q.flash) { q.key = k; return q; } }
+      return null;
+    },
     accuracy(id) { return recentAcc(drillStats(id)); },
     fill(selectedFormat) {
       const sel = $('st-format');
