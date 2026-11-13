@@ -94,6 +94,11 @@ jobs:
         continue-on-error: true
         run: node scripts/build-teams.js
 
+      - name: Refresh videos
+        id: videos
+        continue-on-error: true
+        run: node scripts/build-videos.js
+
       - name: Refresh news
         id: news
         continue-on-error: true
@@ -101,7 +106,7 @@ jobs:
 
       - name: Check the data files are readable
         run: |
-          for f in data/dex.json data/meta.json data/sprites.json data/teams.json data/news.json data/movetext.json data/meta/*.json data/teams/*.json; do
+          for f in data/dex.json data/meta.json data/sprites.json data/teams.json data/news.json data/videos.json data/movetext.json data/meta/*.json data/teams/*.json; do
             [ -e "$f" ] || continue
             node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || { echo "$f is broken, restoring the last good copy"; git checkout -- "$f" 2>/dev/null || rm -f "$f"; }
           done
@@ -149,6 +154,7 @@ jobs:
             [ "${{ steps.teams.outcome }}" = "failure" ] && problems="$problems|tournament teams"
           fi
           [ "${{ steps.news.outcome }}" = "failure" ] && problems="$problems|news"
+          [ "${{ steps.videos.outcome }}" = "failure" ] && problems="$problems|videos"
           node -e "const [v,now,checked,p]=process.argv.slice(1);require('fs').writeFileSync('data/status.json',JSON.stringify({version:v,published:now,checked:checked||null,problems:[...new Set(p.split('|').filter(Boolean))]}))" "$v" "$now" "$checked" "$problems"
           cat data/status.json
 

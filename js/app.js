@@ -447,7 +447,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   let rsz = null; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderAll, 250); });
 
   // ---------- routing ----------
-  const TABS = ['news', 'replay', 'topteams', 'sheets', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
+  const TABS = ['news', 'replay', 'topteams', 'sheets', 'videos', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
@@ -466,6 +466,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (tab === 'topteams' && VL.topteams) VL.topteams.render();
     if (tab === 'replay' && VL.replay) VL.replay.render();
     if (tab === 'sheets' && VL.sheets) VL.sheets.render();
+    if (tab === 'videos' && VL.videos) VL.videos.render();
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
   // phone "More" sheet
