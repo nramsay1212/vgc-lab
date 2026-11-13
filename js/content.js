@@ -207,6 +207,43 @@
 
   byStyle('TAGS', TAGS_D, TAGS_S);
   byStyle('TAGQ', TAGQ_D, TAGQ_S);
+
+  // Natures: each raises one stat by 10% and lowers another by 10% (HP is never touched).
+  // Rows are the raised stat, columns the lowered one; where they meet on the diagonal the nature does nothing.
+  const NSTATS = ['atk', 'def', 'spa', 'spd', 'spe'];
+  const NSTAT_NAME = { atk: 'Attack', def: 'Defense', spa: 'Special Attack', spd: 'Special Defense', spe: 'Speed' };
+  const NGRID = [
+    ['Hardy', 'Lonely', 'Adamant', 'Naughty', 'Brave'],
+    ['Bold', 'Docile', 'Impish', 'Lax', 'Relaxed'],
+    ['Modest', 'Mild', 'Bashful', 'Rash', 'Quiet'],
+    ['Calm', 'Gentle', 'Careful', 'Quirky', 'Sassy'],
+    ['Timid', 'Hasty', 'Jolly', 'Naive', 'Serious'],
+  ];
+  const NATURES = [];
+  NGRID.forEach((row, i) => row.forEach((n, j) => NATURES.push({ n, up: i === j ? null : NSTATS[i], down: i === j ? null : NSTATS[j] })));
+  const natureOf = (name) => NATURES.find(x => x.n.toLowerCase() === String(name || '').toLowerCase()) || null;
+  const natureText = (x) => !x || !x.up ? 'No effect on any stat' : `+${NSTAT_NAME[x.up]}, −${NSTAT_NAME[x.down]}`;
+  // the jobs the common natures are picked for
+  const NATURE_ROLES = [
+    ['Jolly', 'A fast physical attacker that never uses special moves'],
+    ['Adamant', 'A physical attacker that wants more power and already outspeeds what it needs to'],
+    ['Timid', 'A fast special attacker that never uses physical moves'],
+    ['Modest', 'A special attacker that wants more power and already outspeeds what it needs to'],
+    ['Brave', 'A slow physical attacker for Trick Room'],
+    ['Quiet', 'A slow special attacker for Trick Room'],
+    ['Bold', 'A support that takes physical hits and never uses physical moves'],
+    ['Calm', 'A support that takes special hits and never uses physical moves'],
+    ['Impish', 'A Pokémon that takes physical hits and only uses physical moves'],
+    ['Careful', 'A Pokémon that takes special hits and only uses physical moves'],
+    ['Relaxed', 'A slow Trick Room setter that takes physical hits'],
+    ['Sassy', 'A slow Trick Room setter that takes special hits'],
+  ];
+  // the whole chart, with one nature highlighted (and its row and column)
+  function natureChart(highlight) {
+    const h = natureOf(highlight); const ab = { atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' };
+    return `<table class="natgrid"><thead><tr><th title="Rows: the stat raised. Columns: the stat lowered."><span class="mini">+ / −</span></th>${NSTATS.map(s => `<th class="${h && h.down === s ? 'hl' : ''}">−${ab[s]}</th>`).join('')}</tr></thead><tbody>${NGRID.map((row, i) => `<tr><th class="${h && h.up === NSTATS[i] ? 'hl' : ''}">+${ab[NSTATS[i]]}</th>${row.map((n, j) => `<td class="${i === j ? 'neutral' : ''} ${h && h.n === n ? 'on' : ''}">${n}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }
+  Object.assign(VL, { NATURES, NSTAT_NAME, NATURE_ROLES, natureOf, natureText, natureChart });
   byStyle('SESSION', SESSION_D, SESSION_S);
   byStyle('SKILLS', SKILLS_D, SKILLS_S);
   byStyle('MILESTONES', MILESTONES_D, MILESTONES_S);

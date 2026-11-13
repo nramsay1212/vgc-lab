@@ -15,11 +15,12 @@
     { id: 'speed', n: 'Speed', how: 'Speed Duel, Speed Sort, and speed questions on tests', play: ['duel', 'spread'], test: 'speed' },
     { id: 'order', n: 'Priority and turn order', how: 'Turn Order, and priority questions on tests', play: ['order', 'normal'], test: 'order' },
     { id: 'damage', n: 'Damage', how: 'Damage Guess', play: ['damage', 'guess'] },
+    { id: 'natures', n: 'Natures', how: 'Nature Rush', play: ['natures', 'rush'] },
     { id: 'items', n: 'Items and abilities', how: 'Item and ability questions on tests', test: 'items' },
     { id: 'mechanics', n: 'Mechanics', how: 'Mechanics questions on tests', test: 'mechanics' },
     { id: 'meta', n: 'Meta knowledge', how: 'Common sets questions on tests', test: 'meta' },
   ];
-  const COLORS = { types: '#6E79E8', speed: '#F2683C', order: '#3FB6A8', damage: '#E2B340', items: '#D46BA8', mechanics: '#4CB782', meta: '#5AA9E6', overall: 'var(--ink)' };
+  const COLORS = { types: '#6E79E8', speed: '#F2683C', order: '#3FB6A8', damage: '#E2B340', items: '#D46BA8', mechanics: '#4CB782', meta: '#5AA9E6', natures: '#B48EF0', overall: 'var(--ink)' };
   const START = 1000, PROVISIONAL = 10;
   const RANKS = [[1800, 'Champion'], [1600, 'Master'], [1400, 'Expert'], [1200, 'Ace Trainer'], [1000, 'Trainer'], [0, 'Novice']];
   const rankOf = (r) => (RANKS.find(([min]) => r >= min) || RANKS[RANKS.length - 1])[1];

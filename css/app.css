@@ -869,3 +869,12 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .rank-ladder .rk.here{border-color:var(--accent);background:var(--accent-soft)}
 @media (max-width:700px){.rank-ladder{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .dmgwhy ol{margin:6px 0 0;padding-left:20px;display:grid;gap:4px;font-size:13.5px;color:var(--ink-2)}
+/* nature chart */
+.natgrid{border-collapse:collapse;margin-top:10px;font-size:12.5px;width:100%;max-width:520px}
+.natgrid th,.natgrid td{border:1px solid var(--line);padding:5px 6px;text-align:center}
+.natgrid th{color:var(--muted);font-weight:500;background:var(--bg-2)}
+.natgrid th.hl{color:var(--ink);background:var(--accent-soft)}
+.natgrid td.neutral{color:var(--faint);font-style:italic}
+.natgrid td.on{background:var(--accent);color:#fff;font-weight:600}
+.natgrid{table-layout:fixed}
+@media (max-width:560px){.natgrid{font-size:11.5px}.natgrid th,.natgrid td{padding:5px 2px}}

@@ -97,6 +97,7 @@
     { id: 'whofirst', name: 'Who moves first?', desc: 'Two Pokémon, real spreads, speed control in play. Same-priority moves.' },
     { id: 'items', name: 'Items', desc: 'What does this held item do?' },
     { id: 'abilities', name: 'Abilities', desc: 'What does this ability do?' },
+    { id: 'natures', name: 'Natures', desc: 'What each nature raises and lowers, which nature does what, and which one a Pokémon wants.' },
     { id: 'priority', name: 'Priority', desc: 'What priority bracket is this move in?' },
     { id: 'mechanics', name: 'Mechanics', desc: 'Damage modifiers, durations, status and the battle gimmick, for this game.' },
     { id: 'commonsets', name: 'Common sets', desc: 'How the 50 most-used Pokémon are usually built: items, abilities and moves.' },
@@ -264,6 +265,31 @@
         const others = lvl(c) >= 2 ? similar(it.d, pool, 3) : shuffle(pool).slice(0, 3);
         if (others.length < 3) return null;
         return { q: `What does <b>${esc(it.n)}</b> do?`, opts: shuffle([{ label: it.d, ok: true }, ...others.map(d => ({ label: d, ok: false }))]), long: true, ex: `<b>${esc(it.n)}</b>: ${esc(it.d)}` };
+      },
+    },
+    // three kinds of question per nature: what it does, which one does this, and which one a job needs
+    natures: {
+      keys: () => VL.NATURES.map(x => 'what:' + x.n).concat(VL.NATURES.filter(x => x.up).map(x => 'which:' + x.n), VL.NATURE_ROLES.map(r => 'fit:' + r[0])),
+      make(key, c) {
+        const [kind, name] = key.split(':'); const x = VL.natureOf(name); if (!x) return null;
+        const others = shuffle(VL.NATURES.filter(o => o.n !== x.n && o.up));
+        const ex = `<b>${esc(x.n)}</b>: ${esc(VL.natureText(x))}.${x.up ? ` Each nature raises one stat by 10% and lowers another by 10%.` : ' Hardy, Docile, Serious, Bashful and Quirky raise and lower the same stat, so they do nothing.'}${VL.natureChart(x.n)}`;
+        if (kind === 'what') {
+          const wrong = [...new Set(others.map(o => VL.natureText(o)))].filter(t => t !== VL.natureText(x)).slice(0, x.up ? 2 : 3);
+          // a near miss: the same two stats the other way round
+          const flip = x.up && VL.NATURES.find(o => o.up === x.down && o.down === x.up);
+          const opts = [VL.natureText(x), ...(flip ? [VL.natureText(flip)] : []), ...wrong].slice(0, 4);
+          if (x.up && opts.length < 4) opts.push('No effect on any stat');
+          return { q: `What does a <b>${esc(x.n)}</b> nature do?`, opts: shuffle(opts.map(t => ({ label: t, ok: t === VL.natureText(x) }))), ex };
+        }
+        if (kind === 'which') {
+          const near = others.filter(o => o.up === x.up || o.down === x.down || (o.up === x.down && o.down === x.up));
+          const names = [...new Set([...near.slice(0, 2), ...others].map(o => o.n))].slice(0, 3);
+          return { q: `Which nature gives <b>+${esc(VL.NSTAT_NAME[x.up])}</b> and <b>−${esc(VL.NSTAT_NAME[x.down])}</b>?`, opts: shuffle([{ label: x.n, ok: true }, ...names.map(n => ({ label: n, ok: false }))]), ex };
+        }
+        const role = VL.NATURE_ROLES.find(r => r[0] === x.n); if (!role) return null;
+        const names = shuffle(VL.NATURE_ROLES.filter(r => r[0] !== x.n).map(r => r[0])).slice(0, 3);
+        return { q: `${esc(role[1])}. Which nature fits best?`, opts: shuffle([{ label: x.n, ok: true }, ...names.map(n => ({ label: `${n} (${VL.natureText(VL.natureOf(n))})`, ok: false }))]).map(o => o.ok ? { ...o, label: `${x.n} (${VL.natureText(x)})` } : o), ex: `${ex}<p class="sub">${esc(role[1])}: you want the stat it uses raised, and the stat it never uses lowered.</p>` };
       },
     },
     abilities: {
@@ -595,6 +621,7 @@
     if (S.view === 'speed') renderSpeed();
     if (S.view === 'types') renderTypes();
     if (S.view === 'items') renderItems();
+    if (S.view === 'natures') { $('nat-chart').innerHTML = VL.natureChart(); $('nat-roles').innerHTML = `<table class="list"><tbody>${VL.NATURE_ROLES.map(([n, d]) => `<tr><td><b>${esc(n)}</b></td><td class="mini">${esc(VL.natureText(VL.natureOf(n)))}</td><td>${esc(d)}</td></tr>`).join('')}</tbody></table>`; }
     if (S.view === 'priority') renderPriority();
     if (S.view === 'glossary' && VL.renderGlossary) VL.renderGlossary();
   }

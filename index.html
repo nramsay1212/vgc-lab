@@ -275,6 +275,7 @@
       <button type="button" data-sv="speed" aria-pressed="false">Speed tiers</button>
       <button type="button" data-sv="types" aria-pressed="false">Type chart</button>
       <button type="button" data-sv="items" aria-pressed="false">Items &amp; abilities</button>
+      <button type="button" data-sv="natures" aria-pressed="false">Natures</button>
       <button type="button" data-sv="priority" aria-pressed="false">Priority</button>
       <button type="button" data-sv="glossary" aria-pressed="false">Glossary</button>
     </div>
@@ -297,6 +298,16 @@
         </div>
         <p class="sub" id="sp-note"></p>
         <div class="scroll" id="sp-table"></div>
+      </div>
+    </div>
+    <div id="sv-natures" class="sv" hidden>
+      <div class="card">
+        <div class="card-head"><h3>Nature chart</h3><span class="sub">Each nature raises one stat by 10% and lowers another by 10%. HP is never changed.</span></div>
+        <div id="nat-chart"></div>
+        <p class="sub">Find the stat you want raised on the left and the one you can spare along the top. The five on the diagonal (Hardy, Docile, Bashful, Quirky, Serious) do nothing.</p>
+        <div class="section-label">Which nature for which job</div>
+        <div id="nat-roles"></div>
+        <p class="sub">The rule of thumb: raise the stat the Pokémon uses most, and lower the attacking stat it never uses. Lower Speed only for Trick Room. Practice with the <b>Natures</b> drill or <b>Nature Rush</b> in Games.</p>
       </div>
     </div>
     <div id="sv-types" class="sv" hidden>

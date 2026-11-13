@@ -19,12 +19,13 @@
     { id: 'sort', name: 'Speed Sort', desc: 'Put 5 Pokémon in order from fastest to slowest. 5 rounds.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['tr', 'Under Trick Room']] },
     { id: 'order', name: 'Turn Order', desc: 'Four Pokémon pick their moves. Tap them in the order they\'ll act: priority first, then Speed. 8 rounds.', modes: [['normal', 'Standard'], ['field', 'With Tailwind and Trick Room']] },
     { id: 'damage', name: 'Damage Guess', desc: 'A real attack with common sets. Guess how much it does before the calculator tells you. 8 rounds.', modes: [['guess', 'Guess the %']] },
+    { id: 'natures', name: 'Nature Rush', desc: 'What a nature does, or which nature does it. 60 seconds, 4 choices each.', modes: [['rush', '60 seconds']] },
     { id: 'types', name: 'Type Rush', desc: 'Attacking type into a real Pokémon\'s typing. 60 seconds, keep the streak going.', modes: [['rush', '60 seconds']] },
   ];
 
   // Each answer updates the rating for its skill area. Harder levels count for more.
-  const AREA = { duel: 'speed', sort: 'speed', order: 'order', damage: 'damage', types: 'types' };
-  const DIFF = { duel: { base: 1000, spread: 1200, control: 1400 }, sort: { base: 1050, spread: 1250, tr: 1300 }, order: { normal: 1300, field: 1450 }, damage: { guess: 1300 }, types: { rush: 1100 } };
+  const AREA = { duel: 'speed', sort: 'speed', order: 'order', damage: 'damage', types: 'types', natures: 'natures' };
+  const DIFF = { duel: { base: 1000, spread: 1200, control: 1400 }, sort: { base: 1050, spread: 1250, tr: 1300 }, order: { normal: 1300, field: 1450 }, damage: { guess: 1300 }, types: { rush: 1100 }, natures: { rush: 1050 } };
   const rate = (s) => { if (G) G.res.push({ a: AREA[G.id], d: DIFF[G.id][G.mode], s }); };
 
   // ---------- settings: format and pool ----------
@@ -67,8 +68,8 @@
     stopTimer();
     G = { id, mode, score: 0, streak: 0, best: 0, n: 0, right: 0, misses: [], round: 0, t0: Date.now(), res: [] };
     $('ar-list').hidden = true; area().hidden = false;
-    ({ duel: duelNext, sort: sortNext, order: orderNext, damage: damageNext, types: typesNext })[id]();
-    if (id === 'duel' || id === 'types') {
+    ({ duel: duelNext, sort: sortNext, order: orderNext, damage: damageNext, types: typesNext, natures: natNext })[id]();
+    if (id === 'duel' || id === 'types' || id === 'natures') {
       G.left = 60;
       timer = setInterval(() => { G.left--; const el = $('ar-time'); if (el) el.textContent = G.left; if (G.left > 0 && G.left <= 5) VL.sound && VL.sound.play('tick'); if (G.left <= 0) finish(); }, 1000);
     }
@@ -350,6 +351,39 @@
     setTimeout(() => { G && (G.lock = false); if (G && !G.done) typesNext(); }, ok ? 350 : 1400);
   }
 
+  // ---------- Nature Rush ----------
+  function natNext() {
+    const all = VL.NATURES.filter(x => x.up); const x = pick(all);
+    const others = all.filter(o => o.n !== x.n).sort(() => Math.random() - 0.5);
+    let q, opts;
+    if (Math.random() < 0.5) {
+      // what does it do? the flipped nature is always a choice, since it's the easy mix-up
+      const flip = all.find(o => o.up === x.down && o.down === x.up);
+      const set = [x, flip, ...others.filter(o => o !== flip)].slice(0, 4).map(o => VL.natureText(o));
+      q = `What does <b>${esc(x.n)}</b> do?`; opts = set.sort(() => Math.random() - 0.5).map(t => ({ label: t, ok: t === VL.natureText(x) }));
+    } else {
+      const near = others.filter(o => o.up === x.up || o.down === x.down);
+      const set = [x, ...near.slice(0, 2), ...others].filter((o, i, a) => a.indexOf(o) === i).slice(0, 4);
+      q = `Which nature is <b>+${esc(VL.NSTAT_NAME[x.up])}</b>, <b>−${esc(VL.NSTAT_NAME[x.down])}</b>?`; opts = set.sort(() => Math.random() - 0.5).map(o => ({ label: o.n, ok: o === x }));
+    }
+    G.cur = { x, q, opts }; renderNat();
+  }
+  function renderNat(flash) {
+    const c = G.cur;
+    area().innerHTML = `${header(`<span class="pill n">⏱ <span id="ar-time">${G.left ?? 60}</span>s</span><span class="pill m">${G.score} pts</span>${G.streak > 1 ? `<span class="pill w">streak ${G.streak}</span>` : ''}`)}
+      <p class="q2" style="text-align:center">${c.q}</p>
+      <div class="opts">${c.opts.map((o, i) => `<button class="opt ${flash !== undefined ? (o.ok ? 'right' : i === flash ? 'wrong' : '') : ''}" data-nat="${i}" ${flash !== undefined ? 'disabled' : ''}>${i + 1}. ${esc(o.label)}</button>`).join('')}</div>
+      ${flash !== undefined && !c.opts[flash].ok ? `<div class="explain"><b>${esc(c.x.n)}</b>: ${esc(VL.natureText(c.x))}${VL.natureChart(c.x.n)}</div>` : '<p class="sub" style="text-align:center">Keys 1–4 answer.</p>'}`;
+    bindQuit();
+  }
+  function natAnswer(i) {
+    if (!G || G.id !== 'natures' || G.lock || !G.cur.opts[i]) return;
+    const c = G.cur; const ok = c.opts[i].ok;
+    scoreHit(ok, `<b>${esc(c.x.n)}</b> is ${esc(VL.natureText(c.x))}`);
+    G.lock = true; renderNat(i);
+    setTimeout(() => { G && (G.lock = false); if (G && !G.done) natNext(); }, ok ? 350 : 2200);
+  }
+
   // ---------- input ----------
   $('ar-play').addEventListener('click', e => {
     if (!G || G.done) return;
@@ -357,11 +391,13 @@
     const s = e.target.closest('[data-sort]'); if (s) return sortTap(+s.dataset.sort);
     const o = e.target.closest('[data-ord]'); if (o) return orderTap(+o.dataset.ord);
     const t = e.target.closest('[data-ty]'); if (t) return typesAnswer(+t.dataset.ty);
+    const nt = e.target.closest('[data-nat]'); if (nt) return natAnswer(+nt.dataset.nat);
   });
   document.addEventListener('keydown', e => {
     if (!G || G.done || $('p-games').classList.contains('on') === false) return;
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.type !== 'range') return;
     if (G.id === 'duel') { if (e.key === 'ArrowLeft') { e.preventDefault(); duelAnswer('A'); } if (e.key === 'ArrowRight') { e.preventDefault(); duelAnswer('B'); } if (e.key === 'ArrowDown') { e.preventDefault(); duelAnswer('tie'); } }
+    if (G.id === 'natures' && /^[1-4]$/.test(e.key)) { e.preventDefault(); natAnswer(+e.key - 1); }
     if (G.id === 'types' && /^[1-6]$/.test(e.key)) { e.preventDefault(); typesAnswer([0, 0.25, 0.5, 1, 2, 4][+e.key - 1]); }
   });
 
