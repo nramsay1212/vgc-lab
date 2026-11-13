@@ -4,7 +4,14 @@
   'use strict';
   const VL = (window.VL = window.VL || {});
 
-  VL.TAGS = [
+  // ---------- play style: doubles (VGC) or singles (Battle Stadium) ----------
+  VL.style = function () {
+    try { const p = VL.store && VL.store.get('meta', 'profile'); return p && p.style === 'singles' ? 'singles' : 'doubles'; } catch (e) { return 'doubles'; }
+  };
+  VL.isSingles = () => VL.style() === 'singles';
+  const byStyle = (name, d, sg) => Object.defineProperty(VL, name, { configurable: true, enumerable: true, get: () => (VL.isSingles() ? sg : d) });
+
+  const TAGS_D = [
     ['preview', 'Wrong bring or lead'],
     ['speed', 'Misjudged speed, Trick Room or Tailwind turns'],
     ['calc', 'Misjudged damage'],
@@ -21,7 +28,7 @@
     ['matchup', 'Bad team matchup'],
   ];
 
-  VL.SESSION = [
+  const SESSION_D = [
     { id: 'drill', t: 'Study drill or game', m: '5 min', d: 'One round in Study or one game in Games.' },
     { id: 'warm', t: 'Warm-up: calc 3 threats', m: '10 min', d: null },
     { id: 'ladder', t: 'Ladder block with your focus', m: '6–10 games', d: 'At <span class="term" data-term="preview">team preview</span>, say your <span class="term" data-term="bring4">bring-4</span>, your <span class="term" data-term="lead">lead</span>, and your <span class="term" data-term="wincon">win condition</span> before you lock in.' },
@@ -32,7 +39,7 @@
     { id: 'weekly', t: 'Weekly review', m: 'Sunday', d: 'Copy the review prompt in the Review tab into Claude, add any new problem Pokémon to the notebook, and set next week\'s focus.' },
   ];
 
-  VL.SKILLS = [
+  const SKILLS_D = [
     { id: 'preview', name: 'Team preview and game plans', what: 'Choosing the right 4 and <span class="term" data-term="lead">lead</span> at <span class="term" data-term="preview">team preview</span>, and knowing your <span class="term" data-term="wincon">win condition</span> before turn 1.', drill: 'Before every game, say your bring-4, lead and win condition. Afterward, check whether the plan or the play lost it.', tags: ['preview', 'matchup'] },
     { id: 'speed', name: 'Speed control and turn order', what: 'Knowing who moves first under <span class="term" data-term="tailwind">Tailwind</span>, <span class="term" data-term="trickroom">Trick Room</span>, paralysis, Scarf and speed drops, and counting the turns left. Also called <span class="term" data-term="speedcontrol">speed control</span>.', drill: 'Study: Base Speed and Who moves first. Say the Tailwind or Trick Room turns left out loud each turn.', tags: ['speed'], study: ['basespeed', 'whofirst'] },
     { id: 'damage', name: 'Damage intuition', what: 'Knowing roughly what a hit does without a <span class="term" data-term="calc">damage calculator</span>: when something survives, when a <span class="term" data-term="spread">spread move</span> knocks something out, and when it comes down to the <span class="term" data-term="roll">damage roll</span>.', drill: 'Warm-up calcs on the Pokémon you lose to. Guess the % before checking.', tags: ['calc'], study: ['mechanics'] },
@@ -47,7 +54,7 @@
     { id: 'formats', name: 'Learning new formats fast', what: 'Getting strong in a new regulation or game before everyone else does.', drill: 'Run the New format playbook in the Formats tab every time the format changes.', tags: [] },
   ];
 
-  VL.MILESTONES = [
+  const MILESTONES_D = [
     ['m100', 'Log 100 games with tags'],
     ['mtypes', 'Score 95% or better on Type vs Pokémon'],
     ['mfmt3', 'Log games in 3 different formats'],
@@ -63,7 +70,7 @@
     ['mchamp', 'World Champion'],
   ];
 
-  VL.STAGES = [
+  const STAGES_D = [
     { n: 'Foundations', ms: ['m100', 'mtypes'], d: 'Knowledge becomes automatic, and logging and reviewing become habits. Type matchups, speed tiers and common items should be instant.' },
     { n: 'Ladder consistency', ms: ['mfmt3', 'mpeak', 'mtop'], d: 'Finish high on ladder in several formats, not just one. Each new format, you should get strong faster than the last.' },
     { n: 'Local results', ms: ['mcup', 'mwin'], d: 'Best-of-3 experience at League Challenges and Cups. Learn to adapt between games and play well under pressure.' },
@@ -86,7 +93,7 @@
     ['2027-08-13', 'World Championships (Singapore)', 'Aug 13–15.'],
   ];
 
-  VL.PLAYBOOK = [
+  const PLAYBOOK_D = [
     ['rules', 'Read the full rules', 'Legal Pokémon and items, banned or restricted Pokémon, the battle gimmick, level, team size and timer.'],
     ['diff', 'List what changed', 'New Pokémon, items and moves, and what left. The Study tab updates to the new format automatically.'],
     ['recaps', 'Read your old recaps', 'What did you misjudge early last time? Avoid it now.'],
@@ -96,6 +103,84 @@
     ['watch', 'Study the first big event', 'Note the top-cut teams and leads, and write notebook cards for the 5 most common threats.'],
     ['commit', 'Pick a team and log 50 games', 'Don\'t switch until you have 50 logged games with it, so the review data means something.'],
   ];
+
+  // ---------- singles versions (Battle Stadium Singles: bring 3 of 6) ----------
+  const TAGS_S = [
+    ['preview', 'Wrong bring-3 or lead'],
+    ['speed', 'Misjudged speed or priority'],
+    ['calc', 'Misjudged damage'],
+    ['switch', 'Bad switch-in or lost momentum'],
+    ['setup', 'Let them set up, or set up at the wrong time'],
+    ['hazards', 'Hazards or chip damage'],
+    ['overpredict', 'Over-predicted (switch, Protect)'],
+    ['predictable', 'Played too predictable'],
+    ['mega', 'Gimmick timing (Mega, Tera, etc.)'],
+    ['wincon', 'Traded away my win condition'],
+    ['endgame', 'Endgame miscount'],
+    ['info', 'Missed an item/ability reveal'],
+    ['knowledge', 'Didn\'t know a mechanic or interaction'],
+    ['tilt', 'Autopilot or tilt'],
+    ['luck', 'Bad luck (critical hit, miss, speed tie)'],
+    ['matchup', 'Bad team matchup'],
+  ];
+  VL.ALLTAGS = [...TAGS_D, ...TAGS_S.filter(([id]) => !TAGS_D.some(([d]) => d === id))];
+
+  const SESSION_S = [
+    SESSION_D[0], SESSION_D[1],
+    { id: 'ladder', t: 'Ladder block with your focus', m: '6–10 games', d: 'At <span class="term" data-term="preview">team preview</span>, say your <span class="term" data-term="bring3">bring-3</span>, your <span class="term" data-term="lead">lead</span>, and your <span class="term" data-term="wincon">win condition</span> before you lock in.' },
+    SESSION_D[3], SESSION_D[4],
+    { id: 'study', t: 'Study top play', m: '15 min', d: 'Watch a high-rated Battle Stadium Singles stream or replay. Pause at team preview and call both players\' bring-3 and leads before they\'re shown.' },
+    { id: 'switch', t: 'Switch-in homework', m: 'weekly', d: 'Pick 3 Pokémon you fear on ladder. For each, write which of your Pokémon takes its strongest attack and what it does on the next turn.' },
+    SESSION_D[7],
+  ];
+
+  const SKILLS_S = [
+    { id: 'preview', name: 'Team preview and your 3', what: 'Choosing the right 3 and <span class="term" data-term="lead">lead</span> at <span class="term" data-term="preview">team preview</span>, and knowing your <span class="term" data-term="wincon">win condition</span> before turn 1.', drill: 'Before every game, say your bring-3, lead and win condition. Afterward, check whether the plan or the play lost it.', tags: ['preview', 'matchup'] },
+    { id: 'speed', name: 'Speed tiers and priority', what: 'Knowing who moves first: speed tiers, Choice Scarf, paralysis, priority moves like Sucker Punch and Extreme Speed, and the occasional <span class="term" data-term="trickroom">Trick Room</span>.', drill: 'Study: Base Speed and Who moves first. Before each attack, say who moves first and why.', tags: ['speed'], study: ['basespeed', 'whofirst'] },
+    { id: 'damage', name: 'Damage intuition', what: 'Knowing roughly what a hit does without a <span class="term" data-term="calc">damage calculator</span>: what survives, what takes two hits, and when it comes down to the <span class="term" data-term="roll">damage roll</span>.', drill: 'Warm-up calcs on the Pokémon you lose to. Guess the % before checking.', tags: ['calc'], study: ['mechanics'] },
+    SKILLS_D[3],
+    { id: 'switching', name: 'Switching and momentum', what: 'Knowing which of your Pokémon can take the hit that\'s coming, when to switch instead of attack, and using <span class="term" data-term="pivot">pivot moves</span> like U-turn and Volt Switch to keep the initiative.', drill: 'In reviews, mark every turn you switched. Was the switch-in safe, and did you get a free turn after it?', tags: ['switch', 'overpredict', 'predictable'] },
+    { id: 'setup', name: 'Setting up and stopping sweepers', what: 'Spotting when a free turn lets you <span class="term" data-term="setup">set up</span> with Swords Dance, Dragon Dance or Nasty Plot, and always keeping an answer to the opponent\'s setup: priority, Haze, Roar, Encore or a faster attacker.', drill: 'At team preview, name the opponent\'s likeliest setup sweeper and the Pokémon you\'ll stop it with.', tags: ['setup', 'wincon'] },
+    { id: 'hazards', name: 'Hazards and chip damage', what: '<span class="term" data-term="hazards">Entry hazards</span> like Stealth Rock and Spikes, when they\'re worth a turn in a 3-Pokémon game, and counting chip from hazards, Life Orb, Rocky Helmet and status.', drill: 'Study: Mechanics. In reviews, add up the chip each side took and ask whether it decided the game.', tags: ['hazards', 'endgame'], study: ['mechanics'] },
+    { id: 'resources', name: 'Resources and gimmick timing', what: 'When to use the <span class="term" data-term="gimmick">battle gimmick</span> (Mega, Tera, Dynamax), and protecting the Pokémon your <span class="term" data-term="wincon">win condition</span> needs. With only 3 Pokémon, every one matters.', drill: 'Before turn 1, decide which Pokémon is your win condition and what has to happen for it to win.', tags: ['mega', 'wincon'] },
+    { id: 'endgame', name: 'Endgame counting', what: 'Counting HP, speed and damage to see a won or lost endgame early. In 3-on-3 the endgame can start on turn 2.', drill: 'In close games, write down the endgame you expected and compare it to what happened.', tags: ['endgame'] },
+    { id: 'info', name: 'Tracking information', what: 'Noticing revealed items, abilities, moves and speed (a surprise Choice Scarf, a Focus Sash) and using them.', drill: 'After every reveal, say out loud what it changes for the rest of the game.', tags: ['info'] },
+    SKILLS_D[8], SKILLS_D[9], SKILLS_D[11],
+  ];
+
+  const MILESTONES_S = [
+    ['m100', 'Log 100 games with tags'],
+    ['mtypes', 'Score 95% or better on Type vs Pokémon'],
+    ['mfmt3', 'Log games in 3 different formats'],
+    ['mpeak', 'Match your best ever ladder finish in a new game'],
+    ['mtop', 'Finish a ranked season in the top 500'],
+    ['stop100', 'Finish a ranked season in the top 100'],
+    ['sonline', 'Place well in an official online competition'],
+    ['stop10', 'Finish a ranked season in the top 10'],
+    ['srank1', 'Reach rank 1 on the ladder'],
+  ];
+
+  const STAGES_S = [
+    STAGES_D[0], STAGES_D[1],
+    { n: 'High ladder', ms: ['stop100', 'sonline'], d: 'Top 100 finishes and online competitions. Team preview reads and switching decide most games at this level.' },
+    { n: 'The very top', ms: ['stop10', 'srank1'], d: 'Top 10 and rank 1. Consistency across a whole season is what gets you there.' },
+  ];
+
+  const PLAYBOOK_S = [
+    ['rules', 'Read the full rules', 'Legal Pokémon and items, banned Pokémon, the battle gimmick, level, how many you bring (usually 3 of 6) and the timer.'],
+    PLAYBOOK_D[1], PLAYBOOK_D[2], PLAYBOOK_D[3],
+    ['arch', 'Map the archetypes', 'Which setup sweepers, Choice Scarf users, hazard setters and walls are popular, and which of them beat each other.'],
+    ['try3', 'Play three styles', 'Offense, balance and something bulkier, about 10 games each, before you commit to one.'],
+    ['watch', 'Study the top of the ladder', 'Watch high-rated players in the first week. Note the common bring-3 cores and write notebook cards for the 5 most common threats.'],
+    PLAYBOOK_D[7],
+  ];
+
+  byStyle('TAGS', TAGS_D, TAGS_S);
+  byStyle('SESSION', SESSION_D, SESSION_S);
+  byStyle('SKILLS', SKILLS_D, SKILLS_S);
+  byStyle('MILESTONES', MILESTONES_D, MILESTONES_S);
+  byStyle('STAGES', STAGES_D, STAGES_S);
+  byStyle('PLAYBOOK', PLAYBOOK_D, PLAYBOOK_S);
 
   /* Mechanics flashcards.
    * min: first generation the fact applies to. champ: 'only' = Champions only,
@@ -179,4 +264,28 @@
   // existing cards that belong in Hard and Expert tests too
   const HARD_Q = ['What does a critical hit ignore?', 'Which of these is NOT affected by Rage Powder?', 'What does Prankster do?', 'What does Psychic Terrain do?', 'How much does terrain boost', 'In doubles, how much do Reflect', 'Using Protect twice in a row', 'When does a Pokémon use its Mega Evolved Speed?', 'Which ability blocks Intimidate', 'What breaks Focus Sash?', 'When does Sucker Punch fail?', 'In Scarlet/Violet, what is the same-type attack bonus when you Terastallize', 'In Pokémon Champions, how long can sleep last?', 'In Pokémon Champions, how long can freeze last?', 'In Pokémon Champions, what\'s the chance a paralyzed Pokémon can\'t move?', 'What does Grassy Terrain do?', 'What does Misty Terrain do?'];
   VL.MECHANICS.forEach(c => { if (HARD_Q.some(h => c.q.startsWith(h))) c.hard = true; });
+  // Cards that only matter in doubles are hidden in singles formats.
+  const DBL_Q = ['A spread move hits two targets', 'What priority are Follow Me', 'Which of these is NOT affected by Rage Powder', 'In doubles, how much do Reflect', 'What do Helping Hand', 'Which of these moves also hits your ally', 'What does Wide Guard block', 'One opponent protects from your Heat Wave', 'Which of these moves can still hit a Pokémon behind Wide Guard', 'Both opponents are at full HP. Your Focus Sash'];
+  VL.MECHANICS.forEach(c => { if (DBL_Q.some(h => c.q.startsWith(h))) c.dbl = 1; });
+  // Singles cards go on the end so saved progress on existing cards keeps its place.
+  VL.MECHANICS.push(
+    { sgl: 1, q: 'How much HP does Stealth Rock take from a Pokémon that is 4× weak to Rock when it switches in?', a: 'Half (50%)', w: ['A quarter (25%)', 'An eighth (12.5%)', 'All of it'], ex: 'Stealth Rock does 1/8 of max HP times the Rock-type effectiveness: 3.125% at 0.25×, 6.25% at 0.5×, 12.5% neutral, 25% at 2× and 50% at 4×.', min: 4 },
+    { sgl: 1, q: 'How much do 3 layers of Spikes take from a grounded Pokémon switching in?', a: 'A quarter of max HP', w: ['An eighth', 'A sixth', 'A third'], ex: '1 layer takes 1/8, 2 layers 1/6, 3 layers 1/4. Flying types, Levitate and Air Balloon avoid Spikes.', min: 3 },
+    { sgl: 1, q: 'What do 2 layers of Toxic Spikes do?', a: 'Badly poison grounded Pokémon that switch in', w: ['Regular poison', 'Poison and lower Speed', 'Nothing more than 1 layer'], ex: '1 layer gives regular poison, 2 layers give bad poison. A grounded Poison type switching in clears them. Steel and Poison types can\'t be poisoned.', min: 4 },
+    { sgl: 1, hard: true, q: 'How much damage does bad poison (from Toxic) do?', a: '1/16 of max HP the first turn, then 1/16 more each turn', w: ['1/8 every turn', '1/16 every turn', '1/4 every turn'], ex: 'Turn 1 is 1/16, turn 2 is 2/16, and so on. Switching out resets the counter. Regular poison is a flat 1/8.', min: 3 },
+    { sgl: 1, q: 'What does Regenerator do?', a: 'Heals 1/3 of max HP when the Pokémon switches out', w: ['Heals 1/16 each turn', 'Heals 1/4 when it switches in', 'Heals 1/2 once it drops below half HP'], ex: 'That\'s why Regenerator Pokémon love pivoting with U-turn or switching often.', min: 5 },
+    { sgl: 1, hard: true, q: 'Knock Off hits a target holding an item it can lose. What happens?', a: '1.5× damage, and the item is removed', w: ['2× damage', 'The item is removed, no extra damage', 'It gets +1 priority'], ex: 'Since Generation 6, Knock Off does 1.5× (97.5 power) when it can remove the item. Mega Stones and a few other items can\'t be knocked off.', min: 6 },
+    { sgl: 1, hard: true, q: 'Since Generation 8, what does Rapid Spin do besides clearing hazards?', a: 'Raises the user\'s Speed by 1 stage', w: ['Heals 1/8 of max HP', 'Also removes the opponent\'s screens', 'Nothing else'], ex: 'It clears Stealth Rock, Spikes, Toxic Spikes, Sticky Web and binding moves from the user\'s side. It\'s a Normal move, so Ghost types are immune and block the spin.', min: 8 },
+    { sgl: 1, hard: true, q: 'Since Generation 6, which hazards does Defog remove?', a: 'Hazards on both sides of the field', w: ['Only yours', 'Only the opponent\'s', 'None; it only clears weather'], ex: 'Defog also removes the target side\'s screens and lowers its evasion. Since Generation 8 it clears terrain too.', min: 6 },
+    { sgl: 1, champ: 'not', q: 'What does Heavy-Duty Boots do?', a: 'The holder ignores entry hazards when it switches in', w: ['Halves hazard damage', 'Blocks Spikes only', 'Stops the holder being forced out'], ex: 'Pokémon weak to Rock, like Volcarona and Charizard, carry it so Stealth Rock doesn\'t chip them every switch. It isn\'t in Pokémon Champions.', min: 8 },
+    { sgl: 1, q: 'Why are U-turn and Volt Switch so common in singles?', a: 'They deal damage, then switch the user out', w: ['They always move first', 'They can\'t miss and ignore Protect', 'They lower the target\'s Speed'], ex: 'Pivoting gets a safe Pokémon in after you see what the opponent did. Volt Switch fails into Ground types, so there\'s no switch.', min: 5 },
+    { sgl: 1, q: 'What priority do Roar and Whirlwind have?', a: '−6, so they almost always move last', w: ['0', '+1', '−7'], ex: 'They force the target out to a random Pokémon, which removes stat boosts and makes it take hazard damage again.', min: 4 },
+    { sgl: 1, q: 'How much HP does Substitute cost?', a: 'A quarter of max HP', w: ['A third', 'Half', 'An eighth'], ex: 'The substitute takes hits for the user and blocks most status moves. Sound moves and Infiltrator go through it since Generation 6.', min: 1 },
+    { sgl: 1, q: 'How much does Leftovers heal each turn?', a: '1/16 of max HP', w: ['1/8', '1/10', '1/4'], ex: 'It heals at the end of every turn. Over a long singles game that adds up.', min: 2 },
+    { sgl: 1, q: 'What does Sticky Web do?', a: 'Lowers the Speed of grounded Pokémon switching in by 1 stage', w: ['Traps Pokémon that switch in', 'Does 1/8 damage and lowers Speed', 'Lowers Speed by 2 stages'], ex: 'Only one layer. Flying types, Levitate and Air Balloon avoid it, and Defog or Rapid Spin clears it.', min: 6 },
+    { sgl: 1, q: 'In singles, how much do Reflect and Light Screen reduce damage?', a: 'Half (0.5×)', w: ['About a third (0.67×)', 'A quarter (0.75×)', 'All of it for one turn'], ex: 'They last 5 turns, 8 with Light Clay. In doubles the cut is smaller (about 0.67×). Critical hits ignore screens.', min: 3 },
+    { sgl: 1, hard: true, q: 'What does Magic Bounce do?', a: 'Reflects status moves like Stealth Rock and Toxic back at the user', w: ['Blocks all damage from hazards', 'Bounces back half of direct damage', 'Reflects only Taunt and Encore'], ex: 'Hazards, Toxic, Will-O-Wisp, Taunt and most other non-damaging moves aimed at it get sent back.', min: 5 },
+    { sgl: 1, champ: 'not', q: 'What does Pursuit do if the target switches out?', a: 'It hits before the switch at double power', w: ['It fails', 'It hits the Pokémon coming in', 'It traps the target'], ex: 'Pursuit was removed in Generation 8, so it only matters in older singles formats.', min: 2, max: 7 },
+    { sgl: 1, hard: true, q: 'A Pokémon at +2 Attack switches out. What happens to the boost?', a: 'It\'s lost', w: ['It stays for the rest of the battle', 'It drops to +1', 'It passes to the Pokémon coming in'], ex: 'Stat changes reset on switching, except through Baton Pass. That\'s why Roar, Whirlwind and Dragon Tail are good against setup sweepers.', min: 1 },
+  );
 })();

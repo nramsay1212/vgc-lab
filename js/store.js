@@ -92,6 +92,7 @@
       return changed;
     },
     count() { let n = 0; for (const c of COLLS) n += Object.keys(state[c] || {}).length; return n; },
+    async flush() { clearTimeout(saveTimer); await saveLocal(); },
     async clearAll() { state = empty(); await saveLocal(); emit(true); },
     exportJSON() { return JSON.stringify(state, null, 1); },
     importJSON(obj) {

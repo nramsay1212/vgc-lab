@@ -20,8 +20,10 @@
       this.dex = dex;
       dex.species.forEach((s, i) => { this.byId.set(s.id, i); this.byName.set(toId(s.n), i); });
     },
-    formats() { return this.dex ? this.dex.formats : []; },
-    format(id) { const f = this.formats(); return f.find(x => x.id === id) || f.find(x => x.current && x.doubles) || f[0]; },
+    allFormats() { return this.dex ? this.dex.formats : []; },
+    // only the formats for the play style picked at the top (doubles or singles)
+    formats() { const all = this.allFormats(); const want = !(VL.isSingles && VL.isSingles()); const f = all.filter(x => !!x.doubles === want); return f.length ? f : all; },
+    format(id) { const f = this.formats(); return f.find(x => x.id === id) || f.find(x => x.current) || f[0]; },
     mon(i, fmt) {
       const s = this.dex.species[i]; if (!s) return null;
       const ov = fmt && fmt.overrides && fmt.overrides[i];
@@ -83,7 +85,8 @@
   function mechCards(fmt) {
     const champ = fmt && fmt.mod && fmt.mod.startsWith('champions');
     const gen = fmt ? fmt.gen : 9;
-    return VL.MECHANICS.map((c, i) => ({ ...c, i })).filter(c => gen >= (c.min || 1) && (!c.max || gen <= c.max) && (c.champ === 'only' ? champ : c.champ === 'not' ? !champ : true));
+    const dbl = fmt ? !!fmt.doubles : true;
+    return VL.MECHANICS.map((c, i) => ({ ...c, i })).filter(c => gen >= (c.min || 1) && (!c.max || gen <= c.max) && (c.champ === 'only' ? champ : c.champ === 'not' ? !champ : true) && (c.dbl ? dbl : c.sgl ? !dbl : true));
   }
 
   // ---------- helpers for harder questions ----------

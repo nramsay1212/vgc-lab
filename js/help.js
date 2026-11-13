@@ -8,9 +8,13 @@
 
   VL.GLOSSARY = {
     bo3: ['Best of 1 and best of 3', 'Best of 1: a single game decides it, like ranked ladder. Best of 3: first to win 2 games, used at tournaments. In a best of 3 you can change your plan between games based on what you saw.'],
-    preview: ['Team preview', 'Before the battle, both players see each other\'s 6 Pokémon. In VGC you then pick 4 of your 6 to bring, and choose which 2 lead.'],
+    preview: ['Team preview', 'Before the battle, both players see each other\'s 6 Pokémon. In doubles (VGC) you then pick 4 of your 6 and choose which 2 lead. In Battle Stadium Singles you pick 3 and choose 1 to lead.'],
     bring4: ['Bring 4', 'In VGC you register 6 Pokémon but only bring 4 into each game, chosen after seeing your opponent\'s 6 at team preview.'],
-    lead: ['Lead', 'The two Pokémon you send out at the start of the battle. The other two stay in the back to switch in later.'],
+    lead: ['Lead', 'The Pokémon you send out at the start of the battle: 2 in doubles, 1 in singles. The rest stay in the back to switch in later.'],
+    bring3: ['Bring 3', 'In Battle Stadium Singles you register 6 Pokémon but only bring 3 into each game, chosen after seeing your opponent\'s 6 at team preview.'],
+    hazards: ['Entry hazards', 'Stealth Rock, Spikes, Toxic Spikes and Sticky Web. Once set, they hurt or slow every opposing Pokémon that switches in until they\'re cleared with Rapid Spin, Defog or Mortal Spin.'],
+    pivot: ['Pivot', 'A move that attacks and then switches the user out, like U-turn, Volt Switch or Flip Turn. It lets you bring in the right Pokémon after seeing what the opponent did.'],
+    setup: ['Setting up', 'Using a turn to boost your stats with moves like Swords Dance, Dragon Dance or Nasty Plot, then sweeping. Most singles games are won or lost around setup.'],
     wincon: ['Win condition', 'The Pokémon or plan that actually wins you the game, like a strong attacker that sweeps once Trick Room is up. Protect it; don\'t trade it away early.'],
     speedcontrol: ['Speed control', 'Anything that changes who moves first: Tailwind, Trick Room, Icy Wind, Electroweb, paralysis, Choice Scarf. Most VGC games are won by whoever controls speed.'],
     tailwind: ['Tailwind', 'Doubles the Speed of your side for 4 turns, counting the turn you use it.'],
@@ -84,31 +88,51 @@
 
   // ---------- tour ----------
   const STEPS = [
-    ['Welcome to your training lab', `<p>This app turns playing into practice. Everything runs in one loop:</p>
-      <ul><li><b>Play</b> your games with one focus in mind.</li><li><b>Log</b> each game in a minute.</li><li><b>Review</b> once a week to find what's costing you.</li><li><b>Study</b> a little every day so the basics are automatic.</li><li><b>Plan</b> against the threats you keep losing to.</li></ul>`],
-    ['Log every game', `<p>Right after a game, open <b>Log a game</b>. Only Win or Loss is required, but the more you fill in, the smarter Review gets.</p>
-      <p>The most useful parts: <b>their 6</b>, the <b>tags</b> for what lost the game, and one line on what you'd do differently.</p>`],
-    ['Review once a week', `<p><b>Review</b> shows your win rate, rating, the mistakes that cost the most games, and the Pokémon you lose to.</p>
-      <p>Every Sunday, copy the review prompt into Claude for a coach's read on your logs, then set next week's focus on <b>Today</b>.</p>`],
-    ['Study a little every day', `<p><b>Study</b> has 10-question drills: type matchups, speed tiers, items, abilities, priority and mechanics. Questions you miss come back until you get them.</p>
-      <p>It works for every VGC game back to 2009, and new games, Pokémon and items appear automatically each week.</p>`],
-    ['Plan the long road', `<p><b>Notebook</b> holds your game plans against specific threats. <b>Formats</b> helps you learn each new regulation fast. <b>Roadmap</b> shows the path to Worlds and where you are on it.</p>
-      <p>Dotted words like <span class="term" data-term="wincon">win condition</span> explain themselves when you tap them. You can rerun this tour from the menu anytime.</p>`],
+    ['Welcome to your training lab', `<p>Toxicroak VGC Lab turns playing into practice. Everything runs in one loop:</p>
+      <ul><li><b>Play</b> your games with one focus in mind.</li><li><b>Log</b> each game in a minute.</li><li><b>Review</b> once a week to find what's costing you.</li><li><b>Study and play the training games</b> a little every day so the basics are automatic.</li><li><b>Plan</b> against the threats you keep losing to.</li></ul>
+      <p class="sub">This tour takes about a minute. You can rerun it from the menu anytime.</p>`],
+    ['Doubles or singles?', `<p>Pick how you play. The app changes to match: formats, drills, team checks, skills and tips. You can switch anytime with the <b>I play</b> menu at the top.</p>
+      <div class="opts" style="grid-template-columns:1fr 1fr;margin-top:6px"><button type="button" class="opt" data-tourstyle="doubles"><b>Doubles</b><br><span class="sub">VGC: bring 4, lead 2. Official tournaments and Worlds.</span></button><button type="button" class="opt" data-tourstyle="singles"><b>Singles</b><br><span class="sub">Battle Stadium: bring 3, lead 1. Ranked ladder.</span></button></div>`],
+    ['Your account', `<p>Create an account with just a <b>username and password</b> to keep your data safe and use it on both your phone and computer. No email needed.</p>
+      <p>When you sign up you get a <b>recovery code</b>. Save it: it's the only way to reset a forgotten password. Find your account under <b>Account, backup & theme</b>.</p>`],
+    ['Train: every day', `<p><b>Today</b> has your daily checklist, your focus for the week and your current format.</p>
+      <p><b>Log a game</b> right after each game (press <kbd>N</kbd> on a computer). Only Win or Loss is required; tags for what lost it make Review much smarter. Paste a Showdown replay link to fill it in automatically.</p>
+      <p><b>Battle companion</b> runs alongside a live game: turn counters for Tailwind, Trick Room, weather, terrain and screens, plus the opponent's team.</p>`],
+    ['See your progress', `<p><b>Review</b> shows your win rate, the mistakes that cost the most games, the Pokémon you lose to and which leads work.</p>
+      <p><b>Games</b> are quick training games for speed tiers, damage guesses and turn order. <b>Test</b> checks everything you've studied, on Standard, Hard or Expert. Both feed your <b>ratings</b>, and <b>Progress</b> charts them over time so you can see real improvement.</p>`],
+    ['Learn the game', `<p><b>Study</b> has short drills: type matchups, speed tiers, items, abilities, priority, mechanics and common sets. Questions you miss come back until you get them.</p>
+      <p><b>Meta</b> shows what's popular this month. The <b>Damage calculator</b> runs real calcs. <b>Prediction practice</b> trains your team preview reads on top players. <b>Skills</b> shows your strengths and weaknesses, and <b>Formats</b> helps you learn a new regulation fast.</p>`],
+    ['Plan ahead', `<p><b>Notebook</b> holds your game plans against specific threats. <b>Team checker</b> finds shared weaknesses and missing tools in a team. <b>Teams</b> stores the teams you use.</p>
+      <p><b>Tournaments</b> tracks your events and Championship Points, <b>Opponents</b> keeps notes on players you meet, and <b>Roadmap</b> shows the path to the top and where you are on it.</p>`],
+    ['Tips', `<ul><li>Dotted words like <span class="term" data-term="wincon">win condition</span> explain themselves when you tap them.</li><li>Every page has a <b>How to use this page</b> section near the top.</li><li>The app updates itself: new games, Pokémon and items appear automatically each week.</li><li>On a phone, add it to your home screen to use it like an app.</li></ul>`],
   ];
   let step = 0;
+  const TOUR_KEY = 'vgclab-toured2'; // bump when the tour changes so everyone sees the new one once
+  let styleChanged = false;
   function renderTour() {
     $('tour-dots').innerHTML = STEPS.map((_, i) => `<span class="${i <= step ? 'on' : ''}"></span>`).join('');
     $('tour-title').textContent = STEPS[step][0];
     $('tour-body').innerHTML = STEPS[step][1];
     $('tour-back').hidden = step === 0;
     $('tour-next').textContent = step === STEPS.length - 1 ? 'Start training' : 'Next';
+    const st = VL.style ? VL.style() : 'doubles';
+    $('tour-body').querySelectorAll('[data-tourstyle]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tourstyle === st)));
   }
+  $('tour-body').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-tourstyle]'); if (!b || !VL.setStyle) return;
+    if (b.dataset.tourstyle !== VL.style()) { await VL.setStyle(b.dataset.tourstyle, { noReload: true }); styleChanged = true; }
+    renderTour();
+  });
   function openTour() { step = 0; renderTour(); $('tour').hidden = false; $('tour-next').focus(); }
-  function closeTour() { if ($('tour').hidden) return; $('tour').hidden = true; try { localStorage.setItem('vgclab-toured', '1'); } catch (e) { /* ignore */ } }
+  function closeTour() {
+    if ($('tour').hidden) return; $('tour').hidden = true;
+    try { localStorage.setItem(TOUR_KEY, '1'); } catch (e) { /* ignore */ }
+    if (styleChanged) { styleChanged = false; location.reload(); }
+  }
   $('tour-next').onclick = () => { if (step < STEPS.length - 1) { step++; renderTour(); } else { closeTour(); location.hash = 'today'; } };
   $('tour-back').onclick = () => { if (step > 0) { step--; renderTour(); } };
   $('tour-skip').onclick = closeTour;
   $('tour').addEventListener('click', e => { if (e.target.id === 'tour') closeTour(); });
   document.querySelectorAll('[data-tour]').forEach(b => b.addEventListener('click', () => { VL.closeSheet && VL.closeSheet(); openTour(); }));
-  VL.maybeTour = function () { let seen = '1'; try { seen = localStorage.getItem('vgclab-toured'); } catch (e) { /* ignore */ } if (!seen) openTour(); };
+  VL.maybeTour = function () { let seen = '1'; try { seen = localStorage.getItem(TOUR_KEY); } catch (e) { /* ignore */ } if (!seen) openTour(); };
 })();

@@ -1,5 +1,5 @@
 /* Team checker: shared weaknesses, coverage, speed, a checklist of common
- * doubles tools, and the meta Pokémon most likely to beat a team. */
+ * tools (doubles or singles, by format), and the meta Pokémon most likely to beat a team. */
 (function () {
   'use strict';
   const VL = (window.VL = window.VL || {});
@@ -15,6 +15,12 @@
   const REDIRECT = ['followme', 'ragepowder', 'spotlight'];
   const SETTERS_AB = ['drought', 'drizzle', 'sandstream', 'snowwarning', 'orichalcumpulse', 'hadronengine', 'electricsurge', 'grassysurge', 'psychicsurge', 'mistysurge', 'megasol'];
   const SETTERS_MV = ['sunnyday', 'raindance', 'sandstorm', 'snowscape', 'electricterrain', 'grassyterrain', 'psychicterrain', 'mistyterrain'];
+  const HAZARDS = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge'];
+  const REMOVAL = ['rapidspin', 'defog', 'mortalspin', 'tidyup', 'courtchange'];
+  const PIVOTS = ['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception', 'batonpass'];
+  const SETUP = ['swordsdance', 'dragondance', 'nastyplot', 'calmmind', 'bulkup', 'quiverdance', 'shellsmash', 'shiftgear', 'coil', 'bellydrum', 'victorydance', 'tidyup', 'agility', 'rockpolish', 'irondefense', 'curse', 'tailglow', 'geomancy', 'filletaway', 'clangoroussoul', 'noretreat'];
+  const ANTISETUP = ['haze', 'clearsmog', 'roar', 'whirlwind', 'dragontail', 'circlethrow', 'encore', 'perishsong', 'yawn', 'spectralthief'];
+  const RECOVERY = ['recover', 'roost', 'slackoff', 'softboiled', 'synthesis', 'moonlight', 'morningsun', 'wish', 'shoreup', 'strengthsap', 'milkdrink', 'rest', 'junglehealing', 'lunarblessing', 'lifedew', 'healorder'];
   const DISRUPT = ['taunt', 'encore', 'spore', 'sleeppowder', 'willowisp', 'snarl', 'partingshot', 'yawn', 'haze', 'clearsmog', 'imprison'];
 
   function parse(text) {
@@ -110,7 +116,8 @@
     const protects = has(PROTECTS);
     const scarf = known.filter(m => toId(m.item) === 'choicescarf');
     const items = known.map(m => toId(m.item)).filter(Boolean); const dupItems = items.filter((x, i) => items.indexOf(x) !== i);
-    const checks = [
+    const dupCheck = [dupItems.length ? 'no' : 'ok', 'Item Clause', dupItems.length ? `Two Pokémon hold the same item (${[...new Set(dupItems)].map(id => (VL.D.dex.items[id] && VL.D.dex.items[id].n) || known.find(m => toId(m.item) === id).item).join(', ')}). Official formats don't allow duplicate items.` : 'No duplicate items.'];
+    const checks = !fmt.doubles ? singlesChecks() : [
       [has(SPEED_CONTROL).length ? 'ok' : scarf.length ? 'meh' : 'no', 'Speed control', has(SPEED_CONTROL).length ? `${names(has(SPEED_CONTROL))}.` : scarf.length ? `Only Choice Scarf (${names(scarf)}).` : 'None. Most strong teams can change who moves first with Tailwind, Trick Room, Icy Wind, Electroweb or Thunder Wave.'],
       [has(['fakeout']).length ? 'ok' : 'meh', 'Fake Out', has(['fakeout']).length ? `${names(has(['fakeout']))}.` : 'None. Fake Out buys a free turn for setting up or attacking safely. Not required, but common.'],
       [hasAb(['intimidate']).length ? 'ok' : 'meh', 'Intimidate', hasAb(['intimidate']).length ? `${names(hasAb(['intimidate']))}.` : 'None. Intimidate softens physical attackers every time it switches in.'],
@@ -121,9 +128,26 @@
       [has(['wideguard', 'quickguard']).length ? 'ok' : 'meh', 'Wide Guard or Quick Guard', has(['wideguard', 'quickguard']).length ? `${names(has(['wideguard', 'quickguard']))}.` : 'None. Only matters if you struggle with spread moves or priority.'],
       [(hasAb(SETTERS_AB).length || has(SETTERS_MV).length) ? 'ok' : 'meh', 'Weather or terrain', (hasAb(SETTERS_AB).length || has(SETTERS_MV).length) ? `${names([...new Set([...hasAb(SETTERS_AB), ...has(SETTERS_MV)])])}.` : 'None set by your team. That\'s fine unless your plan depends on it.'],
       [has(DISRUPT).length ? 'ok' : 'meh', 'Disruption', has(DISRUPT).length ? `${names(has(DISRUPT))}.` : 'Nothing like Taunt, Encore, Will-O-Wisp, Snarl or Spore to slow down your opponent.'],
-      [dupItems.length ? 'no' : 'ok', 'Item Clause', dupItems.length ? `Two Pokémon hold the same item (${[...new Set(dupItems)].map(id => (VL.D.dex.items[id] && VL.D.dex.items[id].n) || known.find(m => toId(m.item) === id).item).join(', ')}). VGC doesn't allow duplicate items.` : 'No duplicate items.'],
+      dupCheck,
     ];
-    html += `<div class="card"><div class="card-head"><h3>Checklist</h3><span class="sub">Common tools in doubles. Missing one isn't automatically bad.</span></div>${checks.map(([s, t, d]) => `<div class="check"><span class="mark ${s}">${s === 'ok' ? '✓' : s === 'no' ? '!' : '–'}</span><div><b>${t}</b><div class="sub">${esc(d)}</div></div></div>`).join('')}</div>`;
+    function singlesChecks() {
+      const hz = has(HAZARDS), rm = has(REMOVAL), pv = has(PIVOTS), su = has(SETUP), rc = has(RECOVERY);
+      const anti = [...new Set([...has(ANTISETUP), ...hasAb(['unaware'])])];
+      const fast = known.filter(m => m.p && m.p.s && m.p.s[5] >= 100);
+      return [
+        [su.length ? 'ok' : 'meh', 'Setup sweeper', su.length ? `${names(su)}.` : 'Nothing with Swords Dance, Dragon Dance, Nasty Plot or similar. Fine for a pure attacking team, but setup is the most common way to win 3-on-3.'],
+        [anti.length ? 'ok' : 'no', 'Answer to setup', anti.length ? `${names(anti)}.` : 'Nothing like Haze, Roar, Encore, Dragon Tail or Unaware. If the opponent sets up, you\'re relying on outspeeding or priority.'],
+        [prio.length ? 'ok' : 'meh', 'Priority attacks', prio.length ? `${names(prio)}.` : 'None. Priority picks off weakened Pokémon and boosted sweepers.'],
+        [(fast.length || scarf.length) ? 'ok' : 'meh', 'Speed', `${fast.length ? `Base 100 Speed or faster: ${names(fast)}.` : 'Nothing with base 100 Speed or more.'}${scarf.length ? ` Choice Scarf: ${names(scarf)}.` : ''}${has(SPEED_CONTROL).length ? ` Speed control: ${names(has(SPEED_CONTROL))}.` : ''}`],
+        [pv.length ? 'ok' : 'meh', 'Pivoting', pv.length ? `${names(pv)}.` : 'No U-turn, Volt Switch, Flip Turn or Parting Shot. Pivots let you switch safely after seeing the opponent\'s move.'],
+        [hz.length ? 'ok' : 'meh', 'Entry hazards', hz.length ? `${names(hz)}.` : 'No Stealth Rock or Spikes. Less important when each side only brings 3, but chip adds up.'],
+        [rm.length ? 'ok' : 'meh', 'Hazard removal', rm.length ? `${names(rm)}.` : 'No Rapid Spin, Defog or Mortal Spin. Only matters if hazards hurt your team a lot.'],
+        [rc.length ? 'ok' : 'meh', 'Recovery', rc.length ? `${names(rc)}.` : 'No healing moves. Fine for offense; bulkier teams usually want some.'],
+        [has(DISRUPT).length ? 'ok' : 'meh', 'Disruption', has(DISRUPT).length ? `${names(has(DISRUPT))}.` : 'Nothing like Taunt, Encore, Will-O-Wisp or Spore to slow down your opponent.'],
+        dupCheck,
+      ];
+    }
+    html += `<div class="card"><div class="card-head"><h3>Checklist</h3><span class="sub">Common tools in ${fmt.doubles ? 'doubles' : 'singles'}. Missing one isn't automatically bad.</span></div>${checks.map(([s, t, d]) => `<div class="check"><span class="mark ${s}">${s === 'ok' ? '✓' : s === 'no' ? '!' : '–'}</span><div><b>${t}</b><div class="sub">${esc(d)}</div></div></div>`).join('')}</div>`;
 
     // threats
     if (metaE) {

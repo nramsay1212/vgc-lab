@@ -123,15 +123,16 @@
   $('pr-form').addEventListener('submit', e => {
     e.preventDefault();
     const a = splitNames($('pr-a').value).map(canon), b = splitNames($('pr-b').value).map(canon);
-    if (a.length < 4 || b.length < 4) { VL.toast('Enter at least 4 Pokémon for each player'); return; }
-    P = { id: null, stage: 'predict', src: $('pr-src').value.trim() || 'Untitled match', a, b, sa: a.map(() => 0), sb: b.map(() => 0) };
+    const nb = VL.isSingles() ? 3 : 4, nl = VL.isSingles() ? 1 : 2;
+    if (a.length < nb || b.length < nb) { VL.toast(`Enter at least ${nb} Pokémon for each player`); return; }
+    P = { id: null, stage: 'predict', src: $('pr-src').value.trim() || 'Untitled match', a, b, sa: a.map(() => 0), sb: b.map(() => 0), nb, nl };
     $('pr-a').value = ''; $('pr-b').value = ''; $('pr-src').value = '';
     renderPredict(); $('pr-live').scrollIntoView({ behavior: 'smooth' });
   });
-  function stateOk(st) { return st.filter(x => x > 0).length === 4 && st.filter(x => x === 2).length === 2; }
+  function stateOk(st) { return st.filter(x => x > 0).length === P.nb && st.filter(x => x === 2).length === P.nl; }
   function picker(label, names, st, key) {
     const brought = st.filter(x => x > 0).length, leads = st.filter(x => x === 2).length;
-    return `<div><div class="section-label">${esc(label)} · ${brought}/4 brought · ${leads}/2 leading</div><div class="chips">${names.map((n, i) => `<button type="button" class="chip" data-pk="${key}" data-i="${i}" aria-pressed="${st[i] > 0}" style="${st[i] === 2 ? 'border-color:var(--hot);background:var(--hot-soft)' : ''}">${esc(n)}${st[i] === 2 ? ' · lead' : st[i] === 1 ? ' · back' : ''}</button>`).join('')}</div></div>`;
+    return `<div><div class="section-label">${esc(label)} · ${brought}/${P.nb} brought · ${leads}/${P.nl} leading</div><div class="chips">${names.map((n, i) => `<button type="button" class="chip" data-pk="${key}" data-i="${i}" aria-pressed="${st[i] > 0}" style="${st[i] === 2 ? 'border-color:var(--hot);background:var(--hot-soft)' : ''}">${esc(n)}${st[i] === 2 ? ' · lead' : st[i] === 1 ? ' · back' : ''}</button>`).join('')}</div></div>`;
   }
   function renderPredict() {
     const el = $('pr-live');
@@ -139,7 +140,7 @@
     el.hidden = false;
     const ok = stateOk(P.sa) && stateOk(P.sb);
     el.innerHTML = `<div class="card-head"><h3>${P.stage === 'predict' ? 'Your prediction' : 'What actually happened'}: ${esc(P.src)}</h3><button class="linkbtn" id="pr-close">Close</button></div>
-      <p class="sub">Tap a Pokémon once to bring it, again to make it a lead, and a third time to leave it out. Each player brings 4 and leads with 2.</p>
+      <p class="sub">Tap a Pokémon once to bring it, again to make it a lead, and a third time to leave it out. Each player brings ${P.nb} and leads with ${P.nl}.</p>
       ${picker('Player 1', P.a, P.sa, 'a')}${picker('Player 2', P.b, P.sb, 'b')}
       <div class="row" style="justify-content:flex-end"><button class="btn" id="pr-save" ${ok ? '' : 'disabled'}>${P.stage === 'predict' ? 'Lock in prediction' : 'Score it'}</button></div>`;
     $('pr-close').onclick = () => { P = null; renderPredict(); };
@@ -149,14 +150,14 @@
     const b = e.target.closest('[data-pk]'); if (!b || !P) return;
     const st = b.dataset.pk === 'a' ? P.sa : P.sb; const i = +b.dataset.i;
     st[i] = (st[i] + 1) % 3;
-    if (st[i] === 2 && st.filter(x => x === 2).length > 2) st[i] = 0;
-    if (st[i] === 1 && st.filter(x => x > 0).length > 4) st[i] = 0;
+    if (st[i] === 2 && st.filter(x => x === 2).length > P.nl) st[i] = 0;
+    if (st[i] === 1 && st.filter(x => x > 0).length > P.nb) st[i] = 0;
     renderPredict();
   });
   const pick = (names, st, v) => names.filter((n, i) => v === 2 ? st[i] === 2 : st[i] > 0);
   function savePredict() {
     if (P.stage === 'predict') {
-      store.put('predictions', VL.newId('p'), { ts: Date.now(), src: P.src, a: P.a, b: P.b, pa4: pick(P.a, P.sa, 1), pal: pick(P.a, P.sa, 2), pb4: pick(P.b, P.sb, 1), pbl: pick(P.b, P.sb, 2), done: false });
+      store.put('predictions', VL.newId('p'), { ts: Date.now(), src: P.src, a: P.a, b: P.b, pa4: pick(P.a, P.sa, 1), pal: pick(P.a, P.sa, 2), pb4: pick(P.b, P.sb, 1), pbl: pick(P.b, P.sb, 2), nb: P.nb, nl: P.nl, done: false });
       VL.toast('Locked in. Enter what happened after you watch.');
     } else {
       const r = store.get('predictions', P.id);
@@ -166,32 +167,35 @@
     P = null; renderPredict();
   }
   const overlap = (x, y) => (x || []).filter(n => (y || []).includes(n)).length;
-  function score(r) { return { bring: overlap(r.pa4, r.aa4) + overlap(r.pb4, r.ab4), lead: overlap(r.pal, r.aal) + overlap(r.pbl, r.abl) }; }
+  function score(r) {
+    const nb = r.nb || 4, nl = r.nl || 2, bring = overlap(r.pa4, r.aa4) + overlap(r.pb4, r.ab4), lead = overlap(r.pal, r.aal) + overlap(r.pbl, r.abl);
+    return { bring, lead, nb, nl, bp: bring / (2 * nb), lp: lead / (2 * nl) };
+  }
   function renderPredictions() {
     const all = store.list('predictions').sort((a, b) => (b.ts || 0) - (a.ts || 0));
     const done = all.filter(r => r.done);
     const sc = done.map(score);
-    const avgB = sc.length ? sc.reduce((a, s) => a + s.bring, 0) / sc.length / 2 : null;
-    const leadPct = sc.length ? Math.round(100 * sc.reduce((a, s) => a + s.lead, 0) / (sc.length * 4)) : null;
+    const avg = (arr, k) => arr.length ? arr.reduce((a, s) => a + s[k], 0) / arr.length : null;
+    const pct = (x) => x === null ? '–' : `${Math.round(100 * x)}%`;
     const last10 = sc.slice(0, 10); const prev10 = sc.slice(10, 20);
-    const avg = (arr) => arr.length ? arr.reduce((a, s) => a + s.bring, 0) / arr.length / 2 : null;
+    const diff = avg(last10, 'bp') !== null && avg(prev10, 'bp') !== null ? Math.round(100 * (avg(last10, 'bp') - avg(prev10, 'bp'))) : null;
     $('pr-stats').innerHTML = [
       ['Matches scored', done.length],
-      ['Average bring-4 correct', avgB === null ? '–' : `${avgB.toFixed(1)} of 4`],
-      ['Leads called correctly', leadPct === null ? '–' : `${leadPct}%`],
-      ['Last 10 vs the 10 before', avg(last10) !== null && avg(prev10) !== null ? `${(avg(last10) - avg(prev10) >= 0 ? '+' : '')}${(avg(last10) - avg(prev10)).toFixed(1)}` : '–'],
+      ['Brought Pokémon called correctly', pct(avg(sc, 'bp'))],
+      ['Leads called correctly', pct(avg(sc, 'lp'))],
+      ['Last 10 vs the 10 before', diff === null ? '–' : `${diff >= 0 ? '+' : ''}${diff} points`],
     ].map(([k, v]) => `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
     $('pr-list').innerHTML = all.length ? all.map(r => {
       const s = r.done ? score(r) : null;
       return `<div class="threat"><div class="h"><div><b>${esc(r.src)}</b> <span class="mini">${new Date(r.ts).toLocaleDateString()}</span></div>
-        <div class="kv">${s ? `<span class="pill ${s.bring >= 6 ? 'w' : 'l'}">${s.bring}/8 brought</span><span class="pill ${s.lead >= 2 ? 'w' : 'l'}">${s.lead}/4 leads</span>` : `<button class="btn small" data-pract="${esc(r.id)}">Enter what happened</button>`}<button class="linkbtn" data-prdel="${esc(r.id)}">Delete</button></div></div>
+        <div class="kv">${s ? `<span class="pill ${s.bp >= 0.75 ? 'w' : 'l'}">${s.bring}/${2 * s.nb} brought</span><span class="pill ${s.lp >= 0.5 ? 'w' : 'l'}">${s.lead}/${2 * s.nl} leads</span>` : `<button class="btn small" data-pract="${esc(r.id)}">Enter what happened</button>`}<button class="linkbtn" data-prdel="${esc(r.id)}">Delete</button></div></div>
         <ul><li>Player 1 · you called ${esc((r.pa4 || []).join(', '))} (lead ${esc((r.pal || []).join(' + '))})${r.done ? ` · actual ${esc((r.aa4 || []).join(', '))} (lead ${esc((r.aal || []).join(' + '))})` : ''}</li>
         <li>Player 2 · you called ${esc((r.pb4 || []).join(', '))} (lead ${esc((r.pbl || []).join(' + '))})${r.done ? ` · actual ${esc((r.ab4 || []).join(', '))} (lead ${esc((r.abl || []).join(' + '))})` : ''}</li></ul></div>`;
     }).join('') : '<div class="empty">No predictions yet. Next time you watch a top match, pause at team preview and start one above.</div>';
   }
   $('pr-list').addEventListener('click', e => {
     const a = e.target.dataset.pract, d = e.target.dataset.prdel;
-    if (a) { const r = store.get('predictions', a); if (!r) return; P = { id: a, stage: 'actual', src: r.src, a: r.a, b: r.b, sa: r.a.map(() => 0), sb: r.b.map(() => 0) }; renderPredict(); $('pr-live').scrollIntoView({ behavior: 'smooth' }); }
+    if (a) { const r = store.get('predictions', a); if (!r) return; P = { id: a, stage: 'actual', src: r.src, a: r.a, b: r.b, sa: r.a.map(() => 0), sb: r.b.map(() => 0), nb: r.nb || 4, nl: r.nl || 2 }; renderPredict(); $('pr-live').scrollIntoView({ behavior: 'smooth' }); }
     if (d) VL.armDelete(e.target, () => store.del('predictions', d));
   });
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Toxicroak VGC Lab</title>
 <meta name="theme-color" content="#08090A">
-<meta name="description" content="Training log, drills and knowledge base for competitive Pokémon doubles.">
+<meta name="description" content="Training log, drills and knowledge base for competitive Pokémon, doubles and singles.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -15,12 +15,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=8">
-<script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
 <div class="app">
 <aside class="side" aria-label="Main">
   <a class="brand" href="#today"><img src="icons/icon-192.png" alt="" width="24" height="24"><span>Toxicroak VGC Lab</span></a>
+  <label class="stylepick" for="style-side"><span>I play</span><select id="style-side" data-stylepick><option value="doubles">Doubles (VGC)</option><option value="singles">Singles (Battle Stadium)</option></select></label>
   <nav class="nav" aria-label="Sections">
     <div class="navgroup">Train</div>
     <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
@@ -53,6 +54,7 @@
   </div>
 </aside>
 <main class="main" id="main">
+<div class="mtop"><a class="brand" href="#today"><img src="icons/icon-192.png" alt="" width="22" height="22"><span>Toxicroak VGC Lab</span></a><select id="style-top" data-stylepick aria-label="I play"><option value="doubles">Doubles (VGC)</option><option value="singles">Singles (Battle Stadium)</option></select></div>
 <div class="wrap">
   <div class="banner" id="banner" hidden></div>
 
@@ -76,7 +78,7 @@
         <p id="focus-text" style="margin:0;font-size:17px;font-weight:500"></p>
         <div id="focus-form" hidden class="row">
           <label for="focus-input" style="flex:1 1 100%">One habit to practice in every game this week
-            <input type="text" id="focus-input" placeholder="For example: Say my bring-4 and win condition out loud before turn 1">
+            <input type="text" id="focus-input" placeholder="For example: Say my team preview plan and win condition out loud before turn 1">
           </label>
           <button class="btn small" id="focus-save">Save focus</button>
         </div>
@@ -108,9 +110,9 @@
         <li><p><b>Ladder volume on its own plateaus.</b> At a high level you already know the game. What's left to gain is in the few turns per game you get wrong, and you only find those by logging them and looking at them later.</p></li>
         <li><p><b>Daily drills build automatic knowledge.</b> Type matchups, speed tiers, items and mechanics should be instant, so your thinking time goes to reads and planning. Five minutes a day of drills keeps it sharp, and missed questions come back more often.</p></li>
         <li><p><b>One focus per week.</b> When you try to fix everything at once, nothing changes. Pick one habit and run it every game until it's automatic. The weekly review shows you which one to pick next.</p></li>
-        <li><p><b>Plan before turn 1.</b> Most best-of-1 losses are decided at team preview. Saying your bring-4, lead and win condition out loud makes the decision deliberate, and your log shows whether the plan was the problem.</p></li>
+        <li><p><b>Plan before turn 1.</b> Most best-of-1 losses are decided at team preview. Saying your <span data-dbl>bring-4</span><span data-sgl>bring-3</span>, lead and win condition out loud makes the decision deliberate, and your log shows whether the plan was the problem.</p></li>
         <li><p><b>Review a loss turn by turn.</b> You remember the critical hit, not the turn 2 Protect that set it up. Rewatching finds the turn the game actually turned.</p></li>
-        <li><p><b>Predict top players.</b> Calling a top player's bring-4 and leads before they're revealed trains the read you need at preview.</p></li>
+        <li><p><b>Predict top players.</b> Calling a top player's <span data-dbl>bring-4</span><span data-sgl>bring-3</span> and leads before they're revealed trains the read you need at preview.</p></li>
         <li><p><b>Best of 3 every week.</b> Ladder is best of 1, but big events are best of 3. Games 2 and 3 are about adapting to what you saw, and you can't practice that on ladder.</p></li>
       </ol>
     </details>
@@ -411,8 +413,8 @@
   <section class="panel" id="p-predict">
     <header class="page-head">
       <h1>Prediction practice</h1>
-      <p class="lede">Train your team preview reads on top players. While you watch a tournament match, call each player&#39;s 4 and leads before they&#39;re revealed, then check yourself.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pause the video at team preview. Enter both teams and the match name.</li><li>Pick the 4 and the 2 leads you expect from each player, then <b>Lock in prediction</b>.</li><li>Unpause, watch, and enter what they actually brought and led.</li><li>Your accuracy is tracked over time. Read the reasoning behind any miss: why did they bring that?</li></ol></details>
+      <p class="lede">Train your team preview reads on top players. While you watch a tournament match, call each player&#39;s <span data-dbl>4</span><span data-sgl>3</span> and leads before they&#39;re revealed, then check yourself.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pause the video at team preview. Enter both teams and the match name.</li><li>Pick the <span data-dbl>4 and the 2 leads</span><span data-sgl>3 and the lead</span> you expect from each player, then <b>Lock in prediction</b>.</li><li>Unpause, watch, and enter what they actually brought and led.</li><li>Your accuracy is tracked over time. Read the reasoning behind any miss: why did they bring that?</li></ol></details>
     </header>
     <form class="card" id="pr-form" autocomplete="off">
       <div class="card-head"><h3>New prediction</h3></div>
@@ -548,7 +550,7 @@
       <label for="nb-plan">Game plan<textarea id="nb-plan" placeholder="How I win this: what I target first, what I must keep healthy."></textarea></label>
       <div class="row">
         <label for="nb-lead">Lead<input type="text" id="nb-lead"></label>
-        <label for="nb-bring">Bring 4<input type="text" id="nb-bring"></label>
+        <label for="nb-bring"><span data-dbl>Bring 4</span><span data-sgl>Bring 3</span><input type="text" id="nb-bring"></label>
       </div>
       <label for="nb-calcs">Key calcs and speed checks<textarea id="nb-calcs"></textarea></label>
       <div class="row" style="justify-content:flex-end;gap:8px">

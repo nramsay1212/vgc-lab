@@ -12,7 +12,7 @@
   const cap = (s) => s.trim().replace(/\s+/g, ' ').split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
   const splitMons = (s) => String(s || '').split(/[,/\n]+/).map(x => cap(x)).filter(Boolean);
   const pct = (w, n) => n ? Math.round(100 * w / n) : 0;
-  const TAGMAP = Object.fromEntries(VL.TAGS);
+  const TAGMAP = Object.fromEntries(VL.ALLTAGS);
 
   VL.toast = function (msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(VL.toast._t); VL.toast._t = setTimeout(() => t.classList.remove('on'), 1800); };
   function banner(msg) { const b = $('banner'); if (msg) { b.textContent = msg; b.hidden = false; } else b.hidden = true; }
@@ -33,6 +33,34 @@
   }
   VL.curFormatId = curFormatId;
   VL.fmtName = fmtName;
+
+  // ---------- play style (doubles or singles) ----------
+  // Each style remembers its own format, so switching back and forth keeps your choice.
+  function showStyle() {
+    const st = VL.style();
+    document.documentElement.dataset.style = st;
+    try { localStorage.setItem('vgclab-style', st); } catch (e) { /* ignore */ }
+    document.querySelectorAll('[data-stylepick]').forEach(sel => { if (sel.value !== st) sel.value = st; });
+  }
+  VL.setStyle = async function (st, opts = {}) {
+    if (st === VL.style()) return;
+    const p = profile(); const was = VL.style();
+    const remembered = st === 'singles' ? p.fmtSingles : p.fmtDoubles;
+    const all = D.dex ? D.dex.formats : [];
+    const fresh = all.find(f => f.current && !!f.doubles === (st === 'doubles')) || all.find(f => !!f.doubles === (st === 'doubles'));
+    putProfile({ style: st, format: remembered || (fresh ? fresh.id : p.format), [was === 'singles' ? 'fmtSingles' : 'fmtDoubles']: p.format });
+    await store.flush();
+    if (opts.noReload) { showStyle(); return; }
+    try { sessionStorage.setItem('vgclab-stylemsg', st); } catch (e) { /* ignore */ }
+    location.reload();
+  };
+  document.querySelectorAll('[data-stylepick]').forEach(sel => sel.addEventListener('change', () => VL.setStyle(sel.value)));
+  store.ready.then(() => {
+    showStyle();
+    let msg = null; try { msg = sessionStorage.getItem('vgclab-stylemsg'); sessionStorage.removeItem('vgclab-stylemsg'); } catch (e) { /* ignore */ }
+    if (msg) setTimeout(() => VL.toast(msg === 'singles' ? 'Switched to singles' : 'Switched to doubles'), 300);
+  });
+  store.onChange(showStyle);
   function fmtGame(id) { const f = D.dex && D.dex.formats.find(x => x.id === id); return f ? f.game : ''; }
   const games = () => store.list('games').sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const teams = () => store.list('teams').sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -352,7 +380,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const extra = { m100: ` <span class="meta">${Math.min(total, 100)}/100</span>`, mfmt3: ` <span class="meta">${Math.min(fmts, 3)}/3</span>`, mtypes: typeAcc !== null ? ` <span class="meta">${typeAcc}%</span>` : '' };
     $('milestones').innerHTML = VL.MILESTONES.map(([id, label]) => `<li class="${isDone(id) ? 'done' : ''}"><input type="checkbox" id="ms-${id}" data-ms="${id}" ${isDone(id) ? 'checked' : ''} ${auto[id] ? 'disabled' : ''}><label for="ms-${id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(label)}${extra[id] || ''}</span></label></li>`).join('');
     const today = dayKey(); let nextShown = false;
-    $('timeline').innerHTML = VL.EVENTS.map(([d, name, note]) => {
+    $('timeline').innerHTML = (VL.isSingles() ? '<p class="sub" style="margin:0 0 8px">Official Play! Pokémon events, including the World Championships, are played in doubles. Singles is played on the ranked ladder and in online competitions. Switch to Doubles at the top if you want to aim for these.</p>' : '') + VL.EVENTS.map(([d, name, note]) => {
       const past = d < today; let chip = '';
       if (!past && !nextShown) { chip = '<span class="pill n">next</span>'; nextShown = true; } else if (past) chip = '<span class="pill m">done</span>';
       const dt = new Date(d + 'T12:00:00'); const days = Math.round((dt - new Date()) / 864e5);
@@ -509,7 +537,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   let lfResult = null;
   function setResult(r) { lfResult = r; $('lf-w').setAttribute('aria-pressed', r === 'W'); $('lf-l').setAttribute('aria-pressed', r === 'L'); }
   $('lf-w').onclick = () => setResult('W'); $('lf-l').onclick = () => setResult('L');
-  $('lf-tags').innerHTML = VL.TAGS.map(([id, l]) => `<button type="button" class="chip" data-tag="${id}" aria-pressed="false">${esc(l)}</button>`).join('');
+  const tagChips = () => { $('lf-tags').innerHTML = VL.TAGS.map(([id, l]) => `<button type="button" class="chip" data-tag="${id}" aria-pressed="false">${esc(l)}</button>`).join(''); };
+  tagChips(); store.ready.then(tagChips);
   $('lf-tags').addEventListener('click', e => { const b = e.target.closest('[data-tag]'); if (b) b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); });
   $('log-form').addEventListener('submit', e => {
     e.preventDefault();
