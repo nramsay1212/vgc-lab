@@ -57,13 +57,20 @@
   const fmtMult = (m) => m === 0 ? '0' : m === 0.25 ? '¼' : m === 0.5 ? '½' : String(m);
 
   function run() {
-    const out = $('tc-out'); const D = VL.D;
-    if (!D.dex) { out.innerHTML = ''; return; }
-    const fmt = D.format($('tc-format').value);
+    const out = $('tc-out');
+    if (!VL.D.dex) { out.innerHTML = ''; return; }
+    const sec = analyze($('tc-paste').value, $('tc-format').value);
+    out.innerHTML = sec ? Object.values(sec).join('') : '<div class="empty">Pick a saved team or paste one above, then press Check team.</div>';
+  }
+  // Returns the analysis as named HTML sections, so the team builder can show them in tabs.
+  function analyze(text, fmtId) {
+    const D = VL.D; if (!D.dex) return null;
+    const fmt = D.format(fmtId);
     const chart = D.chart(fmt);
     const metaE = VL.meta.forFormat(fmt.id);
-    const raw = parse($('tc-paste').value);
-    if (!raw.length) { out.innerHTML = '<div class="empty">Pick a saved team or paste one above, then press Check team.</div>'; return; }
+    const raw = parse(text);
+    if (!raw.length) return null;
+    const sec = {};
     const filled = [];
     const team = raw.map(r => {
       const i = D.find(r.name); const p = i >= 0 ? D.mon(i, fmt) : null;
@@ -85,9 +92,11 @@
     if (unknown.length) html += `<div class="banner">Couldn't find ${esc(unknown.join(', '))} in this game's data. Check the spelling.</div>`;
     if (filled.length) html += `<div class="banner" style="background:var(--accent-soft)">No moves were listed for ${esc(filled.join(', '))}, so the checker used ${filled.length === 1 ? 'its' : 'their'} most common set from the Meta page.</div>`;
 
+    sec.notes = html; html = '';
     // overview
     html += `<div class="card"><div class="card-head"><h3>Your team</h3><span class="sub">${esc(fmt.name)} · Level 50</span></div><div class="scroll"><table class="list"><thead><tr><th>Pokémon</th><th>Types</th><th>Item</th><th>Ability</th><th>Speed</th><th>Moves</th></tr></thead><tbody>${known.map(m => `<tr><td><b>${esc(m.name)}</b>${m.guessed ? ' <span class="pill m">common set</span>' : ''}</td><td>${m.p.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ')}</td><td>${esc(m.item || '–')}</td><td>${esc(m.ability || '–')}</td><td class="num">${m.speed}${m.evs ? '' : ' <span class="mini">(no spread given)</span>'}</td><td class="sub">${esc(m.moves.join(', ') || '–')}</td></tr>`).join('')}</tbody></table></div></div>`;
 
+    sec.overview = html; html = '';
     // defensive matrix
     const rows = chart.types.map(t => {
       const ms = known.map(m => defMult(chart, t, m.p.t, m.ability, m.item));
@@ -100,6 +109,7 @@
       <div class="scroll"><table class="matrix"><thead><tr><th></th>${known.map(m => `<th>${esc(m.name)}</th>`).join('')}<th>Weak</th><th>Resist</th></tr></thead><tbody>${rows.map(r => `<tr class="${r.flag ? 'flag' : ''}"><th style="text-align:left"><span class="ty ${esc(r.t)}">${esc(r.t)}</span></th>${r.ms.map(x => `<td class="${x >= 4 ? 'x4' : x >= 2 ? 'x2' : x === 0 ? 'x0' : x <= 0.25 ? 'x025' : x < 1 ? 'x05' : ''}">${x === 1 ? '' : fmtMult(x)}</td>`).join('')}<td>${r.weak || ''}</td><td>${r.resist || ''}</td></tr>`).join('')}</tbody></table></div>
       <p class="sub">Accounts for abilities like Levitate and Flash Fire and for Air Balloon.</p></div>`;
 
+    sec.weak = html; html = '';
     // coverage
     const atkTypes = new Set(); for (const m of known) for (const mv of m.moveRecs) if (mv.c !== 'S' && mv.bp > 0) atkTypes.add(mv.t);
     if (!atkTypes.size) for (const m of known) m.p.t.forEach(t => atkTypes.add(t));
@@ -107,6 +117,7 @@
     html += `<div class="card"><div class="card-head"><h3>Coverage</h3><span class="sub">Attacking types on your team: ${[...atkTypes].map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ')}</span></div>
       ${noSE.length ? `<p>Nothing on your team hits these types super effectively: ${noSE.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ')}</p><p class="sub">That's fine if you have strong neutral damage into them, but check how you beat the popular Pokémon of these types.</p>` : '<p class="sub">Your attacks hit every type super effectively at least once.</p>'}</div>`;
 
+    sec.coverage = html; html = '';
     // checklist
     const has = (ids) => known.filter(m => m.moveRecs.some(mv => ids.includes(toId(mv.n))));
     const hasAb = (ids) => known.filter(m => ids.includes(toId(m.ability)));
@@ -149,6 +160,7 @@
     }
     html += `<div class="card"><div class="card-head"><h3>Checklist</h3><span class="sub">Common tools in ${fmt.doubles ? 'doubles' : 'singles'}. Missing one isn't automatically bad.</span></div>${checks.map(([s, t, d]) => `<div class="check"><span class="mark ${s}">${s === 'ok' ? '✓' : s === 'no' ? '!' : '–'}</span><div><b>${t}</b><div class="sub">${esc(d)}</div></div></div>`).join('')}</div>`;
 
+    sec.checklist = html; html = '';
     // threats
     if (metaE) {
       const mine = new Set(known.map(m => m.name));
@@ -168,13 +180,15 @@
         <li>Usually ${t.spe} Speed, faster than ${t.faster.length} of your ${known.length}${t.faster.length ? ` (${esc(t.faster.map(m => m.name).join(', '))})` : ''}.</li>
         <li>${t.answers.length ? `Hit super effectively by ${esc(t.answers.map(m => m.name).join(', '))}.` : 'Nothing on your team hits it super effectively.'}</li></ul></div>`).join('')}</div>`;
 
+      sec.threats = html; html = '';
       // speed tiers
       const tiers = known.map(m => ({ n: m.name, s: m.speed, mine: true })).concat(metaE.mons.slice(0, 25).filter(x => !mine.has(x.n)).map(x => { const i = D.find(x.n); if (i < 0) return null; const p = D.mon(i, fmt); const sp = x.spreads[0] ? x.spreads[0][0].split(':') : null; return { n: x.n, s: speedOf(p.s[5], sp && sp[1] ? sp[1].split('/').map(Number) : null, sp ? sp[0] : '', fmt) }; }).filter(Boolean)).sort((a, b) => b.s - a.s);
       html += `<div class="card"><div class="card-head"><h3>Speed tiers</h3><span class="sub">Your team against the 25 most-used Pokémon, each with its most common spread</span></div><div class="speedline">${tiers.map(t => `<div class="s ${t.mine ? 'mine' : ''}"><span class="num">${t.s}</span><span>${esc(t.n)}</span><span class="mini">${t.mine ? 'yours' : ''}</span></div>`).join('')}</div><p class="sub">Under Trick Room the order flips. Under Tailwind your side's numbers double.</p></div>`;
     } else {
       html += `<div class="card"><p class="sub">Threats and meta speed tiers appear once usage stats are available for ${esc(fmt.name)} on the Meta page.</p></div>`;
     }
-    out.innerHTML = html;
+    sec.speed = html;
+    return sec;
   }
 
   function render() {
@@ -189,5 +203,5 @@
   $('tc-team').addEventListener('change', () => { const t = VL.store.get('teams', $('tc-team').value); if (t) { $('tc-paste').value = t.paste || ''; if (t.fmt && VL.D.dex && VL.D.dex.formats.some(f => f.id === t.fmt)) $('tc-format').value = t.fmt; run(); } });
   $('tc-run').onclick = run;
   $('tc-out').addEventListener('click', e => { const b = e.target.closest('[data-tcnb]'); if (b) { location.hash = 'notebook'; setTimeout(() => { $('nb-name').value = b.dataset.tcnb; $('nb-plan').focus(); }, 50); } });
-  VL.teamcheck = { render, run, parse };
+  VL.teamcheck = { render, run, parse, analyze, speedOf };
 })();

@@ -42,7 +42,7 @@
     <div class="navgroup">Plan</div>
     <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
     <a href="#teamcheck"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Team checker</span></a>
-    <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span></a>
+    <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Team builder</span></a>
     <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
     <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
     <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
@@ -601,33 +601,13 @@
   </section>
 
   <!-- TEAMS -->
-  <section class="panel" id="p-teams">
+  <section class="panel wide" id="p-teams">
     <header class="page-head">
-      <h1>Teams</h1>
-      <p class="lede">Save every team you play and why it works. This is the start of learning to build your own.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Paste a team in Showdown format, or just write the six Pokémon.</li><li>When you log a game, pick the team so its record builds up here.</li><li>After 20+ games with a team, update <b>Why it works</b> and <b>Struggles with</b>. That's teambuilding practice.</li></ol></details>
+      <h1>Team builder</h1>
+      <p class="lede">Build and save teams with everything legal in your format, see how each Pokémon does against the meta, and find out what your team is weak to or missing as you build.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Tap a slot to pick a Pokémon. The most used ones come first, and Pokémon that often pair with your team are marked. Its most common set is filled in for you.</li><li>Change the item, ability, nature, moves and <span class="term" data-term="statpoints">Stat Points</span>. Only legal options for the format are shown.</li><li>On the right, see your Pokémon's damage against the most used Pokémon, their damage against it, and where it sits in speed.</li><li>Below, <b>Team analysis</b> shows shared weaknesses, coverage gaps, what's missing and the biggest threats.</li><li>Teams save automatically. Use <b>Import</b> and <b>Showdown export</b> to move teams to and from Showdown, and <b>Notes</b> to write why it works. When you log a game, pick the team so its record builds up.</li></ol></details>
     </header>
-    <div class="card accent">
-      <h3>Teambuilding, on the back burner</h3>
-      <p class="sub" style="font-size:14.5px">For now, save every team you play here, even rentals and copied teams. Write down why it works and what it struggles with. Your log tracks each team's record, so when you start building your own you'll have a record of which ideas actually won.</p>
-    </div>
-    <form class="card" id="tm-form" autocomplete="off">
-      <div class="card-head"><h3 id="tm-title">Add a team</h3></div>
-      <div class="row">
-        <label for="tm-name">Name<input type="text" id="tm-name" required></label>
-        <label for="tm-src">Source<input type="text" id="tm-src" placeholder="Rental code, player, or my own"></label>
-      </div>
-      <label for="tm-paste">Team paste (Showdown format)<textarea id="tm-paste" style="font-family:var(--font-mono);font-size:13px;min-height:110px"></textarea></label>
-      <div class="grid2">
-        <label for="tm-why">Why it works<textarea id="tm-why"></textarea></label>
-        <label for="tm-weak">What it struggles with<textarea id="tm-weak"></textarea></label>
-      </div>
-      <div class="row" style="justify-content:flex-end;gap:8px">
-        <button class="btn ghost" type="button" id="tm-cancel" hidden>Cancel edit</button>
-        <button class="btn" type="submit">Save team</button>
-      </div>
-    </form>
-    <div class="cards" id="tm-list"></div>
+    <div id="bd-root"><p class="sub">Loading the Pokémon data…</p></div>
   </section>
 
   <!-- SETTINGS -->
@@ -703,7 +683,7 @@
   <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
   <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
   <a href="#teamcheck"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Team checker</span></a>
-  <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span></a>
+  <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Team builder</span></a>
   <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
   <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
   <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
@@ -747,6 +727,7 @@
     <button type="button" class="linkbtn" id="auth-skip" style="align-self:center">Use without an account on this device</button>
   </div>
 </div>
+<div class="modal-back bd-modal" id="bd-modal" hidden><div class="modal bd-mbox" role="dialog" aria-modal="true" aria-label="Picker"><div id="bd-modal-body"></div></div></div>
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -758,6 +739,7 @@
 <script src="js/calc.js?v=8"></script>
 <script src="js/companion.js?v=8"></script>
 <script src="js/teamcheck.js?v=8"></script>
+<script src="js/builder.js?v=8"></script>
 <script src="js/plan.js?v=8"></script>
 <script src="js/progress.js?v=8"></script>
 <script src="js/arcade.js?v=8"></script>

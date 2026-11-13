@@ -388,19 +388,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     }).join('');
   }
 
-  // ---------- teams ----------
-  function renderTeams() {
-    const g = games();
-    $('tm-list').innerHTML = teams().length ? teams().map(t => {
-      const gs = g.filter(x => x.team === t.id); const w = gs.filter(x => x.result === 'W').length;
-      return `<div class="card"><div class="card-head"><h4>${esc(t.name)}</h4>${gs.length ? `<span class="pill ${w * 2 >= gs.length ? 'w' : 'l'}">${w}–${gs.length - w} · ${pct(w, gs.length)}%</span>` : '<span class="pill m">no games yet</span>'}</div>
-        ${t.src ? `<span class="sub">${esc(t.src)}</span>` : ''}${t.paste ? `<pre class="paste">${esc(t.paste)}</pre>` : ''}
-        ${t.why ? `<div><b style="font-size:13px">Why it works</b><div class="sub" style="white-space:pre-wrap">${esc(t.why)}</div></div>` : ''}
-        ${t.weak ? `<div><b style="font-size:13px">Struggles with</b><div class="sub" style="white-space:pre-wrap">${esc(t.weak)}</div></div>` : ''}
-        <div class="row" style="justify-content:flex-end"><button class="linkbtn" data-copyteam="${esc(t.id)}">Copy paste</button><button class="linkbtn" data-editteam="${esc(t.id)}">Edit</button><button class="linkbtn" data-delteam="${esc(t.id)}">Delete</button></div></div>`;
-    }).join('') : '<div class="empty">No teams saved yet.</div>';
-  }
-
   // ---------- settings ----------
   VL.onSync = function (status, message) {
     for (const id of (VL.account && VL.account.user ? ['syncdot2'] : ['syncdot', 'syncdot2'])) { const el = $(id); el.className = 'syncdot ' + (status === 'ok' ? 'ok' : status === 'err' ? 'err' : status === 'busy' ? 'busy' : ''); el.textContent = message || (status === 'off' ? 'Not synced' : ''); }
@@ -423,7 +410,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     requestAnimationFrame(() => {
       queued = false;
       const inside = (id) => { const el = $(id); return el && el.contains(document.activeElement) && document.activeElement !== document.body; };
-      renderHeader(); renderToday(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderTeams(); renderSettings();
+      renderHeader(); renderToday(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderSettings();
+      if (VL.builder && location.hash === '#teams') VL.builder.refreshSide();
       VL.study.render();
       if (VL.teamcheck) VL.teamcheck.render();
       if (VL.arcade) VL.arcade.render();
@@ -451,6 +439,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (tab === 'progress' && VL.progress) VL.progress.render();
     if (tab === 'companion' && VL.companion) VL.companion.render();
     if (tab === 'meta' && VL.meta.render) VL.meta.render();
+    if (tab === 'teams' && VL.builder) VL.builder.render();
     document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
   // phone "More" sheet
@@ -675,22 +664,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const ed = e.target.dataset.editnb, dl = e.target.dataset.delnb;
     if (ed) { const m = store.get('matchups', ed); if (!m) return; nbEditing = ed; $('nb-name').value = m.name || ''; $('nb-team').value = m.team || ''; $('nb-plan').value = m.plan || ''; $('nb-lead').value = m.lead || ''; $('nb-bring').value = m.bring || ''; $('nb-calcs').value = m.calcs || ''; $('nb-title').textContent = 'Edit matchup'; $('nb-cancel').hidden = false; $('nb-name').focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     if (dl) armDelete(e.target, () => store.del('matchups', dl));
-  });
-
-  let tmEditing = null;
-  function clearTm() { tmEditing = null; for (const f of ['tm-name', 'tm-src', 'tm-paste', 'tm-why', 'tm-weak']) $(f).value = ''; $('tm-title').textContent = 'Add a team'; $('tm-cancel').hidden = true; }
-  $('tm-cancel').onclick = clearTm;
-  $('tm-form').addEventListener('submit', e => {
-    e.preventDefault(); const name = $('tm-name').value.trim(); if (!name) return;
-    const id = tmEditing || VL.newId('t'); const prev = store.get('teams', id);
-    store.put('teams', id, { ts: prev?.ts || Date.now(), fmt: prev?.fmt || curFormatId(), name, src: $('tm-src').value.trim(), paste: $('tm-paste').value.replace(/\s+$/, ''), why: $('tm-why').value.trim(), weak: $('tm-weak').value.trim() });
-    clearTm(); VL.toast('Team saved');
-  });
-  $('tm-list').addEventListener('click', async e => {
-    const ed = e.target.dataset.editteam, dl = e.target.dataset.delteam, cp = e.target.dataset.copyteam;
-    if (cp) { const t = store.get('teams', cp); try { await navigator.clipboard.writeText(t?.paste || ''); VL.toast('Paste copied'); } catch (err) { VL.toast('Couldn\'t copy. Select the text instead.'); } }
-    if (ed) { const t = store.get('teams', ed); if (!t) return; tmEditing = ed; $('tm-name').value = t.name || ''; $('tm-src').value = t.src || ''; $('tm-paste').value = t.paste || ''; $('tm-why').value = t.why || ''; $('tm-weak').value = t.weak || ''; $('tm-title').textContent = 'Edit team'; $('tm-cancel').hidden = false; $('tm-name').focus(); }
-    if (dl) armDelete(e.target, () => store.del('teams', dl));
   });
 
   $('sy-connect').onclick = () => {

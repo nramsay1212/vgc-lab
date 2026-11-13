@@ -52,6 +52,7 @@ function addSpecies(s) {
     a: Object.values(s.abilities).filter(Boolean),
     b: s.baseSpecies,
   };
+  if (s.spriteid && s.spriteid !== s.id) rec.sp = s.spriteid; // Showdown sprite file name
   if (!s.nfe) rec.fe = 1;
   if (s.isMega || s.isPrimal) rec.mg = 1;
   spIndex.set(s.id, species.length);
@@ -108,6 +109,8 @@ function describe(dex, effect) {
 }
 
 const outFormats = [];
+const learnsets = new Map(); // format id -> {m: [move ids], l: {speciesIndex: [index into m]}}
+const moveText = new Map(); // move id -> short description
 for (const f of formats) {
   const dex = Dex.forFormat(f);
   const v = TeamValidator.get(f);
@@ -146,9 +149,29 @@ for (const f of formats) {
     if (!heldItem(it) || !itemAllowed(dex, rt, it)) continue;
     const d = describe(dex, it);
     if (!d) continue;
-    if (!items.has(it.id)) items.set(it.id, { n: it.name, d });
+    if (!items.has(it.id)) items.set(it.id, { n: it.name, d, ...(it.spritenum ? { sn: it.spritenum } : {}) });
     legalItems.push(it.id);
   }
+  // learnable moves for every legal Pokémon (battle-only formes use their base)
+  const moveOk = (m) => m.exists && !m.isMax && !m.isZ && !rt.isBanned('move:' + m.id) && !(m.isNonstandard && !rt.has('+pokemontag:' + String(m.isNonstandard).toLowerCase()));
+  const fmtMoves = dex.moves.all().filter(moveOk);
+  const lsIds = []; const lsIdx = new Map(); const ls = {};
+  for (const idx of legal) {
+    const rec = species[idx];
+    let sp = dex.species.get(rec.id);
+    if (sp.battleOnly) continue; // client falls back to the base species
+    const got = [];
+    for (const m of fmtMoves) {
+      let prob = 'x';
+      try { prob = v.checkCanLearn(m, sp); } catch (e) { prob = 'x'; }
+      if (prob) continue;
+      if (!lsIdx.has(m.id)) { lsIdx.set(m.id, lsIds.length); lsIds.push(m.id); }
+      got.push(lsIdx.get(m.id));
+    }
+    if (got.length) ls[idx] = got;
+  }
+  learnsets.set(f.id, { m: lsIds, l: ls });
+  for (const m of fmtMoves) if (!moveText.has(m.id) && lsIdx.has(m.id)) moveText.set(m.id, describe(dex, m));
   const clean = f.name.replace(/^\[[^\]]+\]\s*/, '');
   outFormats.push({
     id: f.id,
@@ -191,8 +214,10 @@ for (const dex of [latestChampMod ? Dex.mod(latestChampMod) : null, Dex].filter(
   for (const m of dex.moves.all()) {
     if (!m.exists || m.isMax || m.isZ || (m.isNonstandard && SKIP_NONSTANDARD.has(m.isNonstandard))) continue;
     if (allMoves[m.id]) continue;
-    const rec = { n: m.name, t: m.type, c: m.category[0], bp: m.basePower || 0 };
+    const rec = { n: m.name, t: m.type, c: m.category === 'Special' ? 'Sp' : m.category[0], bp: m.basePower || 0 }; // P, Sp, or S (status)
     if (m.priority) rec.p = m.priority;
+    if (m.accuracy !== true) rec.a = m.accuracy;
+    if (m.pp) rec.pp = m.pp;
     if (m.target === 'allAdjacentFoes') rec.sp = 'f';
     else if (m.target === 'allAdjacent') rec.sp = 'a';
     allMoves[m.id] = rec;
@@ -215,6 +240,18 @@ const out = {
   priorityMoves: Object.fromEntries([...moves.entries()].sort()),
   moves: Object.fromEntries(Object.entries(allMoves).sort()),
 };
+// learnsets and move text: one file per format, rewritten only when it changes
+const writeIfChanged = (file, obj) => {
+  const txt = JSON.stringify(obj);
+  if (fs.existsSync(file) && fs.readFileSync(file, 'utf8') === txt) return false;
+  fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, txt); return true;
+};
+const lsDir = path.join(path.dirname(OUT), 'learnsets');
+let lsChanged = 0;
+for (const [fid, data] of learnsets) if (writeIfChanged(path.join(lsDir, fid + '.json'), data)) lsChanged++;
+if (writeIfChanged(path.join(path.dirname(OUT), 'movetext.json'), Object.fromEntries([...moveText.entries()].sort()))) lsChanged++;
+console.log(`Learnsets: ${learnsets.size} formats, ${lsChanged} files updated`);
+
 // Only rewrite the file when the Pokémon data itself changed, so the weekly
 // job doesn't make a commit just because the timestamp moved.
 const comparable = (o) => JSON.stringify({ ...o, generated: null, source: { ...o.source, commit: null } });
