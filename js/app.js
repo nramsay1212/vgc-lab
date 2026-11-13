@@ -564,7 +564,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   $('log-form').addEventListener('submit', e => {
     e.preventDefault();
     if (!lfResult) { $('lf-msg').textContent = 'Pick WIN or LOSS first.'; return; }
-    const rating = parseInt($('lf-rating').value, 10), turn = parseInt($('lf-turn').value, 10); const fid = curFormatId();
+    const rating = parseInt($('lf-rating').value, 10), turn = parseInt($('lf-turn').value, 10); const fid = pendingFmt || curFormatId();
     store.put('games', VL.newId('g'), {
       ts: Date.now(), day: dayKey(), fmt: fid, fmtName: fmtName(fid), result: lfResult,
       type: $('lf-type').value, rating: Number.isFinite(rating) ? rating : null, team: $('lf-team').value || null,
@@ -575,7 +575,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       oppName: $('lf-oppname').value.trim() || null, source: pendingSource || null,
     });
     if ($('lf-oppname').value.trim() && VL.plan) VL.plan.ensureOpponent($('lf-oppname').value.trim());
-    pendingSource = null;
+    pendingSource = null; pendingFmt = null;
     const res = lfResult; setResult(null);
     for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false'));
@@ -591,7 +591,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = old; } }, 3000);
   }
   // ---------- fill the log form from the battle companion or a replay ----------
-  let pendingSource = null;
+  let pendingSource = null, pendingFmt = null; // a game handed over from another page may be in another format
   VL.prefillLog = function (o) {
     location.hash = 'log';
     setResult(o.result || null);
@@ -604,9 +604,9 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (o.note) $('lf-note').value = o.note;
     if (o.rating) $('lf-rating').value = o.rating;
     if (o.turn) $('lf-turn').value = o.turn;
-    pendingSource = o.source || null;
+    pendingSource = o.source || null; pendingFmt = o.fmt && o.fmt !== curFormatId() ? o.fmt : null;
     if (o.result === 'L') $('lf-tagq').open = true; // after a loss, offer the questions straight away
-    $('lf-msg').textContent = 'Filled in for you. Add your tags and what you\'d do differently, then save.';
+    $('lf-msg').textContent = `Filled in for you${pendingFmt ? ` (format: ${fmtName(pendingFmt)})` : ''}. Add your tags and what you'd do differently, then save.`;
     setTimeout(() => { window.scrollTo(0, 0); }, 30);
   };
   function parseReplay(log, me) {

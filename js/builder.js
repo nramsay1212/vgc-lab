@@ -480,23 +480,32 @@
   }
   function closeModal() { $('bd-modal').hidden = true; document.body.classList.remove('modal-open'); }
 
-  function teammateScores() {
-    const e = metaE(); if (!e) return {};
+  // how often each Pokémon is seen alongside the ones already picked (from usage stats)
+  function matesOf(names, e) {
+    if (!e) return {};
     const sc = {};
-    for (const s of T.sets) {
-      if (!s || !s.species) continue; const m = VL.meta.get(e, s.species); if (!m || !m.mates) continue;
+    for (const name of names) {
+      const m = VL.meta.get(e, name); if (!m || !m.mates) continue;
       for (const [n, p] of m.mates) sc[n] = Math.max(sc[n] || 0, p);
     }
     return sc;
   }
-  function pickMon() {
-    const f = fmt(); const e = metaE(); const mates = teammateScores(); const have = new Set(T.sets.filter(Boolean).map(s => s.species));
-    const usage = {}; if (e) e.mons.forEach((x, k) => { usage[x.n] = x.u; });
-    const all = f.species.map(i => D().mon(i, f)).filter(p => !have.has(p.n));
+  function teammateScores() { return matesOf(T.sets.filter(s => s && s.species).map(s => s.species), metaE()); }
+  function pickMon() { pickMonFor({ fmtId: fmt().id, names: T.sets.filter(Boolean).map(s => s.species).filter(Boolean), onPick: setMon }); }
+  // the Pokémon picker, shared with the Battle companion: o = { fmtId, names (already picked), onPick(name) }
+  function pickMonFor(o) {
+    const f = D().format(o.fmtId); const have = new Set(o.names || []);
+    let e = null, mates = {}, usage = {}; let redraw = null;
+    const useStats = () => { e = VL.meta && VL.meta.forFormat(f.id); mates = matesOf(o.names || [], e); usage = {}; if (e) e.mons.forEach((x) => { usage[x.n] = x.u; }); };
+    useStats();
+    // an older format's usage stats arrive a moment later; sort by them once they do
+    if (!e && VL.meta && VL.meta.load) VL.meta.load(f.id).then(x => { if (x && redraw && !$('bd-modal').hidden) { useStats(); redraw(); } });
+    // Megas aren't shown at team preview, so the companion leaves them out
+    const all = f.species.map(i => D().mon(i, f)).filter(p => !have.has(p.n) && !(o.noMega && /-Mega(-[XYZ])?$/.test(p.n)));
     let q = '', types = new Set(), sort = 'use', megaOnly = false;
     modal(`<div class="bd-mhead"><input type="search" id="bm-q" placeholder="Search Pokémon by name" autocomplete="off"><button class="x" data-close aria-label="Close">×</button></div>
       <div class="kv bd-chips">${TYPES.map(t => `<button type="button" class="tychip ty ${t}" data-ty="${t}" aria-pressed="false">${t}</button>`).join('')}</div>
-      <div class="kv bd-chips"><span class="mini">Sort</span>${[['use', 'Most used'], ['5', 'Speed'], ['1', 'Atk'], ['3', 'SpA'], ['2', 'Def'], ['4', 'SpD'], ['0', 'HP'], ['name', 'Name']].map(([k, l]) => `<button type="button" class="chipbtn" data-sort="${k}" aria-pressed="${k === 'use'}">${l}</button>`).join('')}<button type="button" class="chipbtn" data-mega aria-pressed="false">Mega only</button><span class="mini r" id="bm-n"></span></div>
+      <div class="kv bd-chips"><span class="mini">Sort</span>${[['use', 'Most used'], ['5', 'Speed'], ['1', 'Atk'], ['3', 'SpA'], ['2', 'Def'], ['4', 'SpD'], ['0', 'HP'], ['name', 'Name']].map(([k, l]) => `<button type="button" class="chipbtn" data-sort="${k}" aria-pressed="${k === 'use'}">${l}</button>`).join('')}${o.noMega ? '' : '<button type="button" class="chipbtn" data-mega aria-pressed="false">Mega only</button>'}<span class="mini r" id="bm-n"></span></div>
       <div class="bd-mongrid" id="bm-grid"></div>`, (body) => {
       const draw = () => {
         let list = all.filter(p => (!q || toId(p.n).includes(q)) && [...types].every(t => p.t.includes(t)) && (!megaOnly || p.mg));
@@ -509,9 +518,9 @@
         const t = ev.target.closest('[data-ty]'); if (t) { const v = t.dataset.ty; if (types.has(v)) types.delete(v); else { if (types.size >= 2) types.clear(); types.add(v); } body.querySelectorAll('[data-ty]').forEach(b => b.setAttribute('aria-pressed', String(types.has(b.dataset.ty)))); draw(); }
         const so = ev.target.closest('[data-sort]'); if (so) { sort = so.dataset.sort; body.querySelectorAll('[data-sort]').forEach(b => b.setAttribute('aria-pressed', String(b === so))); draw(); }
         const mg = ev.target.closest('[data-mega]'); if (mg) { megaOnly = !megaOnly; mg.setAttribute('aria-pressed', String(megaOnly)); draw(); }
-        const mn = ev.target.closest('[data-mon]'); if (mn) { setMon(mn.dataset.mon); closeModal(); }
+        const mn = ev.target.closest('[data-mon]'); if (mn) { closeModal(); o.onPick(mn.dataset.mon); }
       });
-      draw(); setTimeout(() => $('bm-q').focus(), 30);
+      redraw = draw; draw(); setTimeout(() => $('bm-q').focus(), 30);
     });
   }
   function setMon(name) {
@@ -670,8 +679,7 @@
       if (t.dataset.evn !== undefined) renderEditor();
     });
     root.addEventListener('toggle', (e) => { if (e.target.id === 'bd-helper') H.open = e.target.open; }, true);
-    $('bd-modal').addEventListener('click', (e) => { if (e.target.id === 'bd-modal' || e.target.closest('[data-close]')) closeModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('bd-modal').hidden) closeModal(); });
+
   }
   // light update while dragging a slider, so it stays smooth
   function updateStats() {
@@ -682,6 +690,11 @@
   }
 
   let bound = false;
+  // the picker is used outside the builder too, so its closing is wired up straight away
+  $('bd-modal').addEventListener('click', (e) => { if (e.target.id === 'bd-modal' || e.target.closest('[data-close]')) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('bd-modal').hidden) closeModal(); });
+  VL.pickMon = (o) => { if (D().dex) pickMonFor(o); };
+
   VL.builder = {
     render() { if (!D().dex) return; if (!bound) { bind(); bound = true; } render(); },
     open(id) { try { localStorage.setItem(LAST, id); } catch (e) { /* ignore */ } T = null; if (bound && location.hash === '#teams') render(); },

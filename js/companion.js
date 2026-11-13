@@ -35,12 +35,28 @@
     }).filter(Boolean).slice(0, 6);
   }
 
+  // their team at preview: six slots filled from the same picker as the Team builder
+  const OPP = ['', '', '', '', '', ''];
+  const setupFmt = () => $('cp-fmtsel').value || (VL.curFormatId ? VL.curFormatId() : '');
+  function renderSlots() {
+    const D = VL.D;
+    $('cp-oppslots').innerHTML = OPP.map((n, i) => n
+      ? `<div class="cp-slot full"><button type="button" class="cp-slot-main" data-oslot="${i}" aria-label="Change ${esc(n)}">${VL.sprite(n, 'md', false)}<b>${esc(n)}</b>${D.dex && D.find(n) >= 0 ? `<span class="dots">${D.mon(D.find(n), D.format(setupFmt())).t.map(t => `<i class="ty ${t}" title="${t}"></i>`).join('')}</span>` : ''}</button><button type="button" class="x" data-oclear="${i}" aria-label="Remove ${esc(n)}">×</button></div>`
+      : `<button type="button" class="cp-slot empty" data-oslot="${i}"><span class="plus">+</span><span class="sub">Slot ${i + 1}</span></button>`).join('');
+  }
   function renderSetup() {
-    const fid = VL.curFormatId ? VL.curFormatId() : '';
-    $('cp-fmt').textContent = 'Format: ' + (VL.fmtName ? VL.fmtName(fid) : fid);
+    const D = VL.D;
+    const fs = $('cp-fmtsel');
+    if (D.dex && !fs.options.length) {
+      fs.innerHTML = D.formats().map(f => `<option value="${esc(f.id)}">${esc(f.name)}${f.current ? ' (current)' : ''}</option>`).join('');
+      const cur = VL.curFormatId ? VL.curFormatId() : '';
+      if ([...fs.options].some(o => o.value === cur)) fs.value = cur;
+    }
+    $('cp-fmt').textContent = '';
     const sel = $('cp-team'); const cur = sel.value;
     sel.innerHTML = '<option value="">(not set)</option>' + VL.store.list('teams').map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
     sel.value = cur;
+    renderSlots();
   }
 
   function left(t) { const v = B.timers[t.k]; if (!v) return 0; return v.start + v.len - B.turn; }
@@ -113,14 +129,28 @@
   }
 
   // ---------- events ----------
+  $('cp-oppslots').addEventListener('click', (e) => {
+    const x = e.target.closest('[data-oclear]'); if (x) { OPP[+x.dataset.oclear] = ''; renderSlots(); return; }
+    const sl = e.target.closest('[data-oslot]'); if (!sl) return;
+    const i = +sl.dataset.oslot;
+    VL.pickMon && VL.pickMon({ fmtId: setupFmt(), noMega: true, names: OPP.filter((n, k) => n && k !== i), onPick: (n) => {
+      OPP[i] = n;
+      // fill the next empty slot next, so six taps of the picker enter a whole team
+      renderSlots(); const next = OPP.findIndex(v => !v); if (next >= 0 && OPP.filter(Boolean).length < 6) setTimeout(() => { const b = document.querySelector(`[data-oslot="${next}"]`); if (b) b.click(); }, 60);
+    } });
+  });
+  $('cp-fmtsel').addEventListener('change', renderSlots);
+  // a saved team carries its format, so picking it sets the format too
+  $('cp-team').addEventListener('change', () => { const t = VL.store.get('teams', $('cp-team').value); if (t && t.fmt && [...$('cp-fmtsel').options].some(o => o.value === t.fmt)) { $('cp-fmtsel').value = t.fmt; renderSlots(); } });
   $('cp-start').onclick = () => {
-    const names = String($('cp-opp').value).split(/[,/\n]+/).map(cap).filter(Boolean).slice(0, 6);
-    if (!names.length) { VL.toast('Type their Pokémon first'); return; }
+    const typed = String($('cp-opp').value).split(/[,/\n]+/).map(cap).filter(Boolean);
+    const names = [...OPP.filter(Boolean), ...typed].slice(0, 6);
+    if (!names.length) { VL.toast('Add their Pokémon first'); return; }
     const canon = (n) => { const i = VL.D.dex ? VL.D.find(n) : -1; return i >= 0 ? VL.D.dex.species[i].n : n; };
     const team = VL.store.get('teams', $('cp-team').value);
-    B = { active: true, started: Date.now(), fmt: VL.curFormatId ? VL.curFormatId() : '', turn: 1, timers: {}, notes: '', team: team ? team.id : '', oppName: $('cp-oppname').value.trim(),
+    B = { active: true, started: Date.now(), fmt: setupFmt(), turn: 1, timers: {}, notes: '', team: team ? team.id : '', oppName: $('cp-oppname').value.trim(),
       opp: names.map(n => ({ n: canon(n), moves: [] })), mine: team ? teamNames(team.paste).map(n => ({ n: canon(n) })) : [] };
-    $('cp-opp').value = ''; $('cp-oppname').value = '';
+    $('cp-opp').value = ''; $('cp-oppname').value = ''; OPP.fill('');
     save(); render(); window.scrollTo(0, 0);
   };
   $('cp-next').onclick = () => nextTurn(1);
@@ -158,7 +188,7 @@
   function finish(result) {
     const reveals = B.opp.filter(o => o.item || o.ability || (o.moves || []).length).map(o => `${o.n}: ${[o.item && 'item ' + o.item, o.ability && 'ability ' + o.ability, (o.moves || []).length && 'moves ' + o.moves.join(', ')].filter(Boolean).join('; ')}`).join('\n');
     const note = [($('cp-notes').value || '').trim(), reveals ? 'Revealed:\n' + reveals : '', `Lasted ${B.turn} turns.`].filter(Boolean).join('\n\n');
-    VL.prefillLog && VL.prefillLog({ result, opp: B.opp.map(o => o.n), opplead: B.opp.filter(o => o.lead).map(o => o.n), oppName: B.oppName, team: B.team, note });
+    VL.prefillLog && VL.prefillLog({ result, fmt: B.fmt, opp: B.opp.map(o => o.n), opplead: B.opp.filter(o => o.lead).map(o => o.n), oppName: B.oppName, team: B.team, note });
     B = null; save(); render();
   }
   $('cp-won').onclick = () => finish('W');

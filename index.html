@@ -374,12 +374,14 @@
     <header class="page-head">
       <h1>Battle companion</h1>
       <p class="lede">Keep this open on your phone next to your Switch. It counts field turns, tracks what your opponent reveals, and turns the game into a log entry when it ends.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>At <span class="term" data-term="preview">team preview</span>, type their 6 and tap <b>Start battle</b>.</li><li>Tap <b>Next turn</b> at the start of every turn. Timers count down on their own.</li><li>When Tailwind, Trick Room, weather, terrain or screens go up, tap it. The card shows how many turns are left, counting the current one.</li><li>On each opponent card, record what they reveal: item, ability, moves. Tap <b>Protected</b> when they Protect, and the card warns you when a second Protect in a row is likely to fail.</li><li>When the game ends, tap <b>Won</b> or <b>Lost</b>. The log form opens already filled in.</li></ol></details>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick the format, then at <span class="term" data-term="preview">team preview</span> tap each slot to add their 6 and tap <b>Start battle</b>.</li><li>Tap <b>Next turn</b> at the start of every turn. Timers count down on their own.</li><li>When Tailwind, Trick Room, weather, terrain or screens go up, tap it. The card shows how many turns are left, counting the current one.</li><li>On each opponent card, record what they reveal: item, ability, moves. Tap <b>Protected</b> when they Protect, and the card warns you when a second Protect in a row is likely to fail.</li><li>When the game ends, tap <b>Won</b> or <b>Lost</b>. The log form opens already filled in.</li></ol></details>
     </header>
     <div id="cp-setup" class="card">
       <div class="card-head"><h3>New battle</h3><span class="sub" id="cp-fmt"></span></div>
-      <label for="cp-opp">Their 6<input type="text" id="cp-opp" list="dl-mons" placeholder="Incineroar, Rillaboom, Garchomp, ..."></label>
-      <div class="row"><label for="cp-team">My team<select id="cp-team"></select></label><label for="cp-oppname">Opponent's name (optional)<input type="text" id="cp-oppname" list="dl-opps"></label></div>
+      <div class="row"><label for="cp-fmtsel">Format<select id="cp-fmtsel"></select></label><label for="cp-team">My team<select id="cp-team"></select></label></div>
+      <div><div class="section-label">Their team at preview</div><div class="cp-slots" id="cp-oppslots"></div>
+        <details class="cp-typed"><summary>Or type their names</summary><input type="text" id="cp-opp" list="dl-mons" placeholder="Incineroar, Rillaboom, Garchomp, ..." aria-label="Their Pokémon, separated by commas"></details></div>
+      <label for="cp-oppname">Opponent's name (optional)<input type="text" id="cp-oppname" list="dl-opps"></label>
       <div class="row" style="justify-content:flex-end"><button class="btn" id="cp-start">Start battle</button></div>
     </div>
     <div id="cp-live" hidden style="display:flex;flex-direction:column;gap:16px">
