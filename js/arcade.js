@@ -257,17 +257,29 @@
         const mv = pick(moves);
         try {
           const A = build(am), Dd = build(dm);
-          const r = C.calculate(g, A.poke, Dd.poke, new C.Move(g, mv.n), new C.Field({ gameType: f.doubles ? 'Doubles' : 'Singles' }));
+          const M = new C.Move(g, mv.n);
+          const r = C.calculate(g, A.poke, Dd.poke, M, new C.Field({ gameType: f.doubles ? 'Doubles' : 'Singles' }));
           const [lo, hi] = r.range(); const hp = Dd.poke.maxHP(); if (!hi) continue;
           G.round++;
           let ko = ''; try { ko = r.kochance().text || ''; } catch (x) { ko = ''; }
-          G.cur = { A, Dd, am, dm, mv, lo: Math.round(1000 * lo / hp) / 10, hi: Math.round(1000 * hi / hp) / 10, ko: ko.replace(/OHKO/g, 'one-hit knockout').replace(/(\d)HKO/g, '$1-hit knockout'), spread: f.doubles && mv.sp, champ };
+          G.cur = { A, Dd, am, dm, mv, lo: Math.round(1000 * lo / hp) / 10, hi: Math.round(1000 * hi / hp) / 10, ko: ko.replace(/OHKO/g, 'one-hit knockout').replace(/(\d)HKO/g, '$1-hit knockout'), spread: f.doubles && mv.sp, champ, why: whyOf(C, g, A, Dd, M, hp) };
           return renderDamage();
         } catch (x) { /* try another pairing */ }
       }
       area().innerHTML = `${header()}<div class="empty">Couldn't build a matchup. Try again.</div>`; bindQuit();
     }).catch(() => { area().innerHTML = `${header()}<div class="empty">The calculator didn't load. Check your connection.</div>`; bindQuit(); });
   }
+  // what decides the damage, in words: which stats meet, and the multipliers that apply
+  const STAT = { atk: 'Attack', def: 'Defense', spa: 'Special Attack', spd: 'Special Defense' };
+  const NAT = { Lonely: ['atk', 'def'], Brave: ['atk', 'spe'], Adamant: ['atk', 'spa'], Naughty: ['atk', 'spd'], Bold: ['def', 'atk'], Relaxed: ['def', 'spe'], Impish: ['def', 'spa'], Lax: ['def', 'spd'], Timid: ['spe', 'atk'], Hasty: ['spe', 'def'], Jolly: ['spe', 'spa'], Naive: ['spe', 'spd'], Modest: ['spa', 'atk'], Mild: ['spa', 'def'], Quiet: ['spa', 'spe'], Rash: ['spa', 'spd'], Calm: ['spd', 'atk'], Gentle: ['spd', 'def'], Sassy: ['spd', 'spe'], Careful: ['spd', 'spa'] };
+  function whyOf(C, g, A, Dd, M, hp) {
+    const phys = M.category === 'Physical'; const as = phys ? 'atk' : 'spa', ds = phys ? 'def' : 'spd';
+    let eff = null;
+    try { eff = Dd.poke.types.reduce((m, t) => m * (g.types.get(C.toID ? C.toID(M.type) : M.type.toLowerCase()).effectiveness[t] ?? 1), 1); } catch (e) { eff = null; }
+    const nat = NAT[A.nat] || []; const natNote = nat[0] === as ? ` (${A.nat} raises it)` : nat[1] === as ? ` (${A.nat} lowers it)` : '';
+    return { cat: M.category, type: M.type, bp: M.bp, pr: M.priority || 0, as: STAT[as], ds: STAT[ds], aStat: A.poke.stats[as], dStat: Dd.poke.stats[ds], hp, stab: A.poke.types.includes(M.type) || (A.poke.teraType === M.type), eff, natNote };
+  }
+  const effText = (e) => e === 0 ? 'no effect (0×)' : e >= 4 ? 'super effective (4×)' : e >= 2 ? 'super effective (2×)' : e <= 0.25 ? 'not very effective (¼×)' : e < 1 ? 'not very effective (½×)' : 'neutral (1×)';
   function setLine(x, champ) {
     const names = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed'];
     const inv = x.ev.map((v, i) => v ? `${v} ${names[i]}` : null).filter(Boolean).join(', ');
@@ -279,10 +291,11 @@
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/8</span><span class="pill m">${G.score} pts</span>`)}
       <div class="vsrow">${VL.sprite(c.A.name, 'lg', false)}<span class="mini">attacks</span>${VL.sprite(c.Dd.name, 'lg', false)}</div><p class="q2"><b>${esc(c.A.name)}</b> uses <b>${esc(c.mv.n)}</b> on <b>${esc(c.Dd.name)}</b>. How much of its HP does it take?</p>
       <div class="grid2"><div class="explain"><b>${esc(c.A.name)}</b><br><span class="sub">${setLine(c.A, c.champ)}</span></div><div class="explain"><b>${esc(c.Dd.name)}</b><br><span class="sub">${setLine(c.Dd, c.champ)}</span></div></div>
+      ${c.why ? `<div class="explain"><b>${esc(c.mv.n)}</b> · ${esc(c.why.type)} · ${esc(c.why.cat)}, ${c.why.bp} power${c.why.pr ? ` · priority ${c.why.pr > 0 ? '+' : ''}${c.why.pr}` : ''}<br><span class="sub">${esc(c.A.name)}'s ${esc(c.why.as)} is ${c.why.aStat}${esc(c.why.natNote)}. ${esc(c.Dd.name)} has ${c.why.hp} HP and ${esc(c.why.ds)} ${c.why.dStat}.</span></div>` : ''}
       <p class="sub">Level 50, ${c.spread ? 'doubles, hitting both opponents (spread damage)' : 'no field effects'}, full HP, no stat changes. Both use their most common set.</p>
       <div class="dmgslider"><input type="range" min="0" max="150" step="1" value="${v}" id="ar-dmg" ${done ? 'disabled' : ''} aria-label="Your damage guess in percent"><div class="row" style="justify-content:space-between"><span class="mini">0%</span><b class="num" id="ar-dmgv">${v}%${v >= 100 ? ' (knocked out)' : ''}</b><span class="mini">150%</span></div>
         ${done ? `<div class="dmgtrack"><span class="band" style="left:${Math.min(100, c.lo / 1.5)}%;width:${Math.max(0.7, Math.min(100, c.hi / 1.5) - Math.min(100, c.lo / 1.5))}%"></span><span class="mark" style="left:${Math.min(100, guess / 1.5)}%"></span></div>` : ''}</div>
-      ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next attack'}</button></div>`
+      ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.${c.why ? `<br><span class="sub">Why: ${esc(c.mv.n)} is ${c.why.cat === 'Physical' ? 'a physical' : 'a special'} move, so it uses ${esc(c.A.name)}'s ${esc(c.why.as)} (${c.why.aStat}) against ${esc(c.why.ds)} (${c.why.dStat}). ${c.why.bp} power, ${c.why.stab ? 'same-type bonus 1.5×' : 'no same-type bonus'}, ${c.why.eff !== null ? effText(c.why.eff) : ''}${c.spread ? ', and 0.75× for hitting both opponents' : ''}.</span>` : ''}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next attack'}</button></div>`
         : `<div class="row" style="justify-content:flex-end"><button class="btn" id="ar-lock">Lock in guess</button></div>`}`;
     bindQuit();
     if (done) { $('ar-next').onclick = damageNext; $('ar-next').focus(); return; }
