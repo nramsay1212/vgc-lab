@@ -412,6 +412,7 @@
     if (S.view === 'types') renderTypes();
     if (S.view === 'items') renderItems();
     if (S.view === 'priority') renderPriority();
+    if (S.view === 'glossary' && VL.renderGlossary) VL.renderGlossary();
   }
   for (const id of ['st-format', 'st-pool']) $(id).addEventListener('change', () => { if (S.quiz) closeQuiz(); render(); });
   $('dex-q').addEventListener('input', renderDex);

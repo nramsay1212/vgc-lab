@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Toxicroak VGC Lab</title>
-<meta name="theme-color" content="#34407F">
+<meta name="theme-color" content="#08090A">
 <meta name="description" content="Training log, drills and knowledge base for competitive Pokémon doubles.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -13,46 +13,58 @@
 <meta name="apple-mobile-web-app-title" content="Toxicroak Lab">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
+<div class="app">
+<aside class="side" aria-label="Main">
+  <a class="brand" href="#today"><img src="icons/icon-192.png" alt="" width="24" height="24"><span>Toxicroak VGC Lab</span></a>
+  <nav class="nav" aria-label="Sections">
+    <div class="navgroup">Train</div>
+    <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
+    <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log a game</span><kbd>N</kbd></a>
+    <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
+    <div class="navgroup">Learn</div>
+    <a href="#study"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg><span>Study</span></a>
+    <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
+    <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
+    <div class="navgroup">Plan</div>
+    <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
+    <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
+    <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span><span class="later">later</span></a>
+  </nav>
+  <div class="side-foot">
+    <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Sync, backup &amp; theme</span></a>
+    <button type="button" class="navbtn" data-tour><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Take the tour</span></button>
+    <span class="syncdot" id="syncdot">Not synced</span>
+  </div>
+</aside>
+<main class="main" id="main">
 <div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <h1>Toxicroak VGC Lab</h1>
-      <p>Training for a World Championship, in any game · <span class="syncdot" id="syncdot">Not synced</span></p>
-    </div>
-    <div class="countdown">
-      <div><div class="big num" id="cd-games">0</div><div class="lbl">games logged</div></div>
-      <div><div class="big num" id="cd-formats">0</div><div class="lbl">formats played</div></div>
-      <div><div class="big num" id="cd-streak">0</div><div class="lbl">day streak</div></div>
-    </div>
-  </header>
-
   <div class="banner" id="banner" hidden></div>
 
-  <nav class="tabs" aria-label="Sections">
-    <a href="#today">Today</a>
-    <a href="#log">Log a game</a>
-    <a href="#review">Review</a>
-    <a href="#study">Study</a>
-    <a href="#skills">Skills</a>
-    <a href="#formats">Formats</a>
-    <a href="#notebook">Notebook</a>
-    <a href="#roadmap">Roadmap</a>
-    <a href="#teams">Teams<span class="later">later</span></a>
-    <a href="#settings">Sync &amp; backup</a>
-  </nav>
 
   <!-- TODAY -->
   <section class="panel" id="p-today">
+    <header class="page-head">
+      <h1>Today</h1>
+      <p class="lede">Your daily plan. Work down the list: a full session takes about an hour, and each item feeds the rest of the app.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Set one <b>focus</b> for the week. It's the single habit you'll practice in every game.</li><li>Check that <b>Current format</b> is the game and regulation you're playing, so new games are filed under it.</li><li>Work through the session list. Checking 3 of the first 6 items keeps your streak alive.</li><li>Open <b>Why the session is built this way</b> at the bottom to see the reasoning behind each item.</li></ol></details>
+    </header>
+    <div class="tiles kpis">
+      <div class="tile"><div class="k">Day streak</div><div class="v hot" id="cd-streak">0</div></div>
+      <div class="tile"><div class="k">Games logged</div><div class="v" id="cd-games">0</div></div>
+      <div class="tile"><div class="k">Formats played</div><div class="v" id="cd-formats">0</div></div>
+      <div class="tile"><div class="k">Drills answered</div><div class="v" id="cd-drills">0</div></div>
+    </div>
     <div class="grid2">
       <div class="card accent">
         <div class="card-head"><h3>Focus this week</h3><button class="linkbtn" id="focus-edit">Edit</button></div>
         <p id="focus-text" style="margin:0;font-size:17px;font-weight:500"></p>
         <div id="focus-form" hidden class="row">
-          <label for="focus-input" style="flex:1 1 100%">One habit to drill in every game this week
+          <label for="focus-input" style="flex:1 1 100%">One habit to practice in every game this week
             <input type="text" id="focus-input" placeholder="e.g. Say my bring-4 and win condition out loud before turn 1">
           </label>
           <button class="btn small" id="focus-save">Save focus</button>
@@ -95,33 +107,38 @@
 
   <!-- LOG -->
   <section class="panel" id="p-log">
+    <header class="page-head">
+      <h1>Log a game</h1>
+      <p class="lede">Record every game right after it ends. This one minute is what makes Review, Skills and the Notebook useful.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Only <b>Win/Loss</b> is required. Everything else makes your stats better.</li><li><b>Their 6</b> powers "Toughest Pokémon" in Review. Start typing and names autocomplete.</li><li><b>Tags</b> are what lost the game, or nearly did. Be honest: tag your own mistakes, not just bad luck.</li><li><b>What I'd do differently</b> is the most valuable field. Write the turn and the better play.</li></ol></details>
+    </header>
     <form class="card" id="log-form" autocomplete="off">
-      <div class="card-head"><h3>Log a game</h3><span class="sub" id="log-fmt"></span></div>
+      <div class="card-head"><h3>New game</h3><span class="sub" id="log-fmt"></span></div>
       <div class="wl" role="group" aria-label="Result">
         <button type="button" class="w" id="lf-w" aria-pressed="false">WIN</button>
         <button type="button" class="l" id="lf-l" aria-pressed="false">LOSS</button>
       </div>
       <div class="row">
-        <label for="lf-type">Game type
+        <label for="lf-type"><span>Game type <span class="term" data-term="bo3">Bo1 / Bo3?</span></span>
           <select id="lf-type"><option>Ladder (Bo1)</option><option>Bo3 practice</option><option>Tournament</option><option>Online event</option></select>
         </label>
         <label for="lf-rating">Rating after<input type="number" id="lf-rating" inputmode="numeric"></label>
         <label for="lf-team">My team<select id="lf-team"></select></label>
-        <label for="lf-arch">Their style
+        <label for="lf-arch"><span>Their style <span class="term" data-term="archetype">what's this?</span></span>
           <select id="lf-arch">
             <option value="">(not set)</option>
             <option>Tailwind offense</option><option>Trick Room</option><option>Sun</option><option>Rain</option><option>Sand</option><option>Snow</option><option>Terrain</option><option>Balance</option><option>Hyper offense</option><option>Other</option>
           </select>
         </label>
       </div>
-      <label for="lf-opp">Their 6 at team preview (comma-separated)
+      <label for="lf-opp"><span>Their 6 at <span class="term" data-term="preview">team preview</span> (comma-separated)</span>
         <input type="text" id="lf-opp" list="dl-mons" placeholder="Incineroar, Rillaboom, Garchomp, ...">
       </label>
       <div class="row">
-        <label for="lf-mylead">My lead<input type="text" id="lf-mylead" placeholder="Pokémon A, Pokémon B"></label>
+        <label for="lf-mylead"><span>My <span class="term" data-term="lead">lead</span></span><input type="text" id="lf-mylead" placeholder="Pokémon A, Pokémon B"></label>
         <label for="lf-myback">My back 2<input type="text" id="lf-myback"></label>
         <label for="lf-opplead">Their lead<input type="text" id="lf-opplead"></label>
-        <label for="lf-turn" style="flex:0 1 110px">Key turn<input type="number" id="lf-turn" min="1"></label>
+        <label for="lf-turn" style="flex:0 1 120px"><span>Key turn <span class="term" data-term="keyturn">?</span></span><input type="number" id="lf-turn" min="1"></label>
       </div>
       <div>
         <div class="sub" style="margin-bottom:6px">What lost the game, or nearly did? Pick any that apply.</div>
@@ -144,8 +161,12 @@
 
   <!-- REVIEW -->
   <section class="panel" id="p-review">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <h2>Review</h2>
+    <header class="page-head">
+      <h1>Review</h1>
+      <p class="lede">Find the patterns in your games: what's costing you, which Pokémon beat you, which leads work. Use it once a week to pick your next focus.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Pick what to look at with <b>Show</b>: this format, everything, or the last 30 days.</li><li>The biggest bar in <b>What's costing you games</b> is usually your next weekly focus.</li><li>Add Pokémon from <b>Toughest Pokémon</b> to your Notebook and write a plan for them.</li><li>Every Sunday, use <b>Copy review prompt</b>, paste it into Claude, and save the answer here.</li></ol></details>
+    </header>
+    <div class="row" style="justify-content:flex-end;align-items:center">
       <label for="rv-scope" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px">Show
         <select id="rv-scope" style="width:auto"></select>
       </label>
@@ -183,6 +204,11 @@
 
   <!-- STUDY -->
   <section class="panel" id="p-study">
+    <header class="page-head">
+      <h1>Study</h1>
+      <p class="lede">Drills and reference for everything you should know instantly: type matchups, speed, items, abilities, priority and mechanics, for any game.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Choose a <b>Study format</b>. Pokémon, stats and rules change to match that game.</li><li>Do one 10-question <b>drill</b> a day. Questions you miss come back more often until you get them.</li><li>Use the <b>reference</b> tabs during or after games: Pokémon lookup, speed tiers, type chart and more.</li><li>Number keys 1–6 answer drill questions fast on a computer.</li></ol></details>
+    </header>
     <div class="card">
       <div class="row">
         <label for="st-format">Study format<select id="st-format"></select></label>
@@ -204,6 +230,7 @@
       <button type="button" data-sv="types" aria-pressed="false">Type chart</button>
       <button type="button" data-sv="items" aria-pressed="false">Items &amp; abilities</button>
       <button type="button" data-sv="priority" aria-pressed="false">Priority</button>
+      <button type="button" data-sv="glossary" aria-pressed="false">Glossary</button>
     </div>
     <div id="sv-drills" class="sv">
       <div id="quiz-wrap" hidden class="card"></div>
@@ -238,6 +265,9 @@
         <div class="card"><label for="ab-q">Abilities in this format<input type="text" id="ab-q" placeholder="Search name or effect"></label><div class="lookup-results" id="ab-out"></div></div>
       </div>
     </div>
+    <div id="sv-glossary" class="sv" hidden>
+      <div class="card"><label for="gl-q">Search terms<input type="text" id="gl-q" placeholder="e.g. spread, Trick Room, CP"></label><div id="gl-out" class="gloss"></div></div>
+    </div>
     <div id="sv-priority" class="sv" hidden>
       <div class="card"><div class="card-head"><h3>Priority brackets</h3><span class="sub">Higher goes first. Speed only decides order within a bracket.</span></div><div id="pr-out"></div></div>
     </div>
@@ -245,6 +275,11 @@
 
   <!-- SKILLS -->
   <section class="panel" id="p-skills">
+    <header class="page-head">
+      <h1>Skills</h1>
+      <p class="lede">The abilities that carry from one format to the next. Rate yourself honestly, then compare your rating to what your logs say.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Tap 1–5 to rate each skill. 3 means solid, 5 means among the best players you face.</li><li>The red bar shows how often that skill was tagged in your last 50 losses.</li><li>A high rating with a big red bar means you're overrating it. That's a great weekly focus.</li></ol></details>
+    </header>
     <div class="card accent">
       <h3>Skills that carry across every format</h3>
       <p class="sub" style="font-size:14.5px">Regulations change every few months, and so do the Pokémon and the battle gimmick. These skills don't. Rate yourself honestly, 1 to 5. The red bar shows how often each skill shows up in the tags on your last 50 losses, so you can check your rating against your logs.</p>
@@ -257,6 +292,11 @@
 
   <!-- FORMATS -->
   <section class="panel" id="p-formats">
+    <header class="page-head">
+      <h1>Formats</h1>
+      <p class="lede">Your record across every regulation and game, plus a checklist for getting strong fast when the format changes.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Each row is a format you've logged games in. "First 20" vs "After" shows how fast you adapted.</li><li>When a new format starts, run the <b>New format playbook</b> from the top.</li><li>When a format ends, write a <b>recap</b>. Read old recaps before the next one starts.</li></ol></details>
+    </header>
     <div class="card">
       <div class="card-head"><h3>Every format you've played</h3><span class="sub">From the format saved on each game</span></div>
       <div class="scroll" id="fm-table"></div>
@@ -282,6 +322,11 @@
 
   <!-- NOTEBOOK -->
   <section class="panel" id="p-notebook">
+    <header class="page-head">
+      <h1>Matchup notebook</h1>
+      <p class="lede">Your game plan against specific threats. When you see one at team preview, read its card before you pick your 4.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Add a card for any Pokémon or <span class="term" data-term="archetype">archetype</span> you struggle with.</li><li>Write the plan as instructions to yourself: what to lead, what to target, what to keep healthy.</li><li>Each card shows your record against that threat, pulled from your game log.</li></ol></details>
+    </header>
     <form class="card" id="nb-form" autocomplete="off">
       <div class="card-head"><h3 id="nb-title">Add a matchup</h3><span class="sub">One card per threat or archetype. Write the plan you'll follow at team preview.</span></div>
       <div class="row">
@@ -309,6 +354,11 @@
 
   <!-- ROADMAP -->
   <section class="panel" id="p-roadmap">
+    <header class="page-head">
+      <h1>Roadmap</h1>
+      <p class="lede">The long path to a World Championship: where you are now, the milestones along the way, and this season's events.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Your current stage is highlighted. Some milestones tick themselves off from your logs and drills.</li><li>Check the event list to plan which tournaments to enter. Every one is Bo3 practice.</li><li>Read <b>How Worlds invites work</b> to see how <span class="term" data-term="cp">Championship Points</span> add up.</li></ol></details>
+    </header>
     <div class="card">
       <div class="card-head"><h3>The long road</h3><span class="sub">Each stage can take a season or more. That's normal.</span></div>
       <div id="stages"></div>
@@ -338,6 +388,11 @@
 
   <!-- TEAMS -->
   <section class="panel" id="p-teams">
+    <header class="page-head">
+      <h1>Teams</h1>
+      <p class="lede">Save every team you play and why it works. This is the start of learning to build your own.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Paste a team in Showdown format, or just write the six Pokémon.</li><li>When you log a game, pick the team so its record builds up here.</li><li>After 20+ games with a team, update <b>Why it works</b> and <b>Struggles with</b>. That's teambuilding practice.</li></ol></details>
+    </header>
     <div class="card accent">
       <h3>Teambuilding, on the back burner</h3>
       <p class="sub" style="font-size:14.5px">For now, save every team you play here, even rentals and copied teams. Write down why it works and what it struggles with. Your log tracks each team's record, so when you start building your own you'll have a record of which ideas actually won.</p>
@@ -363,6 +418,11 @@
 
   <!-- SETTINGS -->
   <section class="panel" id="p-settings">
+    <header class="page-head">
+      <h1>Sync, backup & theme</h1>
+      <p class="lede">Keep your data safe and the same on every device, and choose how the app looks.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Your data saves on this device automatically, even offline.</li><li>Set up sync once on each device to share data between your phone and computer.</li><li>Download a backup now and then. It's one file you can restore anywhere.</li></ol></details>
+    </header>
     <div class="card accent">
       <div class="card-head"><h3>Sync across your devices</h3><span class="syncdot" id="syncdot2">Not set up</span></div>
       <p class="sub" style="font-size:14.5px">Your data saves on this device automatically. To use the same data on your phone and computer, connect a GitHub token. The app keeps your data in one private gist on your GitHub account, and nothing else on your account is touched.</p>
@@ -388,16 +448,57 @@
       </div>
     </div>
     <div class="card">
+      <div class="card-head"><h3>Theme</h3></div>
+      <div class="seg" role="radiogroup" aria-label="Theme" id="theme-seg">
+        <button type="button" role="radio" data-theme-set="dark" aria-checked="true">Dark</button>
+        <button type="button" role="radio" data-theme-set="light" aria-checked="false">Light</button>
+        <button type="button" role="radio" data-theme-set="system" aria-checked="false">Match device</button>
+      </div>
+    </div>
+    <div class="card">
       <div class="card-head"><h3>Pokémon data</h3></div>
       <p class="sub" id="data-info"></p>
     </div>
   </section>
 </div>
+</main>
+</div>
+<nav class="bottombar" aria-label="Sections">
+  <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
+  <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log</span></a>
+  <a href="#study"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg><span>Study</span></a>
+  <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
+  <button type="button" id="more-btn" aria-expanded="false" aria-controls="sheet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></button>
+</nav>
+<div class="sheet-back" id="sheet-back" hidden></div>
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-grip"></div>
+  <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
+  <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
+  <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
+  <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
+  <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Teams</span></a>
+  <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Sync, backup &amp; theme</span></a>
+  <button type="button" class="navbtn" data-tour><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Take the tour</span></button>
+</div>
+<div class="modal-back" id="tour" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+    <div class="tour-steps" id="tour-dots"></div>
+    <h2 id="tour-title"></h2>
+    <div id="tour-body" class="tour-body"></div>
+    <div class="row" style="justify-content:space-between">
+      <button type="button" class="linkbtn" id="tour-skip">Skip tour</button>
+      <div class="row" style="gap:8px"><button type="button" class="btn ghost" id="tour-back">Back</button><button type="button" class="btn" id="tour-next">Next</button></div>
+    </div>
+  </div>
+</div>
+<div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="js/store.js"></script>
 <script src="js/content.js"></script>
 <script src="js/study.js"></script>
+<script src="js/help.js"></script>
 <script src="js/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

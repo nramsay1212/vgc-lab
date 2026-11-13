@@ -64,6 +64,7 @@
     $('cd-games').textContent = g.length;
     $('cd-formats').textContent = new Set(g.map(x => x.fmt).filter(Boolean)).size;
     $('cd-streak').textContent = streak();
+    $('cd-drills').textContent = store.list('drills').reduce((a, d) => a + (d.n || 0), 0);
   }
 
   // ---------- today ----------
@@ -104,7 +105,7 @@
     $('checklist').innerHTML = VL.SESSION.map(s => {
       const on = !!(day.done && day.done[s.id]);
       return `<li class="${on ? 'done' : ''}"><input type="checkbox" id="ck-${s.id}" data-ck="${s.id}" ${on ? 'checked' : ''}>
-        <label for="ck-${s.id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(s.t)}<span class="meta">${esc(s.m)}</span></span><span class="d">${desc[s.id] || esc(s.d)}</span></label></li>`;
+        <label for="ck-${s.id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(s.t)}<span class="meta">${esc(s.m)}</span></span><span class="d">${desc[s.id] || s.d}</span></label></li>`;
     }).join('');
   }
 
@@ -271,8 +272,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       const share = losses.length ? pct(hits, losses.length) : 0;
       const r = ratings[s.id] || 0;
       const accs = (s.study || []).map(id => { const a = VL.study.accuracy(id); const d = VL.study.DRILLS.find(x => x.id === id); return a === null ? null : `${d.name} ${a}%`; }).filter(Boolean);
-      return `<div class="skill"><div><h4>${esc(s.name)}</h4><p>${esc(s.what)}</p><p class="drill">Practice: ${esc(s.drill)}</p>${accs.length ? `<p class="sub">Drill accuracy: ${esc(accs.join(' · '))}</p>` : ''}</div>
-        <div class="side"><div class="dots" role="group" aria-label="Rate ${esc(s.name)}">${[1, 2, 3, 4, 5].map(v => `<button data-skill="${s.id}" data-v="${v}" class="${v <= r ? 'on' : ''}" aria-label="${v} of 5">${v}</button>`).join('')}</div>
+      return `<div class="skill"><div><h4>${esc(s.name)}</h4><p>${s.what}</p><p class="drill">Practice: ${esc(s.drill)}</p>${accs.length ? `<p class="sub">Drill accuracy: ${esc(accs.join(' · '))}</p>` : ''}</div>
+        <div class="skill-side"><div class="dots" role="group" aria-label="Rate ${esc(s.name)}">${[1, 2, 3, 4, 5].map(v => `<button data-skill="${s.id}" data-v="${v}" class="${v <= r ? 'on' : ''}" aria-label="${v} of 5">${v}</button>`).join('')}</div>
         ${s.tags.length ? `<div class="costbar" title="${hits} of ${losses.length} losses"><span style="width:${share}%"></span></div><span class="sub">${losses.length ? `${hits} of ${losses.length} losses` : 'no losses logged'}</span>` : `<span class="sub">${s.id === 'formats' ? 'See the Formats tab' : ''}</span>`}</div></div>`;
     }).join('');
   }
@@ -382,9 +383,32 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   const TABS = ['today', 'log', 'review', 'study', 'skills', 'formats', 'notebook', 'roadmap', 'teams', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
+    const was = document.querySelector('.panel.on');
     for (const t of TABS) $('p-' + t).classList.toggle('on', t === tab);
-    document.querySelectorAll('nav.tabs a').forEach(a => { if (a.getAttribute('href') === '#' + tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    document.querySelectorAll('.nav a, .side-foot a, .bottombar a, .sheet a').forEach(a => { if (a.getAttribute('href') === '#' + tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    VL.closeSheet();
+    if (was && was.id !== 'p-' + tab) window.scrollTo(0, 0);
+    document.title = (tab === 'today' ? '' : $('p-' + tab).querySelector('.page-head h1').textContent + ' · ') + 'Toxicroak VGC Lab';
   }
+  // phone "More" sheet
+  VL.closeSheet = function () { $('sheet').hidden = true; $('sheet-back').hidden = true; $('more-btn').setAttribute('aria-expanded', 'false'); };
+  $('more-btn').onclick = () => { const open = $('sheet').hidden; $('sheet').hidden = !open; $('sheet-back').hidden = !open; $('more-btn').setAttribute('aria-expanded', String(open)); };
+  $('sheet-back').onclick = VL.closeSheet;
+  // theme (saved per device)
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem('vgclab-theme', t); } catch (e) { /* ignore */ }
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.themeSet === t)));
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#08090A';
+  }
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.onclick = () => applyTheme(b.dataset.themeSet));
+  applyTheme(document.documentElement.dataset.theme || 'dark');
+  // N = log a game (when not typing)
+  document.addEventListener('keydown', e => {
+    if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || !$('tour').hidden) return;
+    e.preventDefault(); location.hash = 'log'; setTimeout(() => $('lf-w').focus(), 50);
+  });
   window.addEventListener('hashchange', route);
 
   // ---------- events ----------
@@ -529,7 +553,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
 
   // ---------- boot ----------
   route();
-  store.ready.then(() => { renderAll(); if (VL.sync.token()) VL.sync.run(); else VL.onSync('off', 'Not synced'); });
+  store.ready.then(() => { renderAll(); if (VL.sync.token()) VL.sync.run(); else VL.onSync('off', 'Not synced'); VL.maybeTour(); });
   fetch('data/dex.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(dex => {
     D.load(dex);
     store.ready.then(() => {
