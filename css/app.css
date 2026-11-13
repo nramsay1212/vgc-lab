@@ -463,3 +463,10 @@ html.sheet-open,html.sheet-open body{overflow:hidden;overscroll-behavior:none}
 .sheet .sheet-grip{position:sticky;top:0;flex:0 0 auto;margin:0 auto 6px;padding:0}
 .sheet-head{position:sticky;top:-8px;z-index:1;background:var(--panel);padding:8px 0 4px;margin:-8px 0 2px}
 .sheet a,.sheet .navbtn{flex:0 0 auto}
+
+/* sign-in screen */
+.authback{background:var(--bg);backdrop-filter:none;z-index:90}
+.authback::before{content:"";position:fixed;inset:0;background:var(--glow) no-repeat;pointer-events:none}
+.authbox{width:min(420px,100%);gap:16px}
+.authbox h2{font-size:19px}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.25),inset 0 0 0 1px var(--line)}

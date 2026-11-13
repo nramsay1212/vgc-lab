@@ -74,9 +74,25 @@
     get(c, id) { const r = state[c] && state[c][id]; return r && !r.del ? { id, ...r } : null; },
     put(c, id, body) {
       const rec = { ...body, u: Date.now() }; delete rec.id;
-      state[c][id] = rec; scheduleSave(); emit(false); sync.soon();
+      state[c][id] = rec; scheduleSave(); emit(false); sync.soon(); VL.account && VL.account.soon();
     },
-    del(c, id) { state[c][id] = { del: true, u: Date.now() }; scheduleSave(); emit(false); sync.soon(); },
+    del(c, id) { state[c][id] = { del: true, u: Date.now() }; scheduleSave(); emit(false); sync.soon(); VL.account && VL.account.soon(); },
+    // ---- used by account sync ----
+    // every record (tombstones included) changed after time t
+    changedSince(t) { const out = []; for (const c of COLLS) for (const [id, r] of Object.entries(state[c] || {})) if (r && (r.u || 0) > t) out.push({ c, i: id, r }); return out; },
+    // merge records from the server; the newer copy of each record wins
+    mergeRecords(list) {
+      let changed = false;
+      for (const { c, i, r } of list) {
+        if (!COLLS.includes(c) || !r) continue;
+        const cur = state[c][i];
+        if (!cur || (r.u || 0) > (cur.u || 0)) { state[c][i] = r; changed = true; }
+      }
+      if (changed) { scheduleSave(); emit(true); }
+      return changed;
+    },
+    count() { let n = 0; for (const c of COLLS) n += Object.keys(state[c] || {}).length; return n; },
+    async clearAll() { state = empty(); await saveLocal(); emit(true); },
     exportJSON() { return JSON.stringify(state, null, 1); },
     importJSON(obj) {
       const m = merge(state, normalize(obj)); state = m.state; scheduleSave(); emit(true); sync.soon();

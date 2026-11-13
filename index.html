@@ -47,7 +47,7 @@
     <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
   </nav>
   <div class="side-foot">
-    <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Sync, backup &amp; theme</span></a>
+    <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Account, backup &amp; theme</span></a>
     <button type="button" class="navbtn" data-tour><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Take the tour</span></button>
     <span class="syncdot" id="syncdot">Not synced</span>
   </div>
@@ -631,12 +631,17 @@
   <!-- SETTINGS -->
   <section class="panel" id="p-settings">
     <header class="page-head">
-      <h1>Sync, backup & theme</h1>
-      <p class="lede">Keep your data safe and the same on every device, and choose how the app looks.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Your data saves on this device automatically, even offline.</li><li>Set up sync once on each device to share data between your phone and computer.</li><li>Download a backup now and then. It's one file you can restore anywhere.</li></ol></details>
+      <h1>Account, backup & theme</h1>
+      <p class="lede">Your account keeps your data safe and the same on every device. You can also download backups and choose how the app looks.</p>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Sign in with the same username and password on your phone and computer. Your data syncs between them on its own.</li><li>Everything also saves on the device, so the app works offline and syncs when you're back online.</li><li>There's no email on accounts, so write your password down. A forgotten password can't be reset.</li><li>Download a backup now and then. It's one file you can restore anywhere.</li></ol></details>
     </header>
     <div class="card accent">
-      <div class="card-head"><h3>Sync across your devices</h3><span class="syncdot" id="syncdot2">Not set up</span></div>
+      <div class="card-head"><h3>Your account</h3></div>
+      <div id="acct-body" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+    <details class="card" id="gist-card">
+      <summary style="cursor:pointer;font-weight:600">Advanced: sync through a GitHub gist instead</summary>
+      <div class="card-head"><span class="sub">Only needed if you don't want to use an account</span><span class="syncdot" id="syncdot2">Not set up</span></div>
       <p class="sub" style="font-size:14.5px">Your data saves on this device automatically. To use the same data on your phone and computer, connect a GitHub token. The app keeps your data in one private gist on your GitHub account, and nothing else on your account is touched.</p>
       <ol style="margin:0;padding-left:20px;font-size:14.5px;display:flex;flex-direction:column;gap:4px">
         <li>On github.com, open <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b>, and choose <b>Generate new token</b>.</li>
@@ -650,7 +655,7 @@
         <button class="btn ghost" id="sy-forget">Disconnect this device</button>
       </div>
       <p class="sub" id="sy-status"></p>
-    </div>
+    </details>
     <div class="card">
       <div class="card-head"><h3>Backup</h3></div>
       <p class="sub">Download everything as one file, or restore from one. Restoring merges with what's here; newer entries win.</p>
@@ -700,7 +705,7 @@
   <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
   <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
   <a href="#roadmap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Roadmap</span></a>
-  <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Sync, backup &amp; theme</span></a>
+  <a href="#settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Account, backup &amp; theme</span></a>
   <button type="button" class="navbtn" data-tour><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Take the tour</span></button>
 </div>
 <div class="modal-back" id="tour" hidden>
@@ -712,6 +717,24 @@
       <button type="button" class="linkbtn" id="tour-skip">Skip tour</button>
       <div class="row" style="gap:8px"><button type="button" class="btn ghost" id="tour-back">Back</button><button type="button" class="btn" id="tour-next">Next</button></div>
     </div>
+  </div>
+</div>
+<div class="modal-back authback" id="auth" hidden>
+  <div class="modal authbox" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="kv" style="gap:10px"><img src="icons/icon-192.png" alt="" width="36" height="36" style="border-radius:9px"><div><h2 id="auth-title">Toxicroak VGC Lab</h2><div class="sub">Sign in to your training data</div></div></div>
+    <div class="seg" role="group" aria-label="Sign in or create an account" style="align-self:stretch;display:grid;grid-template-columns:1fr 1fr">
+      <button type="button" data-authmode="in" aria-pressed="true" role="radio" aria-checked="true">Sign in</button>
+      <button type="button" data-authmode="up" aria-pressed="false" role="radio" aria-checked="false">Create account</button>
+    </div>
+    <form id="auth-form" autocomplete="on" style="display:flex;flex-direction:column;gap:12px">
+      <label for="auth-user">Username<input type="text" id="auth-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" required></label>
+      <label for="auth-pass">Password<input type="password" id="auth-pass" autocomplete="current-password" required></label>
+      <label for="auth-confirm" id="auth-confirm-wrap" hidden>Type the password again<input type="password" id="auth-confirm" autocomplete="new-password"></label>
+      <p class="sub" id="auth-note"></p>
+      <p id="auth-err" role="alert" style="color:var(--loss);font-size:13.5px;min-height:1em"></p>
+      <button class="btn" id="auth-go" type="submit" style="height:40px">Sign in</button>
+    </form>
+    <button type="button" class="linkbtn" id="auth-skip" style="align-self:center">Use without an account on this device</button>
   </div>
 </div>
 <div class="pop" id="pop" role="tooltip" hidden></div>
@@ -730,6 +753,8 @@
 <script src="js/arcade.js?v=8"></script>
 <script src="js/test.js?v=8"></script>
 <script src="js/app.js?v=8"></script>
+<script src="js/firebase-config.js?v=8"></script>
+<script src="js/account.js?v=8"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

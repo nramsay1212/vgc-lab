@@ -375,7 +375,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
 
   // ---------- settings ----------
   VL.onSync = function (status, message) {
-    for (const id of ['syncdot', 'syncdot2']) { const el = $(id); el.className = 'syncdot ' + (status === 'ok' ? 'ok' : status === 'err' ? 'err' : status === 'busy' ? 'busy' : ''); el.textContent = message || (status === 'off' ? 'Not synced' : ''); }
+    for (const id of (VL.account && VL.account.user ? ['syncdot2'] : ['syncdot', 'syncdot2'])) { const el = $(id); el.className = 'syncdot ' + (status === 'ok' ? 'ok' : status === 'err' ? 'err' : status === 'busy' ? 'busy' : ''); el.textContent = message || (status === 'off' ? 'Not synced' : ''); }
     $('sy-status').textContent = status === 'err' ? message : '';
   };
   function renderSettings() {
