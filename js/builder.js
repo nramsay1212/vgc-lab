@@ -348,7 +348,8 @@
     else if (kind === 'maxbulk') { set.nature = category === 'P' ? 'Bold' : 'Calm'; set.evs = category === 'P' ? [max, 0, max, 0, 0, 0] : [max, 0, 0, 0, max, 0]; }
     return set;
   }
-  const speedWith = (set, rec, scarf, tw) => { const mega = megaName(set, rec); let v = statsOf(set, mega ? recOf(mega) : rec)[5]; if (scarf) v = Math.floor(v * 1.5); if (tw) v *= 2; return v; };
+  // the game multiplies Scarf and Tailwind together before rounding: both at once is exactly 3×
+  const speedWith = (set, rec, scarf, tw) => { const mega = megaName(set, rec); const v = statsOf(set, mega ? recOf(mega) : rec)[5]; return scarf && tw ? v * 3 : scarf ? Math.floor(v * 1.5) : tw ? v * 2 : v; };
   const steps = () => { const out = []; for (let v = 0; v <= spMax(); v += spStep()) out.push(v); return out; };
   const budgetFor = (s, idxs) => spTotal() - s.evs.reduce((a, v, i) => a + (idxs.includes(i) ? 0 : v), 0);
 

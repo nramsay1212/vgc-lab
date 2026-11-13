@@ -189,8 +189,8 @@
       const s = r.done ? score(r) : null;
       return `<div class="threat"><div class="h"><div><b>${esc(r.src)}</b> <span class="mini">${new Date(r.ts).toLocaleDateString()}</span></div>
         <div class="kv">${s ? `<span class="pill ${s.bp >= 0.75 ? 'w' : 'l'}">${s.bring}/${2 * s.nb} brought</span><span class="pill ${s.lp >= 0.5 ? 'w' : 'l'}">${s.lead}/${2 * s.nl} leads</span>` : `<button class="btn small" data-pract="${esc(r.id)}">Enter what happened</button>`}<button class="linkbtn" data-prdel="${esc(r.id)}">Delete</button></div></div>
-        <ul><li>Player 1 · you called ${esc((r.pa4 || []).join(', '))} (lead ${esc((r.pal || []).join(' + '))})${r.done ? ` · actual ${esc((r.aa4 || []).join(', '))} (lead ${esc((r.aal || []).join(' + '))})` : ''}</li>
-        <li>Player 2 · you called ${esc((r.pb4 || []).join(', '))} (lead ${esc((r.pbl || []).join(' + '))})${r.done ? ` · actual ${esc((r.ab4 || []).join(', '))} (lead ${esc((r.abl || []).join(' + '))})` : ''}</li></ul></div>`;
+        <ul><li>${VL.spriteRow ? VL.spriteRow(r.pa4) : ''} Player 1 · you called ${esc((r.pa4 || []).join(', '))} (lead ${esc((r.pal || []).join(' + '))})${r.done ? ` · actual ${esc((r.aa4 || []).join(', '))} (lead ${esc((r.aal || []).join(' + '))})` : ''}</li>
+        <li>${VL.spriteRow ? VL.spriteRow(r.pb4) : ''} Player 2 · you called ${esc((r.pb4 || []).join(', '))} (lead ${esc((r.pbl || []).join(' + '))})${r.done ? ` · actual ${esc((r.ab4 || []).join(', '))} (lead ${esc((r.abl || []).join(' + '))})` : ''}</li></ul></div>`;
     }).join('') : '<div class="empty">No predictions yet. Next time you watch a top match, pause at team preview and start one above.</div>';
   }
   $('pr-list').addEventListener('click', e => {
