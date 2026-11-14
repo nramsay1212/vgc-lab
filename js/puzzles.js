@@ -13,7 +13,7 @@
   const DONE = 'vgclab-puzzles-done';
 
   let LIST = null, loading = null;
-  const S = { fmt: '', P: null, busy: false, answered: null, score: { right: 0, n: 0 }, err: '' };
+  const S = { tab: 'own', fmt: '', P: null, busy: false, answered: null, score: { right: 0, n: 0 }, err: '' };
   let done = {}; try { done = JSON.parse(localStorage.getItem(DONE) || '{}') || {}; } catch (e) { done = {}; }
 
   function load() { return loading || (loading = VL.files.get('puzzles').then(j => { LIST = (j && j.formats) || {}; return LIST; })); }
@@ -22,9 +22,23 @@
   // every action each Pokémon chose, turn by turn, and the moves each one showed over the game
   function actions(log) {
     const acts = {}; const known = {}; let turn = 0, upkeep = false;
+    // what each Pokémon showed, and on which turn (the opponent only knows what was shown before the puzzle's turn)
+    const info = {}; const at = (key) => (info[key] = info[key] || { item: null, ability: null, moves: {} });
+    const keyOf = (id) => { const m = String(id || '').match(/^(p[12])[a-c]?: (.+)$/); return m ? m[1] + ':' + m[2] : null; };
+    const tag = (f, name) => { const x = f.find(y => y.startsWith(`[${name}]`)); return x ? x.slice(name.length + 2).trim() : ''; };
     for (const l of String(log).split('\n')) {
       const f = l.split('|'); const t = f[1];
       if (t === 'turn') { turn = +f[2]; upkeep = false; continue; }
+      {
+        const own = keyOf(f[2]); const of = keyOf(tag(f, 'of')); const src = tag(f, 'from');
+        const set = (k, field, v) => { if (k && v && !at(k)[field]) at(k)[field] = { v, turn }; };
+        if (t === '-item' && !/\[from\] (move|ability)/.test(l)) set(own, 'item', f[3]);
+        if (t === '-enditem') set(own, 'item', f[3].replace(/^item: /, ''));
+        if (t === '-ability') set(own, 'ability', f[3]);
+        if (/^item: /.test(src)) set(of || own, 'item', src.slice(6));
+        if (/^ability: /.test(src)) set(of || own, 'ability', src.slice(9));
+        if (t === 'move' && own && !f.some(x => /^\[from\]/.test(x)) && f[3] !== 'Struggle') { const mv = at(own).moves; if (mv[f[3]] === undefined) mv[f[3]] = turn; }
+      }
       if (t === 'upkeep') { upkeep = true; continue; }
       const m = String(f[2] || '').match(/^(p[12])([a-c]): (.+)$/); if (!m) continue;
       const key = m[1] + ':' + m[3], slot = m[1] + m[2];
@@ -36,7 +50,7 @@
       }
       if (t === 'switch' && turn >= 1 && !upkeep) (acts[turn] = acts[turn] || []).push({ slot, key, kind: 'switch', to: String(f[3] || '').split(',')[0] });
     }
-    return { acts, known };
+    return { acts, known, info };
   }
 
   // a turn worth asking about: the winner's Pokémon chose something, and it had enough moves shown to make a real choice
@@ -82,6 +96,32 @@
   }
 
   // ---------- drawing (the board itself is VL.battleView) ----------
+  // both teams as the winner saw them at the start of the turn: their own team in full,
+  // the opponent's only as far as it had been shown
+  function teamPanel(data, raw, sn, side, own, n) {
+    const keys = Object.keys(sn.mons).filter(k => k.startsWith(side + ':'));
+    const allSeen = new Set(); Object.keys(raw.info).concat(Object.keys(raw.known)).forEach(k => { if (k.startsWith(side + ':')) allSeen.add(k); });
+    const nameOf = (k) => (sn.mons[k] && sn.mons[k].name) || (data.turns[data.turns.length - 1].snap || sn).mons[k]?.name || k.split(':')[1];
+    const baseOf = (x) => String(x || '').replace(/-(Mega|Mega-[XYZ]|Primal)$/i, '').split('-')[0];
+    const active = new Set(Object.entries(sn.active).filter(([slot]) => slot.startsWith(side)).map(([, k]) => k));
+    // own side: every Pokémon it used at any point in the game (the player knows its four)
+    const last = data.turns[data.turns.length - 1].snap || sn;
+    const used = own ? Object.keys(last.mons).filter(k => k.startsWith(side + ':')) : keys;
+    const shownBase = new Set(used.map(k => baseOf(nameOf(k))));
+    const rows = used.map(k => {
+      const m = sn.mons[k]; const inf = raw.info[k] || { moves: {} };
+      const vis = (x) => x && (own || x.turn < n);
+      const mv = Object.entries(inf.moves || {}).filter(([, tn]) => own || tn < n).map(([x]) => x);
+      const state = !m ? (own ? '<span class="pz-st back">In the back · 100%</span>' : '') : m.fnt ? '<span class="pz-st fnt">Fainted</span>' : active.has(k) ? `<span class="pz-st act">On the field · ${m.hp}%</span>` : `<span class="pz-st back">In the back · ${m.hp}%</span>`;
+      return `<div class="pz-row ${m && m.fnt ? 'fnt' : ''}">${VL.sprite(nameOf(k), 'sm', false)}<div><div class="kv" style="gap:6px;flex-wrap:wrap"><b>${esc(nameOf(k))}</b>${state}</div>
+        <div class="mini">Item: ${vis(inf.item) ? esc(inf.item.v) : 'not revealed'} · Ability: ${vis(inf.ability) ? esc(inf.ability.v) : 'not revealed'}</div>
+        <div class="mini">${mv.length ? `Moves${own ? '' : ' seen'}: ${mv.map(esc).join(', ')}` : own ? 'No moves used this game' : 'No moves seen yet'}</div></div></div>`;
+    });
+    const rest = data.preview[side].filter(x => !shownBase.has(baseOf(x)));
+    const restRow = rest.length ? `<div class="pz-row pz-rest"><div><div class="mini">${own ? 'Not used this game (left at team preview, or never sent in)' : 'Not seen yet: maybe in the back, maybe left at team preview'}</div>${VL.spriteRow(rest, 'sm')}<div class="mini">${rest.map(esc).join(', ')}</div></div></div>` : '';
+    return `<div class="pz-team ${own ? 'own' : ''}">${rows.join('')}${restRow}</div>`;
+  }
+
   const actText = (a, sn) => {
     const who = sn.mons[a.key] ? sn.mons[a.key].name : a.key.split(':')[1];
     if (a.kind === 'switch') return `${esc(who)} switched out for <b>${esc(a.to)}</b>`;
@@ -114,12 +154,21 @@
     root.innerHTML = head + `<div class="card pz-card">
         <div class="sub">${esc(data.players[c.win])} vs ${esc(data.players[opp])} · rated ${r.r} · you're playing as <b class="rp-n ${c.win}">${esc(data.players[c.win])}</b></div>
         ${VL.battleView(data, sn, { me: c.win, mark: S.after ? null : c.a.key, turn: S.after ? c.n + 1 : c.n })}
+        ${(() => {
+          // one panel at a time, right under the board, so the moves stay close
+          const tabs = [['own', 'Your team'], ['opp', 'Their team'], ['last', c.n > 1 ? `Turn ${c.n - 1}` : 'Leads'], ['all', 'Whole game so far']];
+          const body = S.tab === 'opp' ? teamPanel(data, raw, snBefore, opp, false, c.n)
+            : S.tab === 'last' ? (prev.length ? evs(prev) : '<p class="sub">Nothing yet.</p>')
+            : S.tab === 'all' ? data.turns.slice(0, c.n).map(t => `<div class="section-label">${t.n ? 'Turn ' + t.n : 'Leads'}</div>${evs(t.events)}`).join('')
+            : teamPanel(data, raw, snBefore, c.win, true, c.n);
+          return `<div class="pz-tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-pztab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join('')}</div><div class="pz-tabbody">${body}</div>`;
+        })()}
         ${ans ? `<div class="seg" role="group" style="margin-top:8px"><button type="button" data-pzview="before" aria-pressed="${!S.after}">Start of turn ${c.n}</button><button type="button" data-pzview="after" aria-pressed="${!!S.after}">After it</button></div>` : ''}
         <div class="bv-prompt">${ans ? (ans === right ? '✓ You matched the top player.' : 'The top player chose differently.') : `What will ${esc(me.name)} do?`}</div>
         ${VL.battleMoves(c.moves.map(mv => ({ name: mv, value: 'move:' + mv, cls: mark('move:' + mv), disabled: !!ans })), { fmt: S.fmt.replace(/bo3$/, '') })}
         ${c.canSwitch ? `<div class="bv-switch"><button type="button" class="bv-move switch ${mark('switch')}" data-pz="switch" ${ans ? 'disabled' : ''}><b>Switch out</b>${bench.length ? VL.spriteRow(bench, 'xs') : '<span>to a Pokémon in the back</span>'}</button></div>` : ''}
         ${!ans ? `<p class="sub">Only moves ${esc(me.name)} used during this game are shown. Speed, items and the rest of their sets aren't, just like a real battle.</p>
-          ${prev.length ? `<details class="pz-prev"><summary>What happened last turn</summary>${evs(prev)}</details>` : ''}` : `
+` : `
           <div class="explain"><b>What they did:</b> ${actText(c.a, snBefore)}${partner.length ? `, and ${partner.map(a => actText(a, snBefore)).join(', ')}` : ''}.
             <div class="section-label">How turn ${c.n} played out</div>${evs(data.turns[c.n].events)}
             <p class="sub">${esc(data.winner)} went on to win. <a href="https://replay.pokemonshowdown.com/${esc(r.id)}" target="_blank" rel="noopener">Watch the replay ↗</a> · <button class="linkbtn" id="pz-review">Open in Replay review</button></p></div>${S.change || ''}
@@ -130,6 +179,7 @@
   document.addEventListener('click', (e) => {
     const root = $('pz-root'); if (!root || !root.contains(e.target)) return;
     if (e.target.id === 'pz-next' || e.target.id === 'pz-next2') { S.after = false; next(); return; }
+    const tb = e.target.closest('[data-pztab]'); if (tb) { S.tab = tb.dataset.pztab; render(); return; }
     const v = e.target.closest('[data-pzview]'); if (v) { S.after = v.dataset.pzview === 'after'; render(); return; }
     if (e.target.id === 'pz-review' && S.P) { VL.replay.open(`https://replay.pokemonshowdown.com/${S.P.r.id}`); return; }
     const b = e.target.closest('[data-pz]'); if (!b || !S.P || S.answered) return;
