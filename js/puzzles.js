@@ -70,9 +70,10 @@
       }
     }
     if (!cands.length) return null;
-    // a little more weight on the middle of the game, where decisions are hardest
+    // early-to-middle turns: real decisions, without a long watch to get there
+    const early = cands.filter(c => c.n >= 2 && c.n <= 6 && c.n < data.turns.length - 1);
     const mid = cands.filter(c => c.n >= 2 && c.n < data.turns.length - 1);
-    return pick(mid.length ? mid : cands);
+    return pick(early.length ? early : mid.length ? mid : cands);
   }
 
   async function next() {
@@ -88,7 +89,7 @@
         const j = await res.json(); if (!j.log) continue;
         const data = VL.replay.parse(j.log); if (!data.ok || !data.winner) { done[r.id] = 1; continue; }
         const raw = actions(j.log); const c = choosePuzzle(data, raw); if (!c) { done[r.id] = 1; continue; }
-        S.P = { r, data, raw, c };
+        S.P = { r, data, raw, c }; S.stage = 'preview'; S.t = 0; S.tab = 'own'; S.after = false;
       } catch (e) { /* try another */ }
     }
     if (!S.P) S.err = 'Couldn\'t load a replay from Showdown. Check your connection and try again.';
@@ -139,7 +140,7 @@
       <div class="kv" style="gap:8px"><span class="pill m">${S.score.right}/${S.score.n} matched this session</span><button class="btn" id="pz-next" ${S.busy ? 'disabled' : ''}>${S.P ? 'Next puzzle' : 'Start'}</button></div></div></div>`;
     if (S.busy) { root.innerHTML = head + '<div class="card"><p class="sub">Loading a top-rated game from Showdown…</p></div>'; return; }
     if (S.err) { root.innerHTML = head + `<div class="card"><p class="sub">${esc(S.err)}</p></div>`; return; }
-    if (!S.P) { root.innerHTML = head + `<div class="card"><p>Each puzzle is a real turn from one of the highest-rated games on Showdown. You see what the winning player saw at the start of the turn. Pick what their highlighted Pokémon should do, then see what they did and how it played out.</p><p class="sub">There isn't always one right answer. Matching a top player's choice is the goal, and the reveal shows why it worked.</p></div>`; return; }
+    if (!S.P) { root.innerHTML = head + `<div class="card"><p>Each puzzle is one of the highest-rated games on Showdown. You start at team preview as the player who won, watch the game turn by turn, and at one turn it stops and asks what you'd do. Then you see what they did and can watch the rest.</p><p class="sub">There isn't always one right answer. Matching a top player's choice is the goal, and the reveal shows why it worked.</p></div>`; return; }
 
     const { data, raw, c, r } = S.P; const opp = c.win === 'p1' ? 'p2' : 'p1';
     const sn = S.after ? data.turns[c.n].snap : data.turns[c.n - 1].snap; const snBefore = data.turns[c.n - 1].snap;
@@ -151,8 +152,33 @@
     const bench = snBefore.order[c.win].filter(k => !Object.values(snBefore.active).includes(k) && !snBefore.mons[k].fnt).map(k => snBefore.mons[k].name);
     const partner = (raw.acts[c.n] || []).filter(a => a.slot.startsWith(c.win) && a.key !== c.a.key);
     const evs = (list) => `<div class="rp-events bv-log">${list.map(e => `<div class="rp-ev ${e.cls || ''} ${e.side ? (e.side === c.win ? 'mine' : 'theirs') : ''}">${e.html}</div>`).join('')}</div>`;
+    const who = `<div class="sub">${esc(data.players[c.win])} vs ${esc(data.players[opp])} · rated ${r.r} · you're playing as <b class="rp-n ${c.win}">${esc(data.players[c.win])}</b></div>`;
+    const last = data.turns.length - 1;
+    // progress through the game: preview, the turns before, the decision, the rest
+    const dots = `<div class="pz-dots">${data.turns.map(t => `<i class="${t.n === c.n ? 'q' : ''} ${(S.stage === 'watch' || S.stage === 'post') && t.n === S.t ? 'on' : S.stage === 'decide' && t.n === c.n ? 'on' : ''} ${t.n < (S.stage === 'preview' ? 0 : S.stage === 'watch' ? S.t : S.stage === 'decide' ? c.n : S.t + 1) ? 'past' : ''}"></i>`).join('')}</div>`;
+    if (S.stage === 'preview') {
+      const grid = (side, mine) => `<div class="pz-pv ${mine ? 'own' : ''}"><div class="section-label">${mine ? 'Your team' : 'Their team'} · <span class="rp-n ${side}">${esc(data.players[side])}</span></div><div class="pz-pvgrid">${data.preview[side].map(n => `<div>${VL.sprite(n, 'md', false)}<span>${esc(n)}</span></div>`).join('')}</div></div>`;
+      root.innerHTML = head + `<div class="card pz-card">${who}<h3 style="margin:6px 0 2px">Team preview</h3>
+        <p class="sub">You'll watch this game from the start as <b>${esc(data.players[c.win])}</b>. On turn ${c.n} it stops and asks what <b>${esc(me.name)}</b> should do.</p>
+        ${grid(c.win, true)}${grid(opp, false)}${dots}
+        <div class="row" style="gap:8px"><button class="btn" data-pzgo="watch" style="flex:1">Watch from the start ▶</button><button class="btn ghost" data-pzgo="decide">Skip to the decision</button></div></div>`;
+      return;
+    }
+    if (S.stage === 'watch' || S.stage === 'post') {
+      const t = S.t; const T = data.turns[t]; const snT = T.snap || sn;
+      const atEnd = S.stage === 'post' && t >= last;
+      const nextLabel = S.stage === 'watch' ? (t + 1 >= c.n ? `Your decision: turn ${c.n} ▶` : 'Next turn ▶') : atEnd ? '' : 'Next turn ▶';
+      root.innerHTML = head + `<div class="card pz-card">${who}
+        ${VL.battleView(data, snT, { me: c.win, label: t === 0 ? 'After the leads' : `After turn ${t}` })}
+        ${dots}
+        <div class="pz-nav"><button class="btn ghost" data-pzgo="back">◀ Back</button>${nextLabel ? `<button class="btn" data-pzgo="fwd" style="flex:1">${nextLabel}</button>` : `<button class="btn" id="pz-next2" style="flex:1">Next puzzle</button>`}</div>
+        <div class="section-label">${t === 0 ? 'Team preview and leads' : `What happened on turn ${t}`}</div>${evs(T.events)}
+        ${atEnd ? `<p class="sub"><b>${esc(data.winner)}</b> won the game.</p>` : ''}
+        ${S.stage === 'watch' ? '<p class="sub">Tip: use the ← and → keys on a computer.</p>' : ''}</div>`;
+      return;
+    }
     root.innerHTML = head + `<div class="card pz-card">
-        <div class="sub">${esc(data.players[c.win])} vs ${esc(data.players[opp])} · rated ${r.r} · you're playing as <b class="rp-n ${c.win}">${esc(data.players[c.win])}</b></div>
+        ${who}
         ${VL.battleView(data, sn, { me: c.win, mark: S.after ? null : c.a.key, turn: S.after ? c.n + 1 : c.n })}
         ${(() => {
           // one panel at a time, right under the board, so the moves stay close
@@ -172,13 +198,16 @@
           <div class="explain"><b>What they did:</b> ${actText(c.a, snBefore)}${partner.length ? `, and ${partner.map(a => actText(a, snBefore)).join(', ')}` : ''}.
             <div class="section-label">How turn ${c.n} played out</div>${evs(data.turns[c.n].events)}
             <p class="sub">${esc(data.winner)} went on to win. <a href="https://replay.pokemonshowdown.com/${esc(r.id)}" target="_blank" rel="noopener">Watch the replay ↗</a> · <button class="linkbtn" id="pz-review">Open in Replay review</button></p></div>${S.change || ''}
-          <button class="btn" id="pz-next2" style="width:100%;margin-top:8px">Next puzzle</button>`}
+          <div class="pz-nav"><button class="btn ghost" data-pzgo="post" style="flex:1">Keep watching ▶</button><button class="btn" id="pz-next2" style="flex:1">Next puzzle</button></div>`}
+        ${!ans ? `<div class="pz-nav"><button class="btn ghost small" data-pzgo="rewatch">◀ Watch the turn before again</button></div>` : ''}
+        ${dots}
       </div>`;
   }
 
   document.addEventListener('click', (e) => {
     const root = $('pz-root'); if (!root || !root.contains(e.target)) return;
     if (e.target.id === 'pz-next' || e.target.id === 'pz-next2') { S.after = false; next(); return; }
+    const go = e.target.closest('[data-pzgo]'); if (go && S.P) { step(go.dataset.pzgo); return; }
     const tb = e.target.closest('[data-pztab]'); if (tb) { S.tab = tb.dataset.pztab; render(); return; }
     const v = e.target.closest('[data-pzview]'); if (v) { S.after = v.dataset.pzview === 'after'; render(); return; }
     if (e.target.id === 'pz-review' && S.P) { VL.replay.open(`https://replay.pokemonshowdown.com/${S.P.r.id}`); return; }
@@ -190,6 +219,27 @@
     const changes = VL.progress ? VL.progress.apply([{ a: 'decisions', s: ok ? 1 : 0, d: 1450 }], { src: 'puzzle', label: 'Puzzle' }) : null;
     S.change = changes && VL.progress.changesHtml ? VL.progress.changesHtml(changes) : '';
     render();
+  });
+  // moving through the game
+  function step(k) {
+    const c = S.P.c; const last = S.P.data.turns.length - 1;
+    if (k === 'watch') { S.stage = 'watch'; S.t = 0; }
+    else if (k === 'decide') { S.stage = 'decide'; }
+    else if (k === 'rewatch') { S.stage = 'watch'; S.t = Math.max(0, c.n - 1); }
+    else if (k === 'post') { S.stage = 'post'; S.t = c.n; }
+    else if (k === 'fwd') {
+      if (S.stage === 'watch') { if (S.t + 1 >= c.n) S.stage = 'decide'; else S.t++; }
+      else if (S.stage === 'post' && S.t < last) S.t++;
+    } else if (k === 'back') {
+      if (S.stage === 'watch') { if (S.t === 0) S.stage = 'preview'; else S.t--; }
+      else if (S.stage === 'post') { if (S.t <= c.n) S.stage = 'decide'; else S.t--; }
+    }
+    render(); const card = document.querySelector('.pz-card'); if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView();
+  }
+  document.addEventListener('keydown', (e) => {
+    if (location.hash !== '#puzzles' || !S.P || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    if (e.key === 'ArrowRight' && (S.stage === 'watch' || S.stage === 'post' || S.stage === 'preview')) { e.preventDefault(); step(S.stage === 'preview' ? 'watch' : 'fwd'); }
+    if (e.key === 'ArrowLeft' && (S.stage === 'watch' || S.stage === 'post')) { e.preventDefault(); step('back'); }
   });
   document.addEventListener('change', (e) => { if (e.target.id === 'pz-fmt') { S.fmt = e.target.value; S.P = null; S.answered = null; render(); } });
 

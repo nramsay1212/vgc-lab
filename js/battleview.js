@@ -41,7 +41,7 @@
     const mons = (side, back) => actives(side).map(k => `<div class="bv-slot ${k === o.mark ? 'marked' : ''}">${VL.battleSprite(sn.mons[k].name, back)}</div>`).join('') || '<div class="bv-slot empty"></div>';
     const boxes = (side) => actives(side).map(k => infoBox(sn.mons[k], k === o.mark)).join('');
     return `<div class="bv">
-      <div class="bv-bar"><span class="bv-turn">${o.turn ? `Turn ${o.turn}` : 'Leads'}</span>${field.map(x => `<span class="bv-fx">${esc(x)}</span>`).join('')}</div>
+      <div class="bv-bar"><span class="bv-turn">${o.label ? esc(o.label) : o.turn ? `Turn ${o.turn}` : 'Leads'}</span>${field.map(x => `<span class="bv-fx">${esc(x)}</span>`).join('')}</div>
       <div class="bv-field ${fieldCls} ${(sn.room || []).some(r => /Trick Room/.test(r)) ? 'tr' : ''}">
         <div class="bv-side opp"><div class="bv-who"><b class="rp-n ${opp}">${esc(data.players[opp] || 'Opponent')}</b>${sideConds(sn, opp)}${party(data, sn, opp, false)}</div><div class="bv-boxes">${boxes(opp)}</div><div class="bv-mons">${mons(opp, false)}</div></div>
         <div class="bv-side mine"><div class="bv-mons">${mons(me, true)}</div><div class="bv-boxes">${boxes(me)}</div><div class="bv-who"><b class="rp-n ${me}">${esc(data.players[me] || 'You')}</b>${sideConds(sn, me)}${party(data, sn, me, true)}</div></div>
