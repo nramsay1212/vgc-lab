@@ -46,6 +46,20 @@
     const u = urlFor(rec);
     return `<img class="spr ${cls}${u.pix ? ' pix' : ''}" src="${esc(u.src)}" data-file="${esc(u.file)}" data-ini="${ini}" alt="${title === false ? '' : esc(label)}" title="${title === false ? '' : esc(label)}" loading="lazy" decoding="async" onerror="VL.spriteFail(this)">`;
   };
+  /* Battle sprites like Showdown's: animated, facing the right way (back sprites for your side),
+     falling back to still pictures and then to the normal picture. */
+  VL.battleSprite = function (nameOrRec, back) {
+    const rec = recOf(nameOrRec); const label = rec ? rec.n : String(nameOrRec || '');
+    if (!rec || (MAN && MAN.none && MAN.none.includes(rec.id))) return `<span class="spr none lg" title="${esc(label)}">${esc(label.replace(/[^A-Za-z]/g, '').slice(0, 2) || '?')}</span>`;
+    const u = urlFor(rec); const file = rec.sp || u.file;
+    const chain = [`${BASE}ani${back ? '-back' : ''}/${file}.gif`, `${BASE}gen5${back ? '-back' : ''}/${file}.png`, u.src].join('|');
+    return `<img class="bv-spr" src="${esc(chain.split('|')[0])}" data-chain="${esc(chain)}" alt="${esc(label)}" title="${esc(label)}" onerror="VL.battleSpriteFail(this)">`;
+  };
+  VL.battleSpriteFail = function (img) {
+    const chain = String(img.dataset.chain || '').split('|'); const i = chain.indexOf(img.getAttribute('src'));
+    if (i >= 0 && i < chain.length - 1) { img.src = chain[i + 1]; img.classList.toggle('pix', /\/gen5/.test(chain[i + 1])); return; }
+    img.onerror = null; img.style.visibility = 'hidden';
+  };
   VL.spriteFail = function (img) {
     const step = +(img.dataset.step || 0) + 1; img.dataset.step = step;
     const tries = [`${BASE}gen5/${img.dataset.file}.png`, `${BASE}dex/${img.dataset.file}.png`, `${BASE}gen5/${String(img.dataset.file).split('-')[0]}.png`].filter(u => u !== img.src);

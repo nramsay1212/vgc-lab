@@ -131,22 +131,7 @@
   }
 
   // ---------- drawing ----------
-  const hpClass = (hp) => hp > 50 ? 'hi' : hp > 20 ? 'mid' : 'lo';
-  function monHtml(m, big) {
-    const boosts = Object.entries(m.boosts || {}).filter(([, v]) => v).map(([k, v]) => `<span class="pill ${v > 0 ? 'w' : 'l'}">${v > 0 ? '+' : ''}${v} ${esc(STAT[k] || k)}</span>`).join('');
-    return `<div class="rp-mon ${big ? 'big' : ''} ${m.fnt ? 'fnt' : ''}">${VL.sprite(m.name, big ? 'md' : 'sm', false)}<div><div class="nm">${esc(m.name)}${m.tera ? ` <span class="mini">Tera ${esc(m.tera)}</span>` : ''}</div>
-      <div class="hp"><i class="${hpClass(m.hp)}" style="width:${m.hp}%"></i></div><div class="mini">${m.fnt ? 'Fainted' : m.hp + '%'}${m.status ? ` · <span class="bad-t">${esc(STATUS[m.status] || m.status)}</span>` : ''}</div>${big && boosts ? `<div class="kv" style="flex-wrap:wrap;gap:3px">${boosts}</div>` : ''}</div></div>`;
-  }
-  function sideHtml(side, sn) {
-    const d = R.data; const act = Object.entries(sn.active).filter(([slot]) => slot.startsWith(side)).sort().map(([, k]) => k).filter(k => sn.mons[k] && !sn.mons[k].fnt);
-    const bench = sn.order[side].filter(k => !act.includes(k));
-    const seen = new Set(sn.order[side].map(k => baseName(sn.mons[k].name).split('-')[0]));
-    const unseen = d.preview[side].filter(n => !seen.has(baseName(n).split('-')[0]));
-    return `<div class="rp-side ${side} ${side === R.me ? 'me' : ''}"><div class="kv"><b class="rp-n ${side}">${esc(d.players[side] || side)}</b><span class="mini">${side === R.me ? 'you' : 'opponent'}</span>${sn.side[side].map(x => `<span class="pill n">${esc(x)}</span>`).join('')}</div>
-      <div class="rp-active">${act.map(k => monHtml(sn.mons[k], true)).join('') || '<span class="sub">Nothing on the field</span>'}</div>
-      ${bench.length ? `<div class="rp-bench">${bench.map(k => monHtml(sn.mons[k], false)).join('')}</div>` : ''}
-      ${unseen.length ? `<div class="kv rp-unseen"><span class="mini">Not seen yet</span>${VL.spriteRow(unseen, 'xs')}</div>` : ''}</div>`;
-  }
+  // ---------- drawing (the board is VL.battleView) ----------
   function render() {
     const root = $('rr-root'); if (!root) return;
     if (!VL.D.dex) { root.innerHTML = '<p class="sub">Loading the Pokémon data…</p>'; return; }
@@ -155,7 +140,6 @@
     const sn = R.turn === 0 || R.after ? T.snap : d.turns[R.turn - 1].snap;
     const opp = R.me === 'p1' ? 'p2' : 'p1';
     const result = d.winner ? (d.winner === d.players[R.me] ? 'You won' : 'You lost') : 'No result';
-    const field = [sn.weather, sn.terrain, ...sn.room].filter(Boolean);
     const evs = (list) => list.map(e => `<div class="rp-ev ${e.cls} ${e.side ? (e.side === R.me ? 'mine' : 'theirs') : ''}">${e.html}</div>`).join('');
     const during = T.events.filter(e => !e.after), afterEv = T.events.filter(e => e.after);
     root.innerHTML = `
@@ -167,8 +151,7 @@
         <p class="sub">★ is your key turn. A dot marks turns with a note. Use the left and right arrow keys to step.</p></div>
       <div class="rp-main">
         <div class="card"><div class="card-head"><h3>${R.turn === 0 ? 'The field after leads' : R.after ? `The field after turn ${R.turn}` : `The field at the start of turn ${R.turn}`}</h3>${R.turn > 0 ? `<div class="seg" role="group"><button type="button" data-rpa="0" aria-pressed="${!R.after}">Before</button><button type="button" data-rpa="1" aria-pressed="${R.after}">After</button></div>` : ''}</div>
-          ${field.length ? `<div class="kv" style="flex-wrap:wrap">${field.map(x => `<span class="pill n">${esc(x)}</span>`).join('')}</div>` : ''}
-          <div class="rp-board">${sideHtml(opp, sn)}${sideHtml(R.me, sn)}</div></div>
+          ${VL.battleView(d, sn, { me: R.me, turn: R.turn === 0 ? 0 : R.after ? R.turn + 1 : R.turn })}</div>
         <div class="card"><div class="card-head"><h3>${R.turn === 0 ? 'Team preview and leads' : `What happened on turn ${R.turn}`}</h3><span class="sub"><span class="rp-n ${R.me}">you</span> · <span class="rp-n ${opp}">opponent</span></span></div>
           <div class="rp-events">${evs(during) || '<span class="sub">Nothing happened.</span>'}${afterEv.length ? `<div class="section-label">End of turn</div>${evs(afterEv)}` : ''}</div>
           <label for="rp-note">Your note on ${R.turn === 0 ? 'team preview and leads' : `turn ${R.turn}`}<textarea id="rp-note" placeholder="${R.turn === 0 ? 'Was this the right four and the right lead?' : 'What would you do now? What did you miss?'}">${esc(R.notes[R.turn] || '')}</textarea></label>
