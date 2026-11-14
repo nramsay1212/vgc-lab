@@ -878,3 +878,7 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .natgrid td.on{background:var(--accent);color:#fff;font-weight:600}
 .natgrid{table-layout:fixed}
 @media (max-width:560px){.natgrid{font-size:11.5px}.natgrid th,.natgrid td{padding:5px 2px}}
+/* reading a team (Study drill) */
+.arch-team{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;margin:10px 0 4px;font-size:13px;font-weight:400}
+.arch-mon{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg-2)}
+.arch-mon .mini{line-height:1.35}

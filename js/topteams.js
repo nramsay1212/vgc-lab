@@ -182,5 +182,8 @@
     show(eventId) { S.season = ''; S.scope = eventId || 'official'; S.tag = ''; S.mon = ''; S.q = ''; location.hash = 'topteams'; render(); },
     random(fmtDoubles) { if (!DATA) return null; const pool = DATA.events.filter(e => e.src === 'official').flatMap(e => e.teams.filter(t => t.p <= 16)); const all = pool.length ? pool : DATA.events.flatMap(e => e.teams); return all.length ? all[Math.floor(Math.random() * all.length)] : null; },
     place, shownName,
+    // every team loaded so far (recent events plus any seasons opened), for the archetype drill
+    allTeams() { if (!DATA) return []; const seen = new Set(); const out = []; for (const evs of [DATA.events, ...Object.values(ARCH.got)]) for (const ev of evs || []) { if (seen.has(ev.id)) continue; seen.add(ev.id); for (const t of ev.teams) out.push(t); } return out; },
+    loadLatestSeason() { return loadIndex().then(ix => { const k = Object.keys(ix || {}).sort().pop(); return k ? loadSeason(k) : null; }); },
   };
 })();

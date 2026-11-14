@@ -97,6 +97,7 @@
     { id: 'whofirst', name: 'Who moves first?', desc: 'Two Pokémon, real spreads, speed control in play. Same-priority moves.' },
     { id: 'items', name: 'Items', desc: 'What does this held item do?' },
     { id: 'abilities', name: 'Abilities', desc: 'What does this ability do?' },
+    { id: 'archetypes', name: 'Read a team', desc: 'Real top-cut teams: name the speed control and weather, and spot who sets it up and who has Fake Out, like at team preview.' },
     { id: 'natures', name: 'Natures', desc: 'What each nature raises and lowers, which nature does what, and which one a Pokémon wants.' },
     { id: 'priority', name: 'Priority', desc: 'What priority bracket is this move in?' },
     { id: 'mechanics', name: 'Mechanics', desc: 'Damage modifiers, durations, status and the battle gimmick, for this game.' },
@@ -265,6 +266,47 @@
         const others = lvl(c) >= 2 ? similar(it.d, pool, 3) : shuffle(pool).slice(0, 3);
         if (others.length < 3) return null;
         return { q: `What does <b>${esc(it.n)}</b> do?`, opts: shuffle([{ label: it.d, ok: true }, ...others.map(d => ({ label: d, ok: false }))]), long: true, ex: `<b>${esc(it.n)}</b>: ${esc(it.d)}` };
+      },
+    },
+    // reading a real top-cut team at a glance, the way you have to at team preview
+    archetypes: {
+      keys: (c) => {
+        const T = VL.topteams && VL.topteams.allTeams ? VL.topteams.allTeams() : [];
+        if (!T.length && VL.topteams && !GEN.archetypes.asked) { GEN.archetypes.asked = true; VL.topteams.load().then(() => VL.topteams.loadLatestSeason()).then(() => { if (!S.quiz) render(); }); }
+        const fm = c.fmt.id; const mine = T.filter(t => t.ev && (t.ev.fmt === fm || (t.ev.meta || '') === fm));
+        const use = (mine.length >= 40 ? mine : T).slice(0, 1500);
+        return use.flatMap(t => ['speed', 'field', 'setter', 'fakeout'].map(k => k + '|' + t.key));
+      },
+      make(key, c) {
+        const [kind, tkey] = key.split('|'); const T = VL.topteams.allTeams(); const t = T.find(x => x.key === tkey); if (!t) return null;
+        const mons = t.mons; const tags = t.tags || VL.teamTags(mons);
+        const has = (m, mv) => (m.m || []).some(x => toId(x) === toId(mv));
+        const teamHtml = `<div class="arch-team">${mons.map(m => `<div class="arch-mon">${VL.sprite(VL.topteams.shownName(m), 'md', false)}<div><b>${esc(VL.topteams.shownName(m))}</b><div class="mini">${esc(m.i || '')}${m.a ? ' · ' + esc(m.a) : ''}</div><div class="mini">${(m.m || []).map(esc).join(' · ')}</div></div></div>`).join('')}</div><p class="sub">${esc(t.who || 'A player')}, ${VL.topteams.place ? esc(VL.topteams.place(t.p)) : '#' + t.p} at ${esc(t.ev ? t.ev.name : 'an event')}</p>`;
+        const why = (txt) => `${txt}<br><span class="sub">This team: ${esc(tags.join(', '))}.</span>`;
+        if (kind === 'speed') {
+          const tr = tags.includes('Trick Room'), tw = tags.includes('Tailwind'); const ans = tr && tw ? 'Both Trick Room and Tailwind' : tr ? 'Trick Room' : tw ? 'Tailwind' : 'Neither (it relies on raw Speed, priority or moves like Icy Wind)';
+          const setters = mons.filter(m => has(m, 'Trick Room') || has(m, 'Tailwind')).map(m => `${VL.topteams.shownName(m)} (${has(m, 'Trick Room') ? 'Trick Room' : 'Tailwind'})`);
+          return { q: `How does this team control Speed?${teamHtml}`, opts: ['Trick Room', 'Tailwind', 'Both Trick Room and Tailwind', 'Neither (it relies on raw Speed, priority or moves like Icy Wind)'].map(l => ({ label: l, ok: l === ans })), ex: why(setters.length ? `Set by ${esc(setters.join(', '))}.` : 'No Trick Room or Tailwind on any of its Pokémon.') };
+        }
+        if (kind === 'field') {
+          const FIELD = ['Sun', 'Rain', 'Sand', 'Snow', 'Psychic Terrain', 'Grassy Terrain', 'Electric Terrain', 'Misty Terrain'];
+          const mineF = tags.filter(x => FIELD.includes(x)); const ans = mineF[0] || 'None of these';
+          const wrong = shuffle(FIELD.filter(x => !mineF.includes(x))).slice(0, ans === 'None of these' ? 3 : 2);
+          const opts = shuffle([ans, ...wrong]).concat(ans === 'None of these' ? [] : ['None of these']).slice(0, 4);
+          if (!opts.includes(ans)) opts[0] = ans;
+          const who = mons.filter(m => /drought|drizzle|sand stream|snow warning|surge|orichalcum|hadron|mega sol/i.test(m.a || '') || ['Sunny Day', 'Rain Dance', 'Sandstorm', 'Snowscape', 'Psychic Terrain', 'Grassy Terrain', 'Electric Terrain', 'Misty Terrain'].some(mv => has(m, mv)) || /charizardite y|tyranitarite|abomasite/i.test(m.i || ''));
+          return { q: `Which weather or terrain does this team set?${teamHtml}`, opts: opts.map(l => ({ label: l, ok: l === ans || (l !== 'None of these' && mineF.includes(l)) })), ex: why(who.length ? `Set by ${esc(who.map(m => `${VL.topteams.shownName(m)} (${m.a || m.i})`).join(', '))}.` : 'Nothing on this team sets weather or terrain.') };
+        }
+        if (kind === 'setter') {
+          const goal = ['Trick Room', 'Tailwind', 'Follow Me', 'Rage Powder'].find(mv => mons.some(m => has(m, mv))); if (!goal) return null;
+          const yes = mons.filter(m => has(m, goal)); const no = mons.filter(m => !has(m, goal)); if (no.length < 3) return null;
+          const right = pick(yes); const opts = shuffle([right, ...shuffle(no).slice(0, 3)]);
+          return { q: `Which Pokémon on this team has <b>${esc(goal)}</b>?${teamHtml}`, opts: opts.map(m => ({ label: VL.topteams.shownName(m), ok: m === right })), ex: why(`${esc(yes.map(m => VL.topteams.shownName(m)).join(' and '))} ${yes.length > 1 ? 'have' : 'has'} ${esc(goal)}. Spotting the setter at team preview tells you what to target or Taunt first.`) };
+        }
+        const fo = mons.filter(m => has(m, 'Fake Out')); const no = mons.filter(m => !has(m, 'Fake Out'));
+        if (!fo.length || no.length < 3) return null;
+        const right = pick(fo); const opts = shuffle([right, ...shuffle(no).slice(0, 3)]);
+        return { q: `Which Pokémon on this team has <b>Fake Out</b>?${teamHtml}`, opts: opts.map(m => ({ label: VL.topteams.shownName(m), ok: m === right })), ex: why(`${esc(fo.map(m => VL.topteams.shownName(m)).join(' and '))} ${fo.length > 1 ? 'have' : 'has'} Fake Out. A Fake Out user is usually in the lead to stop your setup on turn 1.`) };
       },
     },
     // three kinds of question per nature: what it does, which one does this, and which one a job needs
