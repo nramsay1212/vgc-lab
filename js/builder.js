@@ -335,7 +335,7 @@
   // ---------- Counters: which Pokémon answer the ones you're struggling with ----------
   // Every meta Pokémon you don't have yet, with its most common set, against each target's most
   // common set: the best damage it does, the most it takes from the target's attacks, and who's faster.
-  const CT = { targets: [], custom: false, tr: false, threats: [], key: '', res: null, busy: false, tok: 0 };
+  const CT = { targets: [], custom: false, speed: 'normal', prev: {}, threats: [], key: '', res: null, busy: false, tok: 0 };
   const commonSet = (name) => {
     const set = targetSet(name, 'common'); const m = metaOf(name); if (!set || !m) return null;
     const rec = recOf(name);
@@ -350,10 +350,27 @@
     const { off, offLo, def, faster } = v;
     if (def < 50 && off >= 100) return ['Hard counter', 'w', 4];
     if (def < 50 && off >= 50) return ['Counter', 'w', 3];
-    if (faster && off >= 100) return [CT.tr ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'n', 2.5];
+    if (faster && off >= 100) return [CT.speed === 'tr' ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'n', 2.5];
     if (def < 100 && offLo >= 100) return ['Takes a hit and KOs back', 'n', 2];
     if (def < 35) return ['Walls it', 'm', 1];
     return ['Loses to it', 'l', 0];
+  }
+  // how many recent top-cut teams in this format bring Tailwind or Trick Room
+  function prevText() {
+    const id = fmt().id; const p = CT.prev[id];
+    if (p === undefined) {
+      CT.prev[id] = null;
+      if (VL.topteams) Promise.all([VL.topteams.load(), VL.topteams.loadLatestSeason()]).then(() => {
+        const teams = VL.topteams.allTeams().filter(t => t.ev && t.ev.fmt === id);
+        const has = (t, mv) => t.mons.some(m => (m.m || []).includes(mv));
+        CT.prev[id] = teams.length ? { n: teams.length, tw: teams.filter(t => has(t, 'Tailwind')).length, tr: teams.filter(t => has(t, 'Trick Room')).length } : false;
+        const el = $('ctr-prev'); if (el) el.innerHTML = prevText();
+      }).catch(() => { CT.prev[id] = false; });
+      return '';
+    }
+    if (!p) return '';
+    const pc = (x) => Math.round(100 * x / p.n);
+    return `Right now: <b>Tailwind on ${pc(p.tw)}%</b> of top-cut teams and <b>Trick Room on ${pc(p.tr)}%</b>, from ${p.n} team sheets at recent events in this format.`;
   }
   function renderCounters() {
     const box = $('bd-ctr'); if (!box) return;
@@ -365,10 +382,11 @@
       <div class="kv bd-chips">${chips.map(n => `<button type="button" class="chipbtn ctr-chip" data-ctrt="${esc(n)}" aria-pressed="${CT.targets.includes(n)}">${VL.sprite(recOf(n) || n, 'xs')}${esc(n)}</button>`).join('')}
         <button type="button" class="chipbtn" data-bd="ctradd">+ Another Pokémon</button>${CT.custom ? '<button type="button" class="chipbtn" data-bd="ctrauto">↺ Back to my threats</button>' : ''}</div>
       ${CT.custom ? '<p class="sub">You picked these yourself, so they won\'t change as you build. <b>Back to my threats</b> goes back to following your team.</p>' : ''}
-      <div class="kv bd-chips"><span class="mini">Speed</span><button type="button" class="chipbtn" data-ctrtr="0" aria-pressed="${!CT.tr}">Normal</button><button type="button" class="chipbtn" data-ctrtr="1" aria-pressed="${CT.tr}">Under Trick Room</button></div>
-      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate, Tailwind and your teammates' support don't.</p><p><b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
+      <div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-ctrsp="${k}" aria-pressed="${CT.speed === k}">${l}</button>`).join('')}</div>
+      <p class="sub" id="ctr-prev">${prevText()}</p>
+      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
-    const key = [fmt().id, CT.tr ? 'tr' : '', CT.targets.join(','), teamNames().map(baseOf).sort().join(',')].join('|');
+    const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
     box.innerHTML = head + '<p class="sub" id="ctr-prog">Checking the meta…</p>';
     const tok = ++CT.tok;
@@ -387,8 +405,8 @@
       return () => new C.Field(o);
     };
     const have = new Set(teamNames().map(baseOf));
-    const speedOfSet = (set) => { const r = recOf(set.species); return r ? speedWith(set, r, set.item === 'Choice Scarf', false) : 0; };
-    const tg = CT.targets.map(n => { const set = commonSet(n); const rec = recOf(n); if (!set || !rec) return null; const mon = calcMon(C, g, set, rec); return mon ? { n, set, rec, mon, atk: attacks(set), spe: speedOfSet(set) } : null; }).filter(Boolean);
+    const speedOfSet = (set, tw) => { const r = recOf(set.species); return r ? speedWith(set, r, set.item === 'Choice Scarf', !!tw) : 0; };
+    const tg = CT.targets.map(n => { const set = commonSet(n); const rec = recOf(n); if (!set || !rec) return null; const mon = calcMon(C, g, set, rec); return mon ? { n, set, rec, mon, atk: attacks(set), spe: speedOfSet(set), espe: speedOfSet(set, CT.speed === 'theirtw') } : null; }).filter(Boolean);
     if (!tg.length) { box(); return; }
     const targetBases = new Set(tg.map(t => baseOf(t.n)));
     const mates = matesOf(teamNames(), e);
@@ -401,13 +419,13 @@
       for (; i < end; i++) {
         const x = pool[i]; const set = commonSet(x.n); const rec = recOf(x.n); if (!set || !rec) continue;
         const me = calcMon(C, g, set, rec); if (!me) continue;
-        const myAtk = attacks(set); const spe = speedOfSet(set);
+        const myAtk = attacks(set); const spe = speedOfSet(set); const espe = speedOfSet(set, CT.speed === 'mytw');
         const vs = tg.map(t => {
           const field = pairField(me, spe, t.mon, t.spe);
           let off = 0, offLo = 0, offMv = '', def = 0, defMv = '';
           for (const mv of myAtk) { const r = row(C, g, me, t.mon, mv.n, field); if (r && r.hi > off) { off = r.hi; offLo = r.lo; offMv = mv.n; } }
           for (const mv of t.atk) { const r = row(C, g, t.mon, me, mv.n, field); if (r && r.hi > def) { def = r.hi; defMv = mv.n; } }
-          const v = { t: t.n, off, offLo, offMv, def, defMv, faster: CT.tr ? spe < t.spe : spe > t.spe, tie: spe === t.spe, spe, tspe: t.spe };
+          const v = { t: t.n, off, offLo, offMv, def, defMv, faster: CT.speed === 'tr' ? espe < t.espe : espe > t.espe, tie: espe === t.espe, spe: espe, tspe: t.espe };
           v.ver = verdict(v); return v;
         });
         const answered = vs.filter(v => v.ver[2] >= 2).length;
@@ -429,7 +447,8 @@
     const line = (v) => {
       const hit = v.off ? `${v.offMv} does ${v.offLo}–${pct(v.off)}` : 'has no attack that hurts it';
       const take = v.def ? `takes up to ${pct(v.def)} from ${v.defMv}` : 'takes nothing from its attacks';
-      const sp = v.tie ? 'speed tie' : CT.tr ? (v.faster ? `moves first under Trick Room (${v.spe} vs ${v.tspe})` : `moves second under Trick Room (${v.spe} vs ${v.tspe})`) : v.faster ? `faster (${v.spe} vs ${v.tspe})` : `slower (${v.spe} vs ${v.tspe})`;
+      const nums = `(${v.spe}${CT.speed === 'mytw' ? ' with Tailwind' : ''} vs ${v.tspe}${CT.speed === 'theirtw' ? ' with Tailwind' : ''})`;
+      const sp = v.tie ? `speed tie ${nums}` : CT.speed === 'tr' ? (v.faster ? `moves first under Trick Room ${nums}` : `moves second under Trick Room ${nums}`) : v.faster ? `faster ${nums}` : `slower ${nums}`;
       return `<li><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <b>${esc(v.t)}</b>: ${esc(hit)}, ${esc(take)}, ${esc(sp)}.</li>`;
     };
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
@@ -767,7 +786,7 @@
       const pr = e.target.closest('[data-preset]'); if (pr) { const v = pr.dataset.preset.split('').map(Number); const s = T.sets[sel]; s.evs = v.map(x => x ? spMax() : 0); const left = spTotal() - s.evs.reduce((a, c) => a + c, 0); if (left > 0) { const i = v.indexOf(1) === 0 ? 5 : 0; const room = spMax() - s.evs[i]; s.evs[i] += Math.min(left, room) - (Math.min(left, room) % spStep()); } if (!v.some(Boolean)) s.evs = [0, 0, 0, 0, 0, 0]; renderEditor(); analysisSoon(); save(); return; }
       const sp = e.target.closest('[data-spread]'); if (sp) { const [nat, nums] = sp.dataset.spread.split(':'); const s = T.sets[sel]; s.nature = nat; const ev = nums.split('/').map(Number); if (ev.length === 6) s.evs = ev; renderEditor(); analysisSoon(); save(); return; }
       const rt = e.target.closest('[data-rtab]'); if (rt) { rtab = rt.dataset.rtab; renderSide(); return; }
-      const tr = e.target.closest('[data-ctrtr]'); if (tr) { CT.tr = tr.dataset.ctrtr === '1'; renderCounters(); return; }
+      const sp2 = e.target.closest('[data-ctrsp]'); if (sp2) { CT.speed = sp2.dataset.ctrsp; renderCounters(); return; }
       const ct = e.target.closest('[data-ctrt]'); if (ct) { const n = ct.dataset.ctrt; CT.custom = true; CT.targets = CT.targets.includes(n) ? CT.targets.filter(x => x !== n) : CT.targets.concat([n]).slice(-4); renderCounters(); return; }
       const cf = e.target.closest('[data-ctr]'); if (cf) { CT.custom = true; CT.targets = [cf.dataset.ctr]; atab = 'counters'; renderAnalysis(); $('bd-analysis').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
       const ca = e.target.closest('[data-ctradd]'); if (ca) { const empty = T.sets.findIndex(x => !x || !x.species); if (empty >= 0) sel = empty; setMon(ca.dataset.ctradd); VL.sound && VL.sound.play('right'); return; }
