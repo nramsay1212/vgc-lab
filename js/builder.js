@@ -350,9 +350,9 @@
     const { off, offLo, def, faster } = v;
     if (def < 50 && off >= 100) return ['Hard counter', 'w', 4];
     if (def < 50 && off >= 50) return ['Counter', 'w', 3];
-    if (faster && off >= 100) return [CT.speed === 'tr' ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'n', 2.5];
-    if (def < 100 && offLo >= 100) return ['Takes a hit and KOs back', 'n', 2];
-    if (def < 35) return ['Walls it', 'm', 1];
+    if (faster && off >= 100) return [CT.speed === 'tr' ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'y', 2.5];
+    if (def < 100 && offLo >= 100) return ['Takes a hit and KOs back', 'y', 2];
+    if (def < 35) return ['Walls it', 'y', 1];
     return ['Loses to it', 'l', 0];
   }
   // how many recent top-cut teams in this format bring Tailwind or Trick Room
@@ -384,7 +384,7 @@
       ${CT.custom ? '<p class="sub">You picked these yourself, so they won\'t change as you build. <b>Back to my threats</b> goes back to following your team.</p>' : ''}
       <div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-ctrsp="${k}" aria-pressed="${CT.speed === k}">${l}</button>`).join('')}</div>
       <p class="sub" id="ctr-prev">${prevText()}</p>
-      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
+      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
     const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
@@ -449,10 +449,12 @@
       const take = v.def ? `takes up to ${pct(v.def)} from ${v.defMv}` : 'takes nothing from its attacks';
       const nums = `(${v.spe}${CT.speed === 'mytw' ? ' with Tailwind' : ''} vs ${v.tspe}${CT.speed === 'theirtw' ? ' with Tailwind' : ''})`;
       const sp = v.tie ? `speed tie ${nums}` : CT.speed === 'tr' ? (v.faster ? `moves first under Trick Room ${nums}` : `moves second under Trick Room ${nums}`) : v.faster ? `faster ${nums}` : `slower ${nums}`;
-      return `<li><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <b>${esc(v.t)}</b>: ${esc(hit)}, ${esc(take)}, ${esc(sp)}.</li>`;
+      const risk = v.ver[1] !== 'y' ? '' : v.ver[0] === 'Walls it' ? ' Risk: it can\'t knock it out.' : v.def >= 100 ? ' Risk: it gets knocked out if it\'s hit first.' : ' Risk: it can\'t take two hits.';
+      return `<li class="ctr-${v.ver[1]}"><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <b>${esc(v.t)}</b>: ${esc(hit)}, ${esc(take)}, ${esc(sp)}.${risk ? `<span class="ctr-risk">${esc(risk)}</span>` : ''}</li>`;
     };
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
-      ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'n' : 'm'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill n">Often with your team</span>' : ''}</div>
+      <div class="ctr-key"><span><i class="dot w"></i>Good: a safe answer</span><span><i class="dot y"></i>Works, but risky</span><span><i class="dot l"></i>Bad: loses to it</span></div>
+      ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
         <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
         <ul>${c.vs.map(line).join('')}</ul></div>`).join('')}`;
   }
