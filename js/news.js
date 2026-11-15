@@ -1,7 +1,7 @@
 /* News: one timeline of what changed. Everything here is produced by the
  * daily update: data changes (new formats, Pokémon, items, balance changes),
  * monthly usage shifts, tournament results, headlines from VGC news sites,
- * the event calendar and this app's own updates.
+ * and the event calendar.
  * Also: the "new version is ready" bar, and the update status line. */
 (function () {
   'use strict';
@@ -25,10 +25,10 @@
 
   const KINDS = {
     format: ['Rules', 'n'], pokemon: ['Pokémon', 'n'], item: ['Items', 'n'], move: ['Moves', 'n'], ability: ['Abilities', 'n'], balance: ['Balance change', 'l'],
-    meta: ['Meta', 'w'], results: ['Results', 'w'], headline: ['Headline', 'm'], app: ['App update', 'm'],
+    meta: ['Meta', 'w'], results: ['Results', 'w'], headline: ['Headline', 'm'],
   };
   const GROUP = { format: 'game', pokemon: 'game', item: 'game', move: 'game', ability: 'game', balance: 'game', meta: 'meta', results: 'results', headline: 'headlines', app: 'app' };
-  const FILTERS = [['all', 'Everything'], ['game', 'Game and data changes'], ['meta', 'Meta'], ['results', 'Tournament results'], ['headlines', 'Headlines'], ['app', 'App updates']];
+  const FILTERS = [['all', 'Everything'], ['game', 'Game and data changes'], ['meta', 'Meta'], ['results', 'Tournament results'], ['headlines', 'Headlines']];
 
   function items() {
     const out = [];
@@ -38,7 +38,6 @@
       out.push({ d: ev.date, k: 'results', t: `${ev.name}: ${win.who ? win.who + ' won' : 'results are in'}`, x: `${ev.players ? ev.players.toLocaleString() + ' players. ' : ''}Winning team:`, mons: win.mons, ev: ev.id });
     }
     for (const h of NEWS.headlines || []) out.push({ d: h.d, k: 'headline', t: h.t, x: h.s || '', u: h.u });
-    for (const a of NEWS.app || []) out.push({ d: a.d, k: 'app', t: a.t });
     const order = { format: 0, balance: 1, pokemon: 2, item: 3, move: 4, ability: 5, meta: 6, results: 7, headline: 8, app: 9 };
     return out.filter(x => x.d && x.t).sort((a, b) => b.d.localeCompare(a.d) || order[a.k] - order[b.k]);
   }

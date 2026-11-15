@@ -6,7 +6,6 @@
  *
  * - headlines: recent competitive Pokémon headlines (title, source, date and
  *   link only) from Victory Road and Google News
- * - app: what changed in this app, from the project's own history
  * - calendar: upcoming major events from Limitless, when it can be read
  * - changes: kept as they are; build-data.js and build-meta.js add to them
  *   when Pokémon data or usage stats change
@@ -45,19 +44,6 @@ async function feed(url, source, maxAgeDays, max) {
   return items.slice(0, max);
 }
 
-function appUpdates() {
-  try {
-    const log = execSync('git log --no-merges -n 150 --format=%cs%x09%an%x09%s', { cwd: path.join(__dirname, '..') }).toString().trim().split('\n');
-    const out = [];
-    for (const line of log) {
-      const [d, who, ...rest] = line.split('\t'); const t = rest.join('\t').trim();
-      if (!t || /github-actions/.test(who) || /^(probe|wip|merge|daily update|weekly update)/i.test(t)) continue;
-      out.push({ d, t: t.replace(/\s+/g, ' ').slice(0, 260) });
-      if (out.length >= 40) break;
-    }
-    return out;
-  } catch (e) { return null; }
-}
 
 // Upcoming major events, read from Limitless's public calendar table. If the page changes shape this returns null and the app's built-in list is used.
 async function calendar() {
@@ -89,17 +75,15 @@ async function calendar() {
     for (const h of [...(vr || []), ...(gn || [])].sort((a, b) => b.d.localeCompare(a.d))) { const k = h.t.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60); if (seen.has(k)) continue; seen.add(k); headlines.push(h); }
     headlines = headlines.slice(0, 22);
   }
-  const app = appUpdates();
   const cal = await calendar();
   const result = {
     v: 1, generated: new Date().toISOString(),
     changes: (old.changes || []).slice(0, 150),
     headlines: headlines || old.headlines || [],
-    app: app && app.length ? app : (old.app || []),
     calendar: cal || old.calendar || [],
   };
   const comparable = (o) => JSON.stringify({ ...o, generated: null });
   if (comparable(old) === comparable(result)) { console.log('No news changes.'); return; }
   fs.writeFileSync(OUT, JSON.stringify(result));
-  console.log(`Wrote ${OUT}: ${result.headlines.length} headlines, ${result.app.length} app updates, ${result.changes.length} data changes, ${result.calendar.length} calendar events`);
+  console.log(`Wrote ${OUT}: ${result.headlines.length} headlines, ${result.changes.length} data changes, ${result.calendar.length} calendar events`);
 })();

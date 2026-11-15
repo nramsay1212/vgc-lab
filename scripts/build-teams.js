@@ -200,7 +200,7 @@ async function online() {
   for (const t of pick) {
     if (out.length >= ONLINE_EVENTS) break;
     const ev = await onlineEvent(t); if (!ev) continue; // not finished, or team sheets hidden
-    out.push(ev); console.log(`  ${ev.date} ${ev.name}: ${teams.length} teams, ${ev.players} players, ${ev.fmt}`);
+    out.push(ev); console.log(`  ${ev.date} ${ev.name}: ${ev.teams.length} teams, ${ev.players} players, ${ev.fmt}`);
   }
   return out;
 }
