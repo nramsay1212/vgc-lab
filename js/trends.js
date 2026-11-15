@@ -22,7 +22,7 @@
     const root = $('td-trends'); if (!root || !VL.store) return;
     const store = VL.store; const fid = VL.curFormatId ? VL.curFormatId() : '';
     const TAG = Object.fromEntries(VL.ALLTAGS || []);
-    const all = store.list('games').sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    const all = store.list('games').filter(x => !(VL.isTestGame && VL.isTestGame(x))).sort((a, b) => (b.ts || 0) - (a.ts || 0)); // climb games only
     const g = all.filter(x => x.fmt === fid); const use = g.length >= 5 ? g : all; const scope = g.length >= 5 ? VL.fmtName(fid) : 'all formats';
     const cards = [];
 

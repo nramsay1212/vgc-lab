@@ -1019,3 +1019,6 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .rp-mon.unbrought{opacity:.6}
 .rp-base{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--mono);font-size:12px}
 .rp-base i{font-style:normal;color:var(--muted)}
+.lf-mode{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+#log-form.testing{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+#log-form.testing #lf-title::after{content:" · Testing";color:var(--warn);font-weight:500}

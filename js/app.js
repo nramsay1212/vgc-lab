@@ -63,6 +63,17 @@
   store.onChange(showStyle);
   function fmtGame(id) { const f = D.dex && D.dex.formats.find(x => x.id === id); return f ? f.game : ''; }
   const games = () => store.list('games').sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  // Climb (your real ladder games, the default) or Testing (trying out teams). Old games count as Climb.
+  const isTest = (g) => g && g.mode === 'test';
+  const climbGames = () => games().filter(g => !isTest(g));
+  VL.isTestGame = isTest;
+  let lfMode = (() => { try { return localStorage.getItem('vgclab-logmode') === 'test' ? 'test' : 'climb'; } catch (e) { return 'climb'; } })();
+  function setLogMode(m) {
+    lfMode = m === 'test' ? 'test' : 'climb'; try { localStorage.setItem('vgclab-logmode', lfMode); } catch (e) { /* private mode */ }
+    document.querySelectorAll('[data-lfmode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lfmode === lfMode)));
+    const h = $('lf-mode-help'); if (h) h.textContent = lfMode === 'test' ? 'Trying out a team: kept apart from your climb record, rating line and weekly review.' : 'Your real ladder climb: counts toward your record, rating line and weekly review.';
+    $('log-form').classList.toggle('testing', lfMode === 'test');
+  }
   const teams = () => store.list('teams').sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
   function monStats(list) {
@@ -108,7 +119,7 @@
     const p = profile();
     $('focus-text').textContent = p.focus || 'No focus set yet. Pick one habit to drill in every game this week.';
     if (document.activeElement !== $('focus-input')) $('focus-input').value = p.focus || '';
-    const g = games(); const fid = curFormatId();
+    const g = climbGames(); const fid = curFormatId();
     const inFmt = g.filter(x => x.fmt === fid);
     const rated = inFmt.filter(x => Number.isFinite(x.rating));
     const f = D.dex && !fid.startsWith('custom:') ? D.format(fid) : null;
@@ -155,13 +166,15 @@
   function renderLog() {
     teamOptions($('lf-team'), '(not set)');
     $('log-fmt').textContent = 'Format: ' + fmtName(curFormatId());
-    const g = games();
-    $('recent-count').textContent = g.length ? `${g.length} total` : '';
+    const all = games(); const show = ($('recent-mode') || {}).value || 'all';
+    const g = show === 'all' ? all : all.filter(x => show === 'test' ? isTest(x) : !isTest(x));
+    $('recent-count').innerHTML = `<select id="recent-mode" aria-label="Which games" style="width:auto"><option value="all">All games (${all.length})</option><option value="climb">Climb (${all.filter(x => !isTest(x)).length})</option><option value="test">Testing (${all.filter(isTest).length})</option></select>`;
+    $('recent-mode').value = show;
     if (!g.length) { $('recent').innerHTML = '<div class="empty">No games yet. Log your next game above and it shows up here.</div>'; return; }
     const tname = Object.fromEntries(teams().map(t => [t.id, t.name]));
     $('recent').innerHTML = `<table class="list"><thead><tr><th></th><th>Date</th><th>Their team</th><th>Leads (mine / theirs)</th><th>Tags</th><th>Note</th><th></th></tr></thead><tbody>${
       g.slice(0, 40).map(x => `<tr>
-        <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span></td>
+        <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span>${isTest(x) ? '<br><span class="pill m" title="Testing game: not part of your climb">Test</span>' : ''}</td>
         <td class="mono" style="white-space:nowrap">${esc((x.day || '').slice(5))}${Number.isFinite(x.rating) ? `<br><span class="sub">${x.rating}</span>` : ''}<br><span class="sub">${esc(x.fmtName || fmtName(x.fmt))}</span></td>
         <td>${(x.opp || []).length ? `<span class="sprrow" title="${esc((x.opp || []).join(', '))}">${(x.opp || []).map(n => VL.sprite(n, 'xs')).join('')}</span>` : '<span class="sub">–</span>'}${/^https:\/\/replay\.pokemonshowdown\.com\//.test(x.source || '') ? `<br><button class="linkbtn" data-review="${esc(x.source)}">Review replay</button>` : ''}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
         <td>${esc(x.mylead || '–')} / ${esc(x.opplead || '–')}</td>
@@ -179,7 +192,8 @@
     sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'cur';
   }
   function scoped() {
-    const s = $('rv-scope').value; const g = games();
+    const s = $('rv-scope').value; const m = ($('rv-mode') || {}).value || 'climb';
+    const g = games().filter(x => m === 'all' || (m === 'test' ? isTest(x) : !isTest(x)));
     if (s === 'cur') return g.filter(x => x.fmt === curFormatId());
     if (s === '30') { const cut = Date.now() - 30 * 864e5; return g.filter(x => (x.ts || 0) >= cut); }
     if (s.startsWith('f:')) return g.filter(x => x.fmt === s.slice(2));
@@ -275,10 +289,12 @@
   }
   function coachPrompt() {
     const p = profile(); const fid = curFormatId();
-    const list = games().filter(g => g.fmt === fid).slice(0, 50);
-    const all = list.length ? list : games().slice(0, 50);
+    const m = ($('rv-mode') || {}).value || 'climb';
+    const pool = games().filter(x => m === 'all' || (m === 'test' ? isTest(x) : !isTest(x)));
+    const list = pool.filter(g => g.fmt === fid).slice(0, 50);
+    const all = list.length ? list : pool.slice(0, 50);
     const tname = Object.fromEntries(teams().map(t => [t.id, t.name]));
-    const rows = all.map(g => [g.day, g.result, g.type, g.rating ?? '', g.team ? tname[g.team] || '' : '', g.arch || '', (g.opp || []).join('/'), g.mylead || '', g.opplead || '', (g.tags || []).map(t => TAGMAP[t] || t).join('; '), g.turn ? 'T' + g.turn : '', (g.note || '').replace(/\s+/g, ' ').slice(0, 220)].join(' | ')).join('\n');
+    const rows = all.map(g => [g.day, g.result, isTest(g) ? `${g.type || ''} (test)` : g.type, g.rating ?? '', g.team ? tname[g.team] || '' : '', g.arch || '', (g.opp || []).join('/'), g.mylead || '', g.opplead || '', (g.tags || []).map(t => TAGMAP[t] || t).join('; '), g.turn ? 'T' + g.turn : '', (g.note || '').replace(/\s+/g, ' ').slice(0, 220)].join(' | ')).join('\n');
     const nb = store.list('matchups').filter(m => !m.fmt || m.fmt === fid).map(m => `- ${m.name}: ${(m.plan || '').replace(/\s+/g, ' ').slice(0, 160)}`).join('\n') || '(empty)';
     // knowledge ratings from Progress (Games and the Test), with the title for each
     const know = VL.progress ? VL.progress.AREAS.map(a => { const r = VL.progress.ratingOf(a.id); return `${a.n}: ${r === null ? 'not rated yet' : `${r} (${VL.progress.rankOf(r)})`}`; }).join('; ') : '';
@@ -289,12 +305,13 @@
 
 Context:
 - Format: ${fmtName(fid)}${f ? ` (${f.game}, ${f.doubles ? 'doubles' : 'singles'}, gimmick: ${f.gimmick})` : ''}.
-- Me: reached high Master Ball and peaked around rank ${p.peak ?? 2000} on Scarlet/Violet ladder. Long-term goal: win a World Championship someday, in whatever game is current. I want skills that carry across formats, not just this one. Teambuilding is on the back burner.
+- Me: reached high Master Ball and peaked around rank ${p.peak ?? 2000} on Scarlet/Violet ladder. Long-term goal: win a World Championship someday, in whatever game is current. I want skills that carry across formats, not just this one. I mostly play proven teams from top players and sometimes experiment with my own changes; those experiments are logged separately as testing games.
 - This week's focus: ${p.focus || '(none set)'}
 - Season goal: ${p.goal || '(none set)'}
 - My knowledge ratings (from quick games and tests, 1000 is the start, 1400 is Expert): ${know || 'none yet'}
 - Recent drill accuracy: ${drills}
 
+${m === 'climb' ? 'These are my climb games (my real ladder run). Team-testing games are left out.' : m === 'test' ? 'These are only my team-testing games, where I try out teams. Judge the teams and my piloting, not my ladder progress.' : 'This includes both my climb games and my team-testing games (marked "test" in the type column).'}
 Game log, newest first. Columns: date | result | type | rating after | my team | their style | their 6 | my lead | their lead | mistake tags | key turn | note
 ${rows || '(no games logged)'}
 
@@ -512,6 +529,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   let lfResult = null;
   function setResult(r) { lfResult = r; $('lf-w').setAttribute('aria-pressed', r === 'W'); $('lf-l').setAttribute('aria-pressed', r === 'L'); }
   $('lf-w').onclick = () => setResult('W'); $('lf-l').onclick = () => setResult('L');
+  document.querySelectorAll('[data-lfmode]').forEach(b => { b.onclick = () => setLogMode(b.dataset.lfmode); });
+  setLogMode(lfMode);
   const tagChips = () => { $('lf-tags').innerHTML = VL.TAGS.map(([id, l]) => `<button type="button" class="chip" data-tag="${id}" aria-pressed="false">${esc(l)}</button>`).join(''); };
   // the question helper and the chips stay in step: a Yes ticks the tag, and ticking a chip marks its question
   const tagLabel = (id) => (VL.TAGS.find(t => t[0] === id) || [])[1] || id;
@@ -530,7 +549,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const old = editingId ? store.get('games', editingId) : null;
     store.put('games', editingId || VL.newId('g'), {
       ...(old || {}),
-      ts: old ? old.ts : Date.now(), day: old ? old.day : dayKey(), fmt: fid, fmtName: fmtName(fid), result: lfResult,
+      ts: old ? old.ts : Date.now(), day: old ? old.day : dayKey(), fmt: fid, fmtName: fmtName(fid), result: lfResult, mode: lfMode,
       type: $('lf-type').value, rating: Number.isFinite(rating) ? rating : null, team: $('lf-team').value || null,
       arch: $('lf-arch').value || null, opp: splitMons($('lf-opp').value).slice(0, 6),
       mylead: splitMons($('lf-mylead').value).join(', '), myback: splitMons($('lf-myback').value).join(', '),
@@ -556,7 +575,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
   function editGame(id) {
     const x = store.get('games', id); if (!x) return;
-    editingId = id; setResult(x.result || null);
+    editingId = id; setResult(x.result || null); setLogMode(isTest(x) ? 'test' : 'climb');
     const set = (f, v) => { const el = $(f); if (el) el.value = v ?? ''; };
     set('lf-type', x.type || $('lf-type').value); set('lf-rating', Number.isFinite(x.rating) ? x.rating : '');
     set('lf-team', x.team || ''); set('lf-arch', x.arch || ''); set('lf-opp', (x.opp || []).join(', '));
@@ -646,6 +665,9 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   $('recent').addEventListener('click', e => { if (e.target.dataset.editgame) { editGame(e.target.dataset.editgame); return; } if (e.target.dataset.review && VL.replay) { VL.replay.open(e.target.dataset.review); return; } const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
 
   $('rv-scope').onchange = renderAll;
+  try { const rm = localStorage.getItem('vgclab-rvmode'); if (rm) $('rv-mode').value = rm; } catch (e) { /* private mode */ }
+  $('rv-mode').onchange = () => { try { localStorage.setItem('vgclab-rvmode', $('rv-mode').value); } catch (e) { /* private mode */ } renderAll(); };
+  document.addEventListener('change', (e) => { if (e.target.id === 'recent-mode') renderLog(); });
   $('rv-mons').addEventListener('click', e => { const n = e.target.dataset.addnb; if (!n) return; location.hash = 'notebook'; clearNb(); $('nb-name').value = n; $('nb-plan').focus(); });
   $('coach-copy').onclick = async () => {
     const text = coachPrompt();

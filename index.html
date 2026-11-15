@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=33">
+<link rel="stylesheet" href="css/app.css?v=34">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -131,6 +131,8 @@
     </header>
     <form class="card" id="log-form" autocomplete="off">
       <div class="card-head"><h3 id="lf-title">New game</h3><span class="sub" id="log-fmt"></span></div>
+      <div class="lf-mode"><div class="seg" role="group" aria-label="What this game is for"><button type="button" data-lfmode="climb" aria-pressed="true">Climb</button><button type="button" data-lfmode="test" aria-pressed="false">Testing</button></div>
+        <span class="sub" id="lf-mode-help">Your real ladder climb: counts toward your record, rating line and weekly review.</span></div>
       <div class="wl" role="group" aria-label="Result">
         <button type="button" class="w" id="lf-w" aria-pressed="false">WIN</button>
         <button type="button" class="l" id="lf-l" aria-pressed="false">LOSS</button>
@@ -199,6 +201,9 @@
       <details class="howto"><summary>How to use this page</summary><ol><li>Pick what to look at with <b>Show</b>: this format, everything, or the last 30 days.</li><li>The biggest bar in <b>What's costing you games</b> is usually your next weekly focus.</li><li>Add Pokémon from <b>Toughest Pokémon</b> to your Notebook and write a plan for them.</li><li>Every Sunday, use <b>Copy review prompt</b>, paste it into Claude, and save the answer here.</li></ol></details>
     </header>
     <div class="row" style="justify-content:flex-end;align-items:center">
+      <label for="rv-mode" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px">Games
+        <select id="rv-mode" style="width:auto"><option value="climb">Climb</option><option value="test">Testing</option><option value="all">Both</option></select>
+      </label>
       <label for="rv-scope" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px">Show
         <select id="rv-scope" style="width:auto"></select>
       </label>
@@ -736,35 +741,35 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=33"></script>
-<script src="js/sound.js?v=33"></script>
-<script src="js/content.js?v=33"></script>
-<script src="js/search.js?v=33"></script>
-<script src="js/study.js?v=33"></script>
-<script src="js/sprites.js?v=33"></script>
-<script src="js/help.js?v=33"></script>
-<script src="js/meta.js?v=33"></script>
-<script src="js/calc.js?v=33"></script>
-<script src="js/companion.js?v=33"></script>
-<script src="js/teamcheck.js?v=33"></script>
-<script src="js/builder.js?v=33"></script>
-<script src="js/plan.js?v=33"></script>
-<script src="js/topteams.js?v=33"></script>
-<script src="js/news.js?v=33"></script>
-<script src="js/replay.js?v=33"></script>
-<script src="js/sheets.js?v=33"></script>
-<script src="js/battleview.js?v=33"></script>
-<script src="js/videos.js?v=33"></script>
-<script src="js/trends.js?v=33"></script>
-<script src="js/progress.js?v=33"></script>
-<script src="js/arcade.js?v=33"></script>
-<script src="js/test.js?v=33"></script>
-<script src="js/compare.js?v=33"></script>
-<script src="js/app.js?v=33"></script>
-<script src="js/hubs.js?v=33"></script>
-<script src="js/whatsnew.js?v=33"></script>
-<script src="js/firebase-config.js?v=33"></script>
-<script src="js/account.js?v=33"></script>
+<script src="js/store.js?v=34"></script>
+<script src="js/sound.js?v=34"></script>
+<script src="js/content.js?v=34"></script>
+<script src="js/search.js?v=34"></script>
+<script src="js/study.js?v=34"></script>
+<script src="js/sprites.js?v=34"></script>
+<script src="js/help.js?v=34"></script>
+<script src="js/meta.js?v=34"></script>
+<script src="js/calc.js?v=34"></script>
+<script src="js/companion.js?v=34"></script>
+<script src="js/teamcheck.js?v=34"></script>
+<script src="js/builder.js?v=34"></script>
+<script src="js/plan.js?v=34"></script>
+<script src="js/topteams.js?v=34"></script>
+<script src="js/news.js?v=34"></script>
+<script src="js/replay.js?v=34"></script>
+<script src="js/sheets.js?v=34"></script>
+<script src="js/battleview.js?v=34"></script>
+<script src="js/videos.js?v=34"></script>
+<script src="js/trends.js?v=34"></script>
+<script src="js/progress.js?v=34"></script>
+<script src="js/arcade.js?v=34"></script>
+<script src="js/test.js?v=34"></script>
+<script src="js/compare.js?v=34"></script>
+<script src="js/app.js?v=34"></script>
+<script src="js/hubs.js?v=34"></script>
+<script src="js/whatsnew.js?v=34"></script>
+<script src="js/firebase-config.js?v=34"></script>
+<script src="js/account.js?v=34"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
