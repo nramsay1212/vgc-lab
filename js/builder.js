@@ -37,6 +37,17 @@
   const recOf = (name) => { const i = D().find(name); return i >= 0 ? D().mon(i, fmt()) : null; };
   const metaE = () => VL.meta && VL.meta.forFormat ? VL.meta.forFormat(fmt().id) : null;
   const metaOf = (name) => { const e = metaE(); return e && VL.meta.get(e, name); };
+  // Item Clause: no two Pokémon may hold the same item. Who holds what, leaving out one slot.
+  function heldItems(except) {
+    const out = {}; T.sets.forEach((x, i) => { if (i !== except && x && x.species && x.item) out[toId(x.item)] = x.species; }); return out;
+  }
+  // the most common item for it that nobody else on the team holds
+  function freeItem(m, except, want) {
+    const held = heldItems(except);
+    if (want && !held[toId(want)]) return want;
+    const list = (m ? m.items : []).map(x => x[0]).filter(n => n && n !== 'No item');
+    return list.find(n => !held[toId(n)]) || '';
+  }
 
   // learnsets load per format, on demand
   const lsCache = {};
@@ -161,6 +172,7 @@
       </div>
       <div class="bd-sub"><span><b id="bd-count">${T.sets.filter(s => s && s.species).length}/6</b> Pokémon</span>${recordPill()}<span class="sub" id="bd-saved">${T.id ? 'Saved' : 'Starts saving when you add a Pokémon'}</span><button class="linkbtn" data-bd="clear">Clear all</button></div>
       <div class="bd-slots" id="bd-slots"></div>
+      <div id="bd-rules"></div>
       <div class="bd-main">
         <div class="bd-edit card" id="bd-edit"></div>
         <div class="bd-side card" id="bd-side"></div>
@@ -174,7 +186,43 @@
     const w = g.filter(x => x.result === 'W').length;
     return `<span class="pill ${w * 2 >= g.length ? 'w' : 'l'}">${w}–${g.length - w} in your log</span>`;
   }
+  // ---------- the format's team rules ----------
+  // Restricted legendaries, and how many each format allows (formats not listed allow none or ban them outright).
+  const RESTRICTED = ['Mewtwo', 'Lugia', 'Ho-Oh', 'Kyogre', 'Groudon', 'Rayquaza', 'Dialga', 'Palkia', 'Giratina', 'Reshiram', 'Zekrom', 'Kyurem', 'Xerneas', 'Yveltal', 'Zygarde', 'Cosmog', 'Cosmoem', 'Solgaleo', 'Lunala', 'Necrozma', 'Zacian', 'Zamazenta', 'Eternatus', 'Calyrex', 'Koraidon', 'Miraidon', 'Terapagos'];
+  const RLIMIT = { gen9vgc2024regg: 1, gen9vgc2025regi: 2, gen8vgc2022: 2, gen7vgc2019: 2, gen6vgc2016: 2, gen4vgc2010: 2 };
+  const isRestricted = (name) => { const r = recOf(name); const b = r ? (r.b || r.n) : name; return RESTRICTED.some(x => b === x || b.startsWith(x + '-') || name === x || name.startsWith(x + '-')); };
+  const GIMMICK = { 'Mega Evolution': 'one Mega Evolution per battle', 'Mega Evolution and Z-Moves': 'one Mega Evolution and one Z-Move per battle', Dynamax: 'Dynamax once per battle', Terastallization: 'Terastallize once per battle' };
+  function renderRules() {
+    const el = $('bd-rules'); if (!el) return;
+    const f = fmt(); const have = T.sets.filter(x => x && x.species);
+    const lim = RLIMIT[f.id];
+    const parts = [f.doubles ? 'bring 6, pick 4' : 'bring 6, pick 3', 'level 50', 'no two of the same Pokémon', 'no two of the same item'];
+    if (GIMMICK[f.gimmick]) parts.push(GIMMICK[f.gimmick]);
+    if (lim) parts.push(`up to ${lim} restricted legendar${lim === 1 ? 'y' : 'ies'}`);
+    let h = `<details class="bd-rule info"><summary><b>${esc(f.name)} rules</b></summary>${esc(parts.join(' · '))}.</details>`;
+    // Item Clause
+    const by = {}; have.forEach(x => { if (x.item) (by[toId(x.item)] = by[toId(x.item)] || { n: x.item, who: [] }).who.push(x.species); });
+    Object.values(by).filter(x => x.who.length > 1).forEach(x => { h += `<div class="bd-rule bad"><b>Item Clause:</b> ${esc(x.who.join(' and '))} both hold ${esc(x.n)}. No two Pokémon can hold the same item, so change one before you play.</div>`; });
+    // Species Clause
+    const sp = {}; have.forEach(x => { const r = recOf(x.species); const b = r ? (r.b || r.n) : x.species; (sp[b] = sp[b] || []).push(x.species); });
+    Object.entries(sp).filter(([, v]) => v.length > 1).forEach(([b]) => { h += `<div class="bd-rule bad"><b>Species Clause:</b> you have two ${esc(b)}. Each Pokémon can only be on the team once.</div>`; });
+    // restricted legendaries
+    const rs = have.filter(x => isRestricted(x.species)).map(x => x.species);
+    if (rs.length && lim !== undefined && rs.length > lim) h += `<div class="bd-rule bad"><b>Too many restricted legendaries:</b> ${esc(f.name)} allows ${lim}, and you have ${rs.length} (${esc(rs.join(', '))}).</div>`;
+    // Pokémon and items the format doesn't allow
+    const legal = new Set(f.species); const items = new Set(f.items);
+    const badMon = have.filter(x => { const i = D().find(x.species); return i < 0 || !legal.has(i); }).map(x => x.species);
+    if (badMon.length) h += `<div class="bd-rule bad"><b>Not allowed in ${esc(f.name)}:</b> ${esc(badMon.join(', '))}.</div>`;
+    const badItem = have.filter(x => x.item && !items.has(toId(x.item))).map(x => `${x.item} (${x.species})`);
+    if (badItem.length) h += `<div class="bd-rule bad"><b>Items not allowed in ${esc(f.name)}:</b> ${esc(badItem.join(', '))}.</div>`;
+    // Mega Stones: allowed, but only one Mega Evolves
+    const megas = /Mega/.test(f.gimmick || '') ? have.filter(x => megaName(x, recOf(x.species))) : [];
+    if (megas.length > 1) h += `<div class="bd-rule info"><b>${megas.length} Mega Stones</b> (${esc(megas.map(x => x.species).join(', '))}). That's allowed, but only one Pokémon can Mega Evolve per battle. You pick which one during the battle.</div>`;
+    el.innerHTML = h;
+  }
   function renderSlots() {
+    renderRules();
+    const dupIds = (() => { const c = {}; T.sets.forEach(x => { if (x && x.species && x.item) c[toId(x.item)] = (c[toId(x.item)] || 0) + 1; }); return c; })();
     const c = $('bd-count'); if (c) c.textContent = `${T.sets.filter(s => s && s.species).length}/6`;
     $('bd-slots').innerHTML = T.sets.map((s, i) => {
       const rec = s && s.species ? recOf(s.species) : null;
@@ -185,7 +233,7 @@
         ${VL.sprite(rec || s.species, 'md')}${mega ? '<span class="megabadge" title="Mega Evolves">M</span>' : ''}
         <b>${esc(rec ? rec.n : s.species)}</b>
         <span class="tys">${rec ? rec.t.map(tyBadge).join('') : '<span class="sub">Not found</span>'}</span>
-        ${s.item ? `<span class="itm">${itemIcon(s.item)}${esc(s.item)}</span>` : ''}</div>`;
+        ${s.item ? `<span class="itm ${dupIds[toId(s.item)] > 1 ? 'dup' : ''}">${itemIcon(s.item)}${esc(s.item)}</span>` : ''}</div>`;
     }).join('');
   }
 
@@ -386,7 +434,7 @@
       <p class="sub" id="ctr-prev">${prevText()}</p>
       <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
-    const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(',')].join('|');
+    const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(','), Object.keys(heldItems(-1)).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
     box.innerHTML = head + '<p class="sub" id="ctr-prog">Checking the meta…</p>';
     const tok = ++CT.tok;
@@ -418,6 +466,7 @@
       const end = Math.min(pool.length, i + 8);
       for (; i < end; i++) {
         const x = pool[i]; const set = commonSet(x.n); const rec = recOf(x.n); if (!set || !rec) continue;
+        const want = set.item; set.item = freeItem(metaOf(x.n), -1, want); const swapped = want && set.item !== want ? want : '';
         const me = calcMon(C, g, set, rec); if (!me) continue;
         const myAtk = attacks(set); const spe = speedOfSet(set); const espe = speedOfSet(set, CT.speed === 'mytw');
         const vs = tg.map(t => {
@@ -431,7 +480,7 @@
         });
         const answered = vs.filter(v => v.ver[2] >= 2).length;
         const score = vs.reduce((a, v) => a + v.ver[2] + Math.min(1, v.off / 100) * 0.4 + Math.max(0, 1 - v.def / 100) * 0.4, 0) + (mates[x.n] || 0) / 100 + x.u / 200;
-        out.push({ n: x.n, rec, set, u: x.u, mate: mates[x.n] || 0, vs, answered, score });
+        out.push({ n: x.n, rec, set, swapped, mega: !!(rec.mg || megaName(set, rec)), u: x.u, mate: mates[x.n] || 0, vs, answered, score });
       }
       const pr = $('ctr-prog'); if (pr) pr.textContent = `Checking the meta… ${i} of ${pool.length}`;
       if (i < pool.length) { setTimeout(step, 0); return; }
@@ -443,6 +492,7 @@
   }
   function countersHtml(res) {
     const empty = T.sets.findIndex(x => !x || !x.species);
+    const teamMega = /Mega/.test(fmt().gimmick || '') && T.sets.some(x => x && x.species && megaName(x, recOf(x.species)));
     const slotLabel = empty >= 0 ? `Add to slot ${empty + 1}` : `Replace slot ${sel + 1}`;
     const pct = (n) => `${n}%`;
     // one block per threat: what it does to them, what they do to it, who moves first, and the catch
@@ -460,7 +510,7 @@
     };
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
       <div class="ctr-key"><span><i class="dot w"></i>Good: a safe answer</span><span><i class="dot y"></i>Works, but risky</span><span><i class="dot l"></i>Bad: loses to it</span></div>
-      ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
+      ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}${c.swapped ? ` (${esc(c.swapped)} is taken)` : ''}</span>` : ''}${c.mega && teamMega ? `<span class="pill y" title="Only one Pokémon can Mega Evolve per battle">2nd Mega: only one can Mega Evolve</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
         <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
         <div class="ctr-blocks">${c.vs.map(v => block(c, v)).join('')}</div></div>`).join('')}`;
   }
@@ -675,12 +725,17 @@
       const base = recOf(species); const bm = metaOf(species);
       s.ability = (bm && bm.abilities[0] && base.a.includes(bm.abilities[0][0])) ? bm.abilities[0][0] : base.a[0] || '';
     }
+    const note = s.itemNote; delete s.itemNote;
     T.sets[sel] = s;
     renderSlots(); renderEditor(); analysisSoon(); save();
-    if (m) VL.toast('Filled in its most common set. Change anything you like.');
+    if (m) VL.toast(note ? `Filled in its most common set. ${note}` : 'Filled in its most common set. Change anything you like.');
   }
   function applyCommon(s, m, keepItem) {
-    if (!keepItem && m.items[0] && m.items[0][0] !== 'No item') s.item = m.items[0][0];
+    if (!keepItem && m.items[0] && m.items[0][0] !== 'No item') {
+      const want = m.items[0][0]; const held = heldItems(sel);
+      s.item = freeItem(m, sel, want);
+      if (s.item !== want) s.itemNote = `${want} is already on ${held[toId(want)]}, so it got ${s.item || 'no item'} instead (no two Pokémon can hold the same item).`;
+    }
     if (m.abilities[0]) s.ability = m.abilities[0][0];
     if (m.spreads[0]) { const [nat, nums] = m.spreads[0][0].split(':'); s.nature = nat; const ev = (nums || '').split('/').map(Number); if (ev.length === 6) s.evs = ev.map(x => Math.min(spMax(), x)); }
     s.moves = m.moves.slice(0, 4).map(x => x[0]); while (s.moves.length < 4) s.moves.push('');
@@ -692,7 +747,8 @@
     const pop = m ? m.items.filter(x => x[0] !== 'No item').map(([n, p]) => ({ ...(items.find(i => i.n === n) || { n, d: '' }), p })) : [];
     let q = '';
     modal(`<div class="bd-mhead"><input type="search" id="bm-q" placeholder="Search items" autocomplete="off"><button class="x" data-close aria-label="Close">×</button></div><div class="bd-list" id="bm-list"></div>`, (body) => {
-      const line = (it) => `<button type="button" class="bd-li" data-item="${esc(it.n)}">${itemIcon(it.n)}<span class="nm"><b>${esc(it.n)}</b><span class="sub">${esc(it.d || '')}</span></span>${it.p ? `<span class="mini">${it.p}%</span>` : ''}</button>`;
+      const held = heldItems(sel);
+      const line = (it) => { const by = held[toId(it.n)]; return `<button type="button" class="bd-li ${by ? 'taken' : ''}" ${by ? 'disabled' : `data-item="${esc(it.n)}"`}>${itemIcon(it.n)}<span class="nm"><b>${esc(it.n)}</b><span class="sub">${by ? `Already on ${esc(by)}. No two Pokémon can hold the same item.` : esc(it.d || '')}</span></span>${it.p ? `<span class="mini">${it.p}%</span>` : ''}</button>`; };
       const draw = () => {
         const f = (x) => !q || toId(x.n).includes(q);
         const p = pop.filter(f), rest = items.filter(x => f(x) && !pop.some(y => y.n === x.n)).sort((a, b) => a.n.localeCompare(b.n));
