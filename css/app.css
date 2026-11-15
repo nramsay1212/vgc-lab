@@ -968,3 +968,12 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .fc-prog i{display:block;height:100%;background:var(--win)}
 .fc-done{text-align:center;padding:24px 8px}
 .nat-more{margin-top:14px}.nat-more summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:500}
+/* team analysis tabs: wrap instead of pushing the page wider */
+.bd-analysis .bd-tabs{display:flex;flex-wrap:wrap;max-width:100%}
+@media (max-width:640px){
+  .bd-analysis .bd-tabs{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
+  .bd-analysis .bd-tabs button{padding:7px 4px;white-space:normal;line-height:1.2}
+}
+.ctr-how{font-size:13px;color:var(--muted)}
+.ctr-how summary{cursor:pointer;color:var(--ink-2)}
+.ctr-row .btn{flex-shrink:0}

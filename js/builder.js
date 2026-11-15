@@ -365,7 +365,7 @@
       <div class="kv bd-chips">${chips.map(n => `<button type="button" class="chipbtn ctr-chip" data-ctrt="${esc(n)}" aria-pressed="${CT.targets.includes(n)}">${VL.sprite(recOf(n) || n, 'xs')}${esc(n)}</button>`).join('')}
         <button type="button" class="chipbtn" data-bd="ctradd">+ Another Pokémon</button></div>
       <div class="kv bd-chips"><span class="mini">Speed</span><button type="button" class="chipbtn" data-ctrtr="0" aria-pressed="${!CT.tr}">Normal</button><button type="button" class="chipbtn" data-ctrtr="1" aria-pressed="${CT.tr}">Under Trick Room</button></div>
-      <p class="sub">${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate, Tailwind and your teammates' support don't.</p></div>`;
+      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate, Tailwind and your teammates' support don't.</p><p><b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
     const key = [fmt().id, CT.tr ? 'tr' : '', CT.targets.join(','), teamNames().map(baseOf).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
@@ -431,7 +431,7 @@
       const sp = v.tie ? 'speed tie' : CT.tr ? (v.faster ? `moves first under Trick Room (${v.spe} vs ${v.tspe})` : `moves second under Trick Room (${v.spe} vs ${v.tspe})`) : v.faster ? `faster (${v.spe} vs ${v.tspe})` : `slower (${v.spe} vs ${v.tspe})`;
       return `<li><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <b>${esc(v.t)}</b>: ${esc(hit)}, ${esc(take)}, ${esc(sp)}.</li>`;
     };
-    return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have. <b>Counter</b> = takes its best hit twice and hits back for half or more. Pokémon often seen with your team are marked.</p>
+    return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
       ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'n' : 'm'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill n">Often with your team</span>' : ''}</div>
         <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
         <ul>${c.vs.map(line).join('')}</ul></div>`).join('')}`;
