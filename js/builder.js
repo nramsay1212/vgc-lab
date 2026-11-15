@@ -363,7 +363,8 @@
     const chips = [...new Set(CT.threats.slice(0, 6).concat(CT.targets))];
     const head = `<div class="ctr-pick"><div class="section-label">Find answers to</div>
       <div class="kv bd-chips">${chips.map(n => `<button type="button" class="chipbtn ctr-chip" data-ctrt="${esc(n)}" aria-pressed="${CT.targets.includes(n)}">${VL.sprite(recOf(n) || n, 'xs')}${esc(n)}</button>`).join('')}
-        <button type="button" class="chipbtn" data-bd="ctradd">+ Another Pokémon</button></div>
+        <button type="button" class="chipbtn" data-bd="ctradd">+ Another Pokémon</button>${CT.custom ? '<button type="button" class="chipbtn" data-bd="ctrauto">↺ Back to my threats</button>' : ''}</div>
+      ${CT.custom ? '<p class="sub">You picked these yourself, so they won\'t change as you build. <b>Back to my threats</b> goes back to following your team.</p>' : ''}
       <div class="kv bd-chips"><span class="mini">Speed</span><button type="button" class="chipbtn" data-ctrtr="0" aria-pressed="${!CT.tr}">Normal</button><button type="button" class="chipbtn" data-ctrtr="1" aria-pressed="${CT.tr}">Under Trick Room</button></div>
       <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate, Tailwind and your teammates' support don't.</p><p><b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
@@ -748,6 +749,7 @@
         const k = b.dataset.bd;
         if (k === 'helpapply' && helpApply) { helpApply(); H.open = true; renderEditor(); analysisSoon(); save(); VL.toast('Applied'); return; }
         if (k === 'pickmon') pickMon();
+        if (k === 'ctrauto') { CT.custom = false; renderAnalysis(); VL.toast('Following your team\'s threats again'); return; }
         if (k === 'ctradd') { pickMonFor({ fmtId: fmt().id, names: CT.targets, onPick: (n) => { CT.custom = true; CT.targets = CT.targets.filter(x => x !== n).concat([n]).slice(-4); renderAnalysis(); } }); return; }
         if (k === 'pickitem') pickItem();
         if (k === 'common') { const s = T.sets[sel]; const rec = recOf(s.species); const m = metaOf(megaName(s, rec) || rec.n) || metaOf(rec.n); if (m) { const keep = s.ability; applyCommon(s, m, false); if (!rec.a.some(a => toId(a) === toId(s.ability))) s.ability = rec.a.some(a => toId(a) === toId(keep)) ? keep : rec.a[0]; renderSlots(); renderEditor(); analysisSoon(); save(); } }
