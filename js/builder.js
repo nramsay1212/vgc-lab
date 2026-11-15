@@ -438,20 +438,31 @@
     const pc = (x) => Math.round(100 * x / p.n);
     return `Right now: <b>Tailwind on ${pc(p.tw)}%</b> of top-cut teams and <b>Trick Room on ${pc(p.tr)}%</b>, from ${p.n} team sheets at recent events in this format.`;
   }
+  // Vs the meta's problems first, then its shaky ones, most used first
+  const weakFrom = (r) => r.out.filter(x => x.st === 'bad' || x.st === 'shaky').sort((a, b) => (a.st === 'bad' ? 0 : 1) - (b.st === 'bad' ? 0 : 1) || b.u - a.u).map(x => x.n);
   function renderCounters() {
     const box = $('bd-ctr'); if (!box) return;
     const e = metaE();
     if (!e) { box.innerHTML = `<p class="sub">Counters need usage stats for ${esc(fmt().name)}, so there's no meta to search. Current formats have them.</p>`; return; }
-    if (!CT.custom) CT.targets = CT.threats.slice(0, 3);
-    const chips = [...new Set(CT.threats.slice(0, 6).concat(CT.targets))];
+    const mr = MM.cache[mmKey(CT.speed)];
+    if (mr) CT.weak = weakFrom(mr);
+    if (!CT.custom) {
+      if (!mr) {
+        box.innerHTML = '<p class="sub">Finding your team\'s weak spots against the meta…</p>';
+        matchupFor(CT.speed).then(() => { if ($('bd-ctr') && atab === 'counters') renderCounters(); }).catch(() => { box.innerHTML = '<p class="sub">Couldn\'t load the damage calculator.</p>'; });
+        return;
+      }
+      CT.targets = CT.weak.slice(0, 3);
+    }
+    const chips = [...new Set((CT.weak || []).slice(0, 6).concat(CT.targets))];
     const head = `<div class="ctr-pick"><div class="section-label">Find answers to</div>
       <div class="kv bd-chips">${chips.map(n => `<button type="button" class="chipbtn ctr-chip" data-ctrt="${esc(n)}" aria-pressed="${CT.targets.includes(n)}">${VL.sprite(recOf(n) || n, 'xs')}${esc(n)}</button>`).join('')}
         <button type="button" class="chipbtn" data-bd="ctradd">+ Another Pokémon</button>${CT.custom ? '<button type="button" class="chipbtn" data-bd="ctrauto">↺ Back to my threats</button>' : ''}</div>
       ${CT.custom ? '<p class="sub">You picked these yourself, so they won\'t change as you build. <b>Back to my threats</b> goes back to following your team.</p>' : ''}
       <div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-ctrsp="${k}" aria-pressed="${CT.speed === k}">${l}</button>`).join('')}</div>
       <p class="sub" id="ctr-prev">${prevText()}</p>
-      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each threat's most common set, at level 50. Each side uses its strongest attack among its 4 most used moves. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Wins the trade</b>: one on one it knocks the other out first, but only just. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
-    if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
+      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your problems and shaky Pokémon from Vs the meta are picked to start, problems first, then the most used. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each threat's most common set, at level 50. Each side uses its strongest attack among its 4 most used moves. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Wins the trade</b>: one on one it knocks the other out first, but only just. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
+    if (!CT.targets.length) { box.innerHTML = head + (CT.custom ? '<p class="sub">Pick at least one Pokémon above.</p>' : '<p class="sub">Vs the meta found nothing shaky or a problem for your team among the 30 most used Pokémon. Use + Another Pokémon to find answers to anything else.</p>'); return; }
     const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(','), Object.keys(heldItems(-1)).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
     box.innerHTML = head + '<p class="sub" id="ctr-prog">Checking the meta…</p>';
@@ -528,7 +539,7 @@
   // ---------- Vs the meta: how the whole team does against the most used Pokémon ----------
   // Your actual sets against each of the 30 most used Pokémon (their most common sets): for each one,
   // which of yours answer it and which it beats. The score weights each by how often it's used.
-  const MM = { speed: 'normal', key: '', res: null, tok: 0, n: 30 };
+  const MM = { speed: 'normal', cache: {}, wait: {}, n: 30 };
   const STATUS = { well: ['Well covered', 'w', 1], ok: ['Covered', 'w', 0.8], shaky: ['Shaky', 'y', 0.45], bad: ['Problem', 'l', 0] };
   function renderMatchup() {
     const box = $('bd-mm'); if (!box) return;
@@ -537,15 +548,25 @@
     const have = T.sets.filter(x => x && x.species && recOf(x.species));
     if (!have.length) { box.innerHTML = '<p class="sub">Add Pokémon to see how your team does against the meta.</p>'; return; }
     const head = `<div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-mmsp="${k}" aria-pressed="${MM.speed === k}">${l}</button>`).join('')}</div>`;
-    const key = [fmt().id, MM.speed, exportTeam()].join('|');
-    if (MM.key === key && MM.res) { box.innerHTML = head + matchupHtml(MM.res); return; }
+    const r = MM.cache[mmKey(MM.speed)];
+    if (r) { box.innerHTML = head + matchupHtml(r); return; }
     box.innerHTML = head + '<p class="sub" id="mm-prog">Testing your team against the meta…</p>';
-    const tok = ++MM.tok;
-    VL.calc.engine().then(() => runMatchup(tok, key, e)).catch(() => { const pr = $('mm-prog'); if (pr) pr.textContent = 'Couldn\'t load the damage calculator.'; });
+    const sp = MM.speed;
+    matchupFor(sp).then(() => { if ($('bd-mm') && atab === 'mm' && MM.speed === sp) renderMatchup(); }).catch(() => { const pr = $('mm-prog'); if (pr) pr.textContent = 'Couldn\'t load the damage calculator.'; });
   }
-  function runMatchup(tok, key, e) {
+  const mmKey = (speed) => [fmt().id, speed, exportTeam()].join('|');
+  // the matchup for one speed setting, worked out once and kept
+  function matchupFor(speed) {
+    const key = mmKey(speed);
+    if (MM.cache[key]) return Promise.resolve(MM.cache[key]);
+    if (MM.wait[key]) return MM.wait[key];
+    const e = metaE(); if (!e) return Promise.resolve(null);
+    if (Object.keys(MM.cache).length > 24) MM.cache = {};
+    return (MM.wait[key] = VL.calc.engine().then(() => new Promise(done => runMatchup(speed, e, done))).then(r => { MM.cache[key] = r; delete MM.wait[key]; return r; }, err => { delete MM.wait[key]; throw err; }));
+  }
+  function runMatchup(mode, e, done) {
     const C = window.calc; const f = fmt(); const g = C.Generations.get(isChamp() ? 0 : f.gen);
-    const pairField = pairFieldMaker(C, f); const mode = MM.speed;
+    const pairField = pairFieldMaker(C, f);
     const mine = T.sets.map(s => {
       if (!s || !s.species) return null; const rec = recOf(s.species); if (!rec) return null;
       const mon = calcMon(C, g, s, rec); if (!mon) return null;
@@ -553,7 +574,6 @@
     }).filter(Boolean);
     const list = e.mons.slice(0, MM.n); const out = []; let i = 0;
     function step() {
-      if (tok !== MM.tok) return;
       const end = Math.min(list.length, i + 4);
       for (; i < end; i++) {
         const x = list[i]; const set = commonSet(x.n); const rec = recOf(x.n); if (!set || !rec) continue;
@@ -572,12 +592,11 @@
         const best = vs.slice().sort((a, b) => b.ver[2] - a.ver[2] || (b.off - b.def) - (a.off - a.def))[0];
         out.push({ n: x.n, rec, u: x.u, st, best, safe, risky, loses });
       }
-      const pr = $('mm-prog'); if (pr) pr.textContent = `Testing your team against the meta… ${i} of ${list.length}`;
+      const pr = $('mm-prog'); if (pr && mode === MM.speed) pr.textContent = `Testing your team against the meta… ${i} of ${list.length}`;
       if (i < list.length) { setTimeout(step, 0); return; }
       const tw = out.reduce((a, r) => a + r.u, 0) || 1;
       const score = Math.round(100 * out.reduce((a, r) => a + r.u * STATUS[r.st][2], 0) / tw);
-      MM.key = key; MM.res = { out, score, size: mine.length };
-      if ($('bd-mm') && atab === 'mm') renderMatchup();
+      done({ out, score, size: mine.length, mode });
     }
     step();
   }
@@ -596,7 +615,7 @@
       return `<div class="mm-item ctr-vs ctr-${st[1]}"><div class="ctr-vh">${VL.sprite(r.rec, 'xs')}<b>${esc(r.n)}</b><span class="mini">${r.u.toFixed(1)}% of teams</span><span class="pill ${st[1]}">${st[0]}</span>${r.st === 'shaky' || r.st === 'bad' ? `<button type="button" class="linkbtn" data-ctr="${esc(r.n)}">Find a counter →</button>` : ''}</div>${lines.join('')}</div>`;
     };
     const group = (keys, title, open) => { const rs = out.filter(r => keys.includes(r.st)); return rs.length ? `<details class="mm-group" ${open ? 'open' : ''}><summary><b>${title}</b> <span class="sub">${rs.length}</span></summary><div class="ctr-blocks">${rs.map(item).join('')}</div></details>` : ''; };
-    return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${MM.speed !== 'normal' ? ` (${MM.speed === 'tr' ? 'under Trick Room' : MM.speed === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
+    return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${res.mode !== 'normal' ? ` (${res.mode === 'tr' ? 'under Trick Room' : res.mode === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
         <div class="sub">${count('well')} well covered · ${count('ok')} covered · ${count('shaky')} shaky · ${count('bad')} problems, out of the ${out.length} most used Pokémon. More common Pokémon count for more.${res.size < 6 ? ` You have ${res.size} of 6, so this goes up as you fill the team.` : ''}</div></div></div>
       <div class="ctr-key"><span><i class="dot w"></i>Covered: something on your team handles it safely</span><span><i class="dot y"></i>Shaky: only risky answers</span><span><i class="dot l"></i>Problem: nothing answers it</span></div>
       ${group(['bad'], 'Problems', true)}${group(['shaky'], 'Shaky', true)}${group(['ok', 'well'], 'Covered', false)}
