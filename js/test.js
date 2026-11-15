@@ -59,7 +59,7 @@
     if (!T || T.done) return;
     const it = T.items[T.i]; const o = it.q.opts[k]; if (!o) return;
     T.answers.push({ kind: it.kind, ok: !!o.ok, yours: k });
-    VL.sound && VL.sound.play(o.ok ? 'right' : 'wrong');
+    VL.sound && VL.sound.play('answer'); // the same blip either way, so the sound doesn't give away the answer
     T.i++;
     if (T.i >= T.items.length) finish(); else renderQ();
   }
