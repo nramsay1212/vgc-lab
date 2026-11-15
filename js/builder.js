@@ -513,7 +513,8 @@
   function countersHtml(res) {
     const empty = T.sets.findIndex(x => !x || !x.species);
     const teamMega = /Mega/.test(fmt().gimmick || '') && T.sets.some(x => x && x.species && megaName(x, recOf(x.species)));
-    const slotLabel = empty >= 0 ? `Add to slot ${empty + 1}` : `Replace slot ${sel + 1}`;
+    // a menu of all six slots: empty ones first, then "Replace <Pokémon>"
+    const slotMenu = (name) => `<select class="ctr-slot" data-ctrslot="${esc(name)}" aria-label="Put ${esc(name)} in a slot"><option value="">${empty >= 0 ? 'Add to team…' : 'Replace…'}</option>${T.sets.map((x, i) => [x, i]).sort((a, b) => (a[0] && a[0].species ? 1 : 0) - (b[0] && b[0].species ? 1 : 0)).map(([x, i]) => `<option value="${i}">${x && x.species ? `Replace ${esc(x.species)} (slot ${i + 1})` : `Slot ${i + 1} (empty)`}</option>`).join('')}</select>`;
     const pct = (n) => `${n}%`;
     // one block per threat: what it does to them, what they do to it, who moves first, and the catch
     const block = (c, v) => {
@@ -532,7 +533,7 @@
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
       <div class="ctr-key"><span><i class="dot w"></i>Good: a safe answer</span><span><i class="dot y"></i>Works, but risky</span><span><i class="dot l"></i>Bad: loses to it</span></div>
       ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}${c.swapped ? ` (${esc(c.swapped)} is taken)` : ''}</span>` : ''}${c.mega && teamMega ? `<span class="pill y" title="Only one Pokémon can Mega Evolve per battle">2nd Mega: only one can Mega Evolve</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
-        <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
+        ${slotMenu(c.n)}</div>
         <div class="ctr-blocks">${c.vs.map(v => block(c, v)).join('')}</div></div>`).join('')}`;
   }
 
@@ -980,6 +981,8 @@
       }
     });
     root.addEventListener('change', (e) => {
+      const cs = e.target.closest('[data-ctrslot]');
+      if (cs) { if (cs.value === '') return; sel = Number(cs.value); setMon(cs.dataset.ctrslot); VL.sound && VL.sound.play('right'); return; }
       const t = e.target;
       if (t.dataset.hs) { H[t.dataset.hs] = t.value; renderHelper(); return; }
       if (t.dataset.hc) { H[t.dataset.hc] = t.checked; renderHelper(); return; }

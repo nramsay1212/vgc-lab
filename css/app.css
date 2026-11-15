@@ -1012,3 +1012,5 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .bd-an .card-head{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px}
 .bd-an .card-head .sub{text-align:left}
 .bd-an p,.bd-an .sub{max-width:1000px}
+.ctr-slot{width:auto;min-width:180px;max-width:260px;flex-shrink:0;padding:6px 10px;font-size:13px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:0;cursor:pointer}
+.ctr-slot option{background:var(--card);color:var(--ink)}
