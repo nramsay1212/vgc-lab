@@ -33,7 +33,7 @@
   function urlFor(rec) {
     const x = MAN && MAN.x && MAN.x[rec.id];
     const sets = (MAN && MAN.sets) || SETS;
-    if (x) return { src: `${BASE}${sets[x[0]]}/${x[1]}.png`, pix: sets[x[0]] === 'gen5', file: x[1] };
+    if (x) { const set = sets[x[0]]; return { src: `${BASE}${set}/${x[1]}.${set === 'ani' ? 'gif' : 'png'}`, pix: set === 'gen5' || set === 'ani', file: x[1], base: x[2] === 1 }; }
     const file = rec.sp || rec.id;
     return { src: `${BASE}${sets[0]}/${file}.png`, pix: false, file };
   }
@@ -43,8 +43,8 @@
     const label = rec ? rec.n : String(nameOrRec || '');
     const ini = esc(label.replace(/[^A-Za-z]/g, '').slice(0, 2) || '?');
     if (!rec || (MAN && MAN.none && MAN.none.includes(rec.id))) return `<span class="spr none ${cls}" title="${esc(label)}">${ini}</span>`;
-    const u = urlFor(rec);
-    return `<img class="spr ${cls}${u.pix ? ' pix' : ''}" src="${esc(u.src)}" data-file="${esc(u.file)}" data-ini="${ini}" alt="${title === false ? '' : esc(label)}" title="${title === false ? '' : esc(label)}" loading="lazy" decoding="async" onerror="VL.spriteFail(this)">`;
+    const u = urlFor(rec); const tip = u.base ? `${label} (no picture of this form yet, so this shows the regular form)` : label;
+    return `<img class="spr ${cls}${u.pix ? ' pix' : ''}" src="${esc(u.src)}" data-file="${esc(u.file)}" data-ini="${ini}" alt="${title === false ? '' : esc(label)}" title="${title === false && !u.base ? '' : esc(tip)}" loading="lazy" decoding="async" onerror="VL.spriteFail(this)">`;
   };
   /* Battle sprites like Showdown's: animated, facing the right way (back sprites for your side),
      falling back to still pictures and then to the normal picture. */
@@ -62,8 +62,8 @@
   };
   VL.spriteFail = function (img) {
     const step = +(img.dataset.step || 0) + 1; img.dataset.step = step;
-    const tries = [`${BASE}gen5/${img.dataset.file}.png`, `${BASE}dex/${img.dataset.file}.png`, `${BASE}gen5/${String(img.dataset.file).split('-')[0]}.png`].filter(u => u !== img.src);
-    if (step <= tries.length) { img.classList.toggle('pix', /\/gen5\//.test(tries[step - 1])); img.src = tries[step - 1]; return; }
+    const tries = [`${BASE}gen5/${img.dataset.file}.png`, `${BASE}dex/${img.dataset.file}.png`, `${BASE}ani/${img.dataset.file}.gif`, `${BASE}gen5/${String(img.dataset.file).split('-')[0]}.png`].filter(u => u !== img.src);
+    if (step <= tries.length) { img.classList.toggle('pix', /\/(gen5|ani)\//.test(tries[step - 1])); img.src = tries[step - 1]; return; }
     const s = document.createElement('span'); s.className = img.className.replace(/\bpix\b/, '') + ' none'; s.textContent = img.dataset.ini || '?'; s.title = img.title || ''; img.replaceWith(s);
   };
   /* a row of small pictures for a list of names */

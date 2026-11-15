@@ -16,7 +16,8 @@ const path = require('path');
 const DEX = path.resolve(process.argv[2] || path.join(__dirname, '..', 'data', 'dex.json'));
 const OUT = path.resolve(process.argv[3] || path.join(__dirname, '..', 'data', 'sprites.json'));
 const BASE = 'https://play.pokemonshowdown.com/sprites/';
-const SETS = ['home-centered', 'gen5', 'dex']; // best first
+const SETS = ['home-centered', 'gen5', 'dex', 'ani']; // best first; 'ani' (animated) has some new Megas the still sets don't
+const EXT = (set) => (set === 'ani' ? 'gif' : 'png');
 const UA = { 'User-Agent': 'toxicroak-vgc-lab (github.com/nramsay1212/vgc-lab)' };
 const toId = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -26,7 +27,8 @@ async function listing(set) {
       const r = await fetch(BASE + set + '/', { headers: UA });
       if (!r.ok) continue;
       const t = await r.text();
-      const files = new Set([...t.matchAll(/href="\.?\/?([a-z0-9-]+)\.png"/g)].map(m => m[1]));
+      const ext = EXT(set);
+      const files = new Set([...t.matchAll(new RegExp(`href="\\.?\\/?([a-z0-9-]+)\\.${ext}"`, 'g'))].map(m => m[1]));
       if (files.size > 200) return files;
     } catch (e) { /* retry */ }
   }
@@ -49,7 +51,7 @@ async function listing(set) {
     for (let k = 0; k < SETS.length && !pick; k++) for (const f of variants(s)) if (has(k, f)) { pick = [k, f]; break; }
     if (!pick && s.b && s.b !== s.n) {
       const b = byName.get(s.b);
-      for (let k = 0; k < SETS.length && !pick && b; k++) if (has(k, fileOf(b))) { pick = [k, fileOf(b)]; viaBase++; }
+      for (let k = 0; k < SETS.length && !pick && b; k++) if (has(k, fileOf(b))) { pick = [k, fileOf(b), 1]; viaBase++; } // 1 = the base form's picture
     }
     if (!pick) { none.push(s.id); continue; }
     count[pick[0]]++;
