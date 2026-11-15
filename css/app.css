@@ -953,10 +953,3 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .bv-pi.fnt::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:#ff8b84;font-weight:800;font-size:15px;text-shadow:0 0 3px #000}
 .bv-pi.unk::after{content:"?";position:absolute;right:-1px;bottom:-3px;color:#fff;font-weight:800;font-size:11px;text-shadow:0 0 3px #000}
 .bv-who b{background:rgba(15,17,22,.7);padding:1px 7px;border-radius:5px}
-
-/* Replay review: guess first */
-.rr-guess{border:1px dashed var(--line-2);border-radius:10px;padding:10px 12px;background:var(--bg-2)}
-.rr-guess p{margin:0 0 8px}
-.rr-g{display:flex;flex-direction:column;gap:6px;padding:6px 0;border-top:1px solid var(--line)}
-.rr-g:first-of-type{border-top:0}
-.rr-res{margin-bottom:8px;display:grid;gap:3px}

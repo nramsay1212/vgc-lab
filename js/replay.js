@@ -105,45 +105,7 @@
   }
 
   // ---------- state ----------
-  // every action each Pokémon chose, turn by turn, and the moves each one showed over the game
-  function actions(log) {
-    const acts = {}; const known = {}; const occ = {}; let turn = 0, upkeep = false;
-    // what each Pokémon showed, and on which turn 
-    const info = {}; const at = (key) => (info[key] = info[key] || { item: null, ability: null, moves: {} });
-    const keyOf = (id) => { const m = String(id || '').match(/^(p[12])[a-c]?: (.+)$/); return m ? m[1] + ':' + m[2] : null; };
-    const tag = (f, name) => { const x = f.find(y => y.startsWith(`[${name}]`)); return x ? x.slice(name.length + 2).trim() : ''; };
-    for (const l of String(log).split('\n')) {
-      const f = l.split('|'); const t = f[1];
-      if (t === 'turn') { turn = +f[2]; upkeep = false; continue; }
-      {
-        const own = keyOf(f[2]); const of = keyOf(tag(f, 'of')); const src = tag(f, 'from');
-        const set = (k, field, v) => { if (k && v && !at(k)[field]) at(k)[field] = { v, turn }; };
-        if (t === '-item' && !/\[from\] (move|ability)/.test(l)) set(own, 'item', f[3]);
-        if (t === '-enditem') set(own, 'item', f[3].replace(/^item: /, ''));
-        if (t === '-ability') set(own, 'ability', f[3]);
-        if (/^item: /.test(src)) set(of || own, 'item', src.slice(6));
-        if (/^ability: /.test(src)) set(of || own, 'ability', src.slice(9));
-        if (t === 'move' && own && !f.some(x => /^\[from\]/.test(x)) && f[3] !== 'Struggle') { const mv = at(own).moves; if (mv[f[3]] === undefined) mv[f[3]] = turn; }
-      }
-      if (t === 'upkeep') { upkeep = true; continue; }
-      const m = String(f[2] || '').match(/^(p[12])([a-c]): (.+)$/); if (!m) continue;
-      const key = m[1] + ':' + m[3], slot = m[1] + m[2];
-      if (t === 'move' && turn >= 1) {
-        if (f.some(x => /^\[from\]/.test(x)) || f[3] === 'Struggle') continue;
-        (known[key] = known[key] || new Set()).add(f[3]);
-        const tg = String(f[4] || '').match(/^(p[12])([a-c]): (.+)$/);
-        (acts[turn] = acts[turn] || []).push({ slot, key, kind: 'move', move: f[3], target: tg ? tg[1] + ':' + tg[3] : '', spread: f.some(x => /^\[spread\]/.test(x)) });
-      }
-      // a switch is chosen by the Pokémon leaving the slot, not the one coming in
-      if ((t === 'switch' || t === 'drag') && turn >= 1 && !upkeep && t === 'switch' && occ[slot]) (acts[turn] = acts[turn] || []).push({ slot, key: occ[slot], kind: 'switch', to: String(f[3] || '').split(',')[0] });
-      if (t === 'switch' || t === 'drag' || t === 'replace') occ[slot] = key;
-    }
-    return { acts, known, info };
-  }
-
   let R = null; // { id, url, log, data, me, turn, key, notes, takeaway, after }
-  // Guess first: each turn stays hidden until you've said what you'd do
-  let GUESS = false; try { GUESS = localStorage.getItem('vgclab-rr-guess') === '1'; } catch (e) { /* ignore */ }
   const SD = 'vgclab-sdname';
   const sdName = () => { try { return localStorage.getItem(SD) || ''; } catch (e) { return ''; } };
   const norm = (u) => String(u || '').trim().replace(/[?#].*$/, '').replace(/\.(json|log)$/, '');
@@ -170,30 +132,6 @@
 
   // ---------- drawing ----------
   // ---------- drawing (the board is VL.battleView) ----------
-  // your Pokémon on the field this turn, with the moves each used during the game, to pick from
-  function guessHtml(d, sn) {
-    const mine = Object.entries(sn.active).filter(([slot, k]) => slot.startsWith(R.me) && sn.mons[k] && !sn.mons[k].fnt).sort();
-    const picks = (R.picks && R.picks[R.turn]) || {};
-    const rows = mine.map(([, k]) => {
-      const moves = [...((R.acts.known[k]) || [])].slice(0, 4);
-      const opts = moves.map(mv => ({ v: 'move:' + mv, l: mv })).concat([{ v: 'switch', l: 'Switch out' }]);
-      return `<div class="rr-g"><div class="kv">${VL.sprite(sn.mons[k].name, 'sm', false)}<b>${esc(sn.mons[k].name)}</b></div><div class="chips">${opts.map(o => `<button type="button" class="chip" data-rrg="${esc(k)}|${esc(o.v)}" aria-pressed="${picks[k] === o.v}">${esc(o.l)}</button>`).join('')}</div></div>`;
-    }).join('');
-    return `<div class="rr-guess"><p><b>What would you do on turn ${R.turn}?</b> Pick for each Pokémon, or just think it through, then show the turn.</p>${rows || '<p class="sub">None of your Pokémon is on the field.</p>'}
-      <button class="btn" data-rp="reveal" style="width:100%;margin-top:6px">Show what happened</button></div>`;
-  }
-  // after showing the turn: how your picks compare with what you actually did
-  function guessResult(d, sn) {
-    const picks = R.picks && R.picks[R.turn]; if (!GUESS || !picks || !R.acts || !Object.keys(picks).length) return '';
-    const acts = (R.acts.acts[R.turn] || []).filter(a => a.slot.startsWith(R.me));
-    const lines = Object.entries(picks).map(([k, v]) => {
-      const a = acts.find(x => x.key === k); const did = a ? (a.kind === 'switch' ? 'switch' : 'move:' + a.move) : null;
-      const name = (sn.mons[k] || {}).name || k.split(':')[1]; const lab = (x) => x === 'switch' ? 'Switch out' : String(x).slice(5);
-      return `<div>${did === v ? '✓' : '✗'} <b>${esc(name)}</b>: you'd pick ${esc(lab(v))}${did ? `, in the game you chose ${esc(lab(did))}` : ', and it didn\'t act'}.</div>`;
-    }).join('');
-    return `<div class="explain rr-res">${lines}<div class="sub">Different isn't always wrong. Was your pick better? Write it in the note below.</div></div>`;
-  }
-
   function render() {
     const root = $('rr-root'); if (!root) return;
     if (!VL.D.dex) { root.innerHTML = '<p class="sub">Loading the Pokémon data…</p>'; return; }
@@ -204,20 +142,18 @@
     const result = d.winner ? (d.winner === d.players[R.me] ? 'You won' : 'You lost') : 'No result';
     const evs = (list) => list.map(e => `<div class="rp-ev ${e.cls} ${e.side ? (e.side === R.me ? 'mine' : 'theirs') : ''}">${e.html}</div>`).join('');
     const during = T.events.filter(e => !e.after), afterEv = T.events.filter(e => e.after);
-    if (GUESS && !R.acts) R.acts = actions(R.log);
-    const hidden = GUESS && R.turn > 0 && !R.after && !(R.shown && R.shown[R.turn]);
     root.innerHTML = `
       <div class="card rp-head"><div class="card-head"><div><h3><span class="rp-n p1">${esc(d.players.p1)}</span> vs <span class="rp-n p2">${esc(d.players.p2)}</span></h3><div class="sub">${esc(d.tier || 'Showdown battle')} · ${N} turn${N === 1 ? '' : 's'} · <b>${result}</b></div></div>
         <div class="kv" style="flex-wrap:wrap"><span class="sub">I was</span><div class="seg" role="group" aria-label="Which player were you">${['p1', 'p2'].map(s => `<button type="button" data-rpme="${s}" aria-pressed="${R.me === s}">${esc(d.players[s])}</button>`).join('')}</div></div></div>
         <div class="row" style="gap:6px"><button class="btn small" data-rp="save">${R.dirty ? 'Save review' : 'Saved'}</button><button class="btn ghost small" data-rp="log">Log this game</button>${R.url ? `<a class="btn ghost small" href="${esc(R.url)}" target="_blank" rel="noopener">Watch on Showdown ↗</a>` : ''}<button class="btn ghost small" data-rp="close">Close</button></div></div>
       <div class="card"><div class="rp-nav"><button class="btn ghost" data-rp="prev" ${R.turn <= 0 ? 'disabled' : ''} aria-label="Previous turn">◀ Previous</button><div class="rp-title"><b>${R.turn === 0 ? 'Leads' : `Turn ${R.turn}`}</b><span class="sub">of ${N}</span></div><button class="btn ghost" data-rp="next" ${R.turn >= N ? 'disabled' : ''} aria-label="Next turn">Next ▶</button></div>
         <div class="rp-turns" role="group" aria-label="Jump to a turn">${d.turns.map(t => `<button type="button" data-rpt="${t.n}" class="${t.n === R.turn ? 'on' : ''} ${R.key === t.n ? 'key' : ''} ${R.notes[t.n] ? 'note' : ''}" title="${t.n === 0 ? 'Leads' : 'Turn ' + t.n}${R.key === t.n ? ' (key turn)' : ''}">${t.n === 0 ? 'L' : t.n}${R.key === t.n ? '★' : ''}</button>`).join('')}</div>
-        <div class="row" style="justify-content:space-between;align-items:center"><p class="sub" style="margin:0">★ is your key turn. A dot marks turns with a note. Use the left and right arrow keys to step.</p><label class="vd-check" for="rp-guess" title="Each turn stays hidden until you pick what you'd do"><input type="checkbox" id="rp-guess" ${GUESS ? 'checked' : ''}> Guess first</label></div></div>
+        <p class="sub">★ is your key turn. A dot marks turns with a note. Use the left and right arrow keys to step.</p></div>
       <div class="rp-main">
-        <div class="card"><div class="card-head"><h3>${R.turn === 0 ? 'The field after leads' : R.after ? `The field after turn ${R.turn}` : `The field at the start of turn ${R.turn}`}</h3>${R.turn > 0 && !hidden ? `<div class="seg" role="group"><button type="button" data-rpa="0" aria-pressed="${!R.after}">Before</button><button type="button" data-rpa="1" aria-pressed="${R.after}">After</button></div>` : ''}</div>
+        <div class="card"><div class="card-head"><h3>${R.turn === 0 ? 'The field after leads' : R.after ? `The field after turn ${R.turn}` : `The field at the start of turn ${R.turn}`}</h3>${R.turn > 0 ? `<div class="seg" role="group"><button type="button" data-rpa="0" aria-pressed="${!R.after}">Before</button><button type="button" data-rpa="1" aria-pressed="${R.after}">After</button></div>` : ''}</div>
           ${VL.battleView(d, sn, { me: R.me, turn: R.turn === 0 ? 0 : R.after ? R.turn + 1 : R.turn })}</div>
         <div class="card"><div class="card-head"><h3>${R.turn === 0 ? 'Team preview and leads' : `What happened on turn ${R.turn}`}</h3><span class="sub"><span class="rp-n ${R.me}">you</span> · <span class="rp-n ${opp}">opponent</span></span></div>
-          ${hidden ? guessHtml(d, sn, opp) : `${guessResult(d, sn)}<div class="rp-events">${evs(during) || '<span class="sub">Nothing happened.</span>'}${afterEv.length ? `<div class="section-label">End of turn</div>${evs(afterEv)}` : ''}</div>`}
+          <div class="rp-events">${evs(during) || '<span class="sub">Nothing happened.</span>'}${afterEv.length ? `<div class="section-label">End of turn</div>${evs(afterEv)}` : ''}</div>
           <label for="rp-note">Your note on ${R.turn === 0 ? 'team preview and leads' : `turn ${R.turn}`}<textarea id="rp-note" placeholder="${R.turn === 0 ? 'Was this the right four and the right lead?' : 'What would you do now? What did you miss?'}">${esc(R.notes[R.turn] || '')}</textarea></label>
           <div class="row" style="justify-content:space-between"><button class="btn ${R.key === R.turn ? '' : 'ghost'} small" data-rp="key">${R.key === R.turn ? '★ This is the key turn' : 'Mark as the key turn'}</button></div></div>
       </div>
@@ -270,7 +206,6 @@
     if (!R) return;
     const t = e.target.closest('[data-rpt]'); if (t) return go(+t.dataset.rpt);
     const me = e.target.closest('[data-rpme]'); if (me) { grabInputs(); R.me = me.dataset.rpme; R.dirty = true; render(); return; }
-    const gp = e.target.closest('[data-rrg]'); if (gp) { const [k, v] = gp.dataset.rrg.split('|'); R.picks = R.picks || {}; const t = (R.picks[R.turn] = R.picks[R.turn] || {}); t[k] = t[k] === v ? undefined : v; if (!t[k]) delete t[k]; render(); return; }
     const a = e.target.closest('[data-rpa]'); if (a) { grabInputs(); R.after = a.dataset.rpa === '1'; render(); return; }
     const b = e.target.closest('[data-rp]'); if (!b) return;
     const k = b.dataset.rp;
@@ -279,7 +214,6 @@
     if (k === 'key') { grabInputs(); R.key = R.key === R.turn ? null : R.turn; R.dirty = true; render(); }
     if (k === 'save') { save(); render(); }
     if (k === 'log') toLog();
-    if (k === 'reveal') { R.shown = R.shown || {}; R.shown[R.turn] = true; VL.sound && VL.sound.play('tap'); render(); return; }
     if (k === 'close') { if (R.dirty && (R.key || Object.keys(R.notes).length || R.takeaway)) save(true); R = null; render(); }
   });
   document.addEventListener('input', (e) => { if (R && (e.target.id === 'rp-note' || e.target.id === 'rp-take')) { if (!R.dirty) { R.dirty = true; const b = document.querySelector('[data-rp=save]'); if (b) b.textContent = 'Save review'; } } });
@@ -289,10 +223,5 @@
     if (e.key === 'ArrowRight') { e.preventDefault(); go(R.turn + 1); }
   });
 
-  document.addEventListener('change', (e) => {
-    if (e.target.id !== 'rp-guess') return;
-    GUESS = e.target.checked; try { localStorage.setItem('vgclab-rr-guess', GUESS ? '1' : '0'); } catch (x) { /* ignore */ }
-    if (R) { R.shown = {}; R.after = false; } render();
-  });
   VL.replay = { render, parse, async open(url) { location.hash = 'replay'; const err = await loadUrl(url); if (err) VL.toast(err); else if (R) R.dirty = true; render(); } };
 })();
