@@ -37,12 +37,14 @@ jobs:
         with:
           node-version: 22
 
+      # A push only publishes code, unless its commit message contains [refresh],
+      # which runs the full data update straight away (handy after fixing a data script).
       # Each refresh step may fail (a website being down, for example) without
       # stopping the others or the publish. Problems are written to
       # data/status.json and shown in the app under Account, backup & theme.
       - name: Refresh Pokémon data from Showdown
         id: dex
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]')
         continue-on-error: true
         run: |
           git clone --depth 1 https://github.com/smogon/pokemon-showdown.git /tmp/ps
@@ -51,7 +53,7 @@ jobs:
 
       - name: Refresh usage stats from Smogon
         id: meta
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]')
         continue-on-error: true
         run: node scripts/build-meta.js /tmp/ps data/dex.json data/meta.json
 
@@ -59,14 +61,14 @@ jobs:
       # once a month for formats Smogon had no stats for
       - name: Archive usage stats for older formats
         id: archive
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]')
         continue-on-error: true
         timeout-minutes: 30
         run: node scripts/build-meta-archive.js /tmp/ps data/dex.json
 
       - name: Update the damage calculator engine
         id: calc
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]')
         continue-on-error: true
         run: |
           latest=$(npm view @smogon/calc version)
@@ -84,13 +86,13 @@ jobs:
 
       - name: Refresh Pokémon sprites
         id: sprites
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]')
         continue-on-error: true
         run: node scripts/build-sprites.js
 
       - name: Refresh tournament teams
         id: teams
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]')
         continue-on-error: true
         run: node scripts/build-teams.js
 
@@ -140,7 +142,7 @@ jobs:
           grep -o "app.js?v=[0-9a-z]*" index.html
           now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           checked="$now"; problems=""
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ contains(github.event.head_commit.message, '[refresh]') }}" != "true" ]; then
             # a push only publishes code, so keep the time and result of the last full data check
             prev="$(curl -sf --max-time 15 "https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY#*/}/data/status.json" || echo '{}')"
             checked="$(node -e "try{const j=JSON.parse(process.argv[1]);process.stdout.write(j.checked||'')}catch(e){}" "$prev")"
