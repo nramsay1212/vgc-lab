@@ -424,8 +424,9 @@
           const field = pairField(me, spe, t.mon, t.spe);
           let off = 0, offLo = 0, offMv = '', def = 0, defMv = '';
           for (const mv of myAtk) { const r = row(C, g, me, t.mon, mv.n, field); if (r && r.hi > off) { off = r.hi; offLo = r.lo; offMv = mv.n; } }
-          for (const mv of t.atk) { const r = row(C, g, t.mon, me, mv.n, field); if (r && r.hi > def) { def = r.hi; defMv = mv.n; } }
-          const v = { t: t.n, off, offLo, offMv, def, defMv, faster: CT.speed === 'tr' ? espe < t.espe : espe > t.espe, tie: espe === t.espe, spe: espe, tspe: t.espe };
+          let defLo = 0;
+          for (const mv of t.atk) { const r = row(C, g, t.mon, me, mv.n, field); if (r && r.hi > def) { def = r.hi; defLo = r.lo; defMv = mv.n; } }
+          const v = { t: t.n, off, offLo, offMv, def, defLo, defMv, faster: CT.speed === 'tr' ? espe < t.espe : espe > t.espe, tie: espe === t.espe, spe: espe, tspe: t.espe };
           v.ver = verdict(v); return v;
         });
         const answered = vs.filter(v => v.ver[2] >= 2).length;
@@ -444,19 +445,24 @@
     const empty = T.sets.findIndex(x => !x || !x.species);
     const slotLabel = empty >= 0 ? `Add to slot ${empty + 1}` : `Replace slot ${sel + 1}`;
     const pct = (n) => `${n}%`;
-    const line = (v) => {
-      const hit = v.off ? `${v.offMv} does ${v.offLo}–${pct(v.off)}` : 'has no attack that hurts it';
-      const take = v.def ? `takes up to ${pct(v.def)} from ${v.defMv}` : 'takes nothing from its attacks';
+    // one block per threat: what it does to them, what they do to it, who moves first, and the catch
+    const block = (c, v) => {
+      const me = c.n, them = v.t;
+      const out = v.off ? `<b>${esc(v.offMv)}</b> does <b>${v.offLo}–${v.off}%</b> into ${esc(them)}.` : `${esc(me)} has no attack that hurts ${esc(them)}.`;
+      const inn = v.def ? `${esc(them)}'s <b>${esc(v.defMv)}</b> does <b>${v.defLo}–${v.def}%</b> into ${esc(me)}.` : `${esc(them)} can't hurt ${esc(me)}.`;
       const nums = `(${v.spe}${CT.speed === 'mytw' ? ' with Tailwind' : ''} vs ${v.tspe}${CT.speed === 'theirtw' ? ' with Tailwind' : ''})`;
-      const sp = v.tie ? `speed tie ${nums}` : CT.speed === 'tr' ? (v.faster ? `moves first under Trick Room ${nums}` : `moves second under Trick Room ${nums}`) : v.faster ? `faster ${nums}` : `slower ${nums}`;
-      const risk = v.ver[1] !== 'y' ? '' : v.ver[0] === 'Walls it' ? ' Risk: it can\'t knock it out.' : v.def >= 100 ? ' Risk: it gets knocked out if it\'s hit first.' : ' Risk: it can\'t take two hits.';
-      return `<li class="ctr-${v.ver[1]}"><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <b>${esc(v.t)}</b>: ${esc(hit)}, ${esc(take)}, ${esc(sp)}.${risk ? `<span class="ctr-risk">${esc(risk)}</span>` : ''}</li>`;
+      const sp = v.tie ? `${esc(me)} and ${esc(them)} speed tie ${nums}.`
+        : CT.speed === 'tr' ? `${esc(me)} moves ${v.faster ? 'first' : 'second'} under Trick Room ${nums}.`
+        : `${esc(me)} is ${v.faster ? 'faster' : 'slower'} ${nums}.`;
+      const risk = v.ver[1] !== 'y' ? '' : v.ver[0] === 'Walls it' ? 'Risk: it can\'t knock it out.' : v.def >= 100 ? 'Risk: it gets knocked out if it\'s hit first.' : 'Risk: it can\'t take two hits.';
+      return `<div class="ctr-vs ctr-${v.ver[1]}"><div class="ctr-vh"><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <span>vs <b>${esc(them)}</b></span></div>
+        <div>${out}</div><div>${inn}</div><div>${sp}</div>${risk ? `<div class="ctr-risk">${esc(risk)}</div>` : ''}</div>`;
     };
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
       <div class="ctr-key"><span><i class="dot w"></i>Good: a safe answer</span><span><i class="dot y"></i>Works, but risky</span><span><i class="dot l"></i>Bad: loses to it</span></div>
       ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
         <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
-        <ul>${c.vs.map(line).join('')}</ul></div>`).join('')}`;
+        <div class="ctr-blocks">${c.vs.map(v => block(c, v)).join('')}</div></div>`).join('')}`;
   }
 
   // ---------- Stat Points helper ----------
