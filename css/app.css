@@ -953,3 +953,4 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .bv-pi.fnt::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:#ff8b84;font-weight:800;font-size:15px;text-shadow:0 0 3px #000}
 .bv-pi.unk::after{content:"?";position:absolute;right:-1px;bottom:-3px;color:#fff;font-weight:800;font-size:11px;text-shadow:0 0 3px #000}
 .bv-who b{background:rgba(15,17,22,.7);padding:1px 7px;border-radius:5px}
+.wn-note{margin-bottom:14px}.wn-note p{margin:0 0 6px}
