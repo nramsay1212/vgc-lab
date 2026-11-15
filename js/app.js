@@ -167,7 +167,7 @@
         <td>${esc(x.mylead || '–')} / ${esc(x.opplead || '–')}</td>
         <td>${(x.tags || []).map(t => `<span class="pill m">${esc(TAGMAP[t] || t)}</span>`).join(' ')}</td>
         <td style="max-width:280px">${esc(x.note || '')}${x.turn ? ` <span class="sub">(T${x.turn})</span>` : ''}</td>
-        <td><button class="linkbtn" data-delgame="${esc(x.id)}">Delete</button></td></tr>`).join('')
+        <td style="white-space:nowrap"><button class="linkbtn" data-editgame="${esc(x.id)}">Edit</button> <button class="linkbtn" data-delgame="${esc(x.id)}">Delete</button></td></tr>`).join('')
     }</tbody></table>`;
   }
 
@@ -528,8 +528,10 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     e.preventDefault();
     if (!lfResult) { $('lf-msg').textContent = 'Pick WIN or LOSS first.'; return; }
     const rating = parseInt($('lf-rating').value, 10), turn = parseInt($('lf-turn').value, 10); const fid = pendingFmt || curFormatId();
-    store.put('games', VL.newId('g'), {
-      ts: Date.now(), day: dayKey(), fmt: fid, fmtName: fmtName(fid), result: lfResult,
+    const old = editingId ? store.get('games', editingId) : null;
+    store.put('games', editingId || VL.newId('g'), {
+      ...(old || {}),
+      ts: old ? old.ts : Date.now(), day: old ? old.day : dayKey(), fmt: fid, fmtName: fmtName(fid), result: lfResult,
       type: $('lf-type').value, rating: Number.isFinite(rating) ? rating : null, team: $('lf-team').value || null,
       arch: $('lf-arch').value || null, opp: splitMons($('lf-opp').value).slice(0, 6),
       mylead: splitMons($('lf-mylead').value).join(', '), myback: splitMons($('lf-myback').value).join(', '),
@@ -543,10 +545,37 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false'));
     syncQs(); $('lf-tagq').open = false;
-    $('lf-msg').textContent = 'Saved. Next game.';
-    VL.markDone('log');
-    VL.toast(res === 'W' ? 'Win logged' : 'Loss logged'); VL.sound && VL.sound.play('save');
+    const wasEdit = !!editingId; stopEditing();
+    $('lf-msg').textContent = wasEdit ? 'Changes saved.' : 'Saved. Next game.';
+    if (!wasEdit) VL.markDone('log');
+    VL.toast(wasEdit ? 'Game updated' : res === 'W' ? 'Win logged' : 'Loss logged'); VL.sound && VL.sound.play('save');
   });
+  // ---------- edit a logged game: load it into the form, save over it ----------
+  let editingId = null;
+  function stopEditing() {
+    editingId = null; $('lf-title').textContent = 'New game'; $('lf-save').textContent = 'Save game'; $('lf-cancel').hidden = true;
+  }
+  function editGame(id) {
+    const x = store.get('games', id); if (!x) return;
+    editingId = id; setResult(x.result || null);
+    const set = (f, v) => { const el = $(f); if (el) el.value = v ?? ''; };
+    set('lf-type', x.type || $('lf-type').value); set('lf-rating', Number.isFinite(x.rating) ? x.rating : '');
+    set('lf-team', x.team || ''); set('lf-arch', x.arch || ''); set('lf-opp', (x.opp || []).join(', '));
+    set('lf-mylead', x.mylead || ''); set('lf-myback', x.myback || ''); set('lf-opplead', x.opplead || '');
+    set('lf-turn', Number.isFinite(x.turn) ? x.turn : ''); set('lf-note', x.note || ''); set('lf-oppname', x.oppName || '');
+    document.querySelectorAll('#lf-tags [data-tag]').forEach(b => b.setAttribute('aria-pressed', String((x.tags || []).includes(b.dataset.tag))));
+    syncQs();
+    pendingSource = x.source || null; pendingFmt = x.fmt || null;
+    $('lf-title').textContent = `Editing your ${x.result === 'W' ? 'win' : 'loss'} from ${x.day || 'earlier'}`;
+    $('lf-save').textContent = 'Save changes'; $('lf-cancel').hidden = false; $('lf-msg').textContent = '';
+    $('log-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('lf-cancel').onclick = () => {
+    stopEditing(); setResult(null); pendingSource = null; pendingFmt = null;
+    for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
+    document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false')); syncQs();
+    $('lf-msg').textContent = 'Editing cancelled. Nothing changed.';
+  };
   VL.armDelete = armDelete;
   function armDelete(btn, run) {
     if (btn.dataset.armed) { run(); return; }
@@ -615,7 +644,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   };
   $('rp-logo').onclick = () => importReplay($('rp-log').value, '');
 
-  $('recent').addEventListener('click', e => { if (e.target.dataset.review && VL.replay) { VL.replay.open(e.target.dataset.review); return; } const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
+  $('recent').addEventListener('click', e => { if (e.target.dataset.editgame) { editGame(e.target.dataset.editgame); return; } if (e.target.dataset.review && VL.replay) { VL.replay.open(e.target.dataset.review); return; } const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
 
   $('rv-scope').onchange = renderAll;
   $('rv-mons').addEventListener('click', e => { const n = e.target.dataset.addnb; if (!n) return; location.hash = 'notebook'; clearNb(); $('nb-name').value = n; $('nb-plan').focus(); });

@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=26">
+<link rel="stylesheet" href="css/app.css?v=27">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -130,7 +130,7 @@
       <details class="howto"><summary>How to use this page</summary><ol><li>Only <b>Win/Loss</b> is required. Everything else makes your stats better.</li><li><b>Their 6</b> powers "Toughest Pokémon" in Review. Start typing and names autocomplete.</li><li><b>Tags</b> are what lost the game, or nearly did. Be honest: tag your own mistakes, not just bad luck.</li><li><b>What I'd do differently</b> is the most valuable field. Write the turn and the better play.</li></ol></details>
     </header>
     <form class="card" id="log-form" autocomplete="off">
-      <div class="card-head"><h3>New game</h3><span class="sub" id="log-fmt"></span></div>
+      <div class="card-head"><h3 id="lf-title">New game</h3><span class="sub" id="log-fmt"></span></div>
       <div class="wl" role="group" aria-label="Result">
         <button type="button" class="w" id="lf-w" aria-pressed="false">WIN</button>
         <button type="button" class="l" id="lf-l" aria-pressed="false">LOSS</button>
@@ -173,7 +173,7 @@
       </label>
       <div class="row" style="justify-content:space-between">
         <span class="sub" id="lf-msg"></span>
-        <button class="btn" type="submit">Save game</button>
+        <span class="row" style="gap:6px"><button class="btn ghost" type="button" id="lf-cancel" hidden>Cancel editing</button><button class="btn" type="submit" id="lf-save">Save game</button></span>
       </div>
     </form>
     <datalist id="dl-mons"></datalist>
@@ -736,35 +736,35 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=26"></script>
-<script src="js/sound.js?v=26"></script>
-<script src="js/content.js?v=26"></script>
-<script src="js/search.js?v=26"></script>
-<script src="js/study.js?v=26"></script>
-<script src="js/sprites.js?v=26"></script>
-<script src="js/help.js?v=26"></script>
-<script src="js/meta.js?v=26"></script>
-<script src="js/calc.js?v=26"></script>
-<script src="js/companion.js?v=26"></script>
-<script src="js/teamcheck.js?v=26"></script>
-<script src="js/builder.js?v=26"></script>
-<script src="js/plan.js?v=26"></script>
-<script src="js/topteams.js?v=26"></script>
-<script src="js/news.js?v=26"></script>
-<script src="js/replay.js?v=26"></script>
-<script src="js/sheets.js?v=26"></script>
-<script src="js/battleview.js?v=26"></script>
-<script src="js/videos.js?v=26"></script>
-<script src="js/trends.js?v=26"></script>
-<script src="js/progress.js?v=26"></script>
-<script src="js/arcade.js?v=26"></script>
-<script src="js/test.js?v=26"></script>
-<script src="js/compare.js?v=26"></script>
-<script src="js/app.js?v=26"></script>
-<script src="js/hubs.js?v=26"></script>
-<script src="js/whatsnew.js?v=26"></script>
-<script src="js/firebase-config.js?v=26"></script>
-<script src="js/account.js?v=26"></script>
+<script src="js/store.js?v=27"></script>
+<script src="js/sound.js?v=27"></script>
+<script src="js/content.js?v=27"></script>
+<script src="js/search.js?v=27"></script>
+<script src="js/study.js?v=27"></script>
+<script src="js/sprites.js?v=27"></script>
+<script src="js/help.js?v=27"></script>
+<script src="js/meta.js?v=27"></script>
+<script src="js/calc.js?v=27"></script>
+<script src="js/companion.js?v=27"></script>
+<script src="js/teamcheck.js?v=27"></script>
+<script src="js/builder.js?v=27"></script>
+<script src="js/plan.js?v=27"></script>
+<script src="js/topteams.js?v=27"></script>
+<script src="js/news.js?v=27"></script>
+<script src="js/replay.js?v=27"></script>
+<script src="js/sheets.js?v=27"></script>
+<script src="js/battleview.js?v=27"></script>
+<script src="js/videos.js?v=27"></script>
+<script src="js/trends.js?v=27"></script>
+<script src="js/progress.js?v=27"></script>
+<script src="js/arcade.js?v=27"></script>
+<script src="js/test.js?v=27"></script>
+<script src="js/compare.js?v=27"></script>
+<script src="js/app.js?v=27"></script>
+<script src="js/hubs.js?v=27"></script>
+<script src="js/whatsnew.js?v=27"></script>
+<script src="js/firebase-config.js?v=27"></script>
+<script src="js/account.js?v=27"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
