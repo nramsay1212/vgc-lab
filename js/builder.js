@@ -391,6 +391,12 @@
     if (rec && rec.mg && !set.item) set.item = rec.ri || '';
     return set;
   };
+  // a threat's attacks: every attack at least 10% of them run (so a sometimes-move like Light of Ruin counts), with how common it is
+  const threatAttacks = (name) => {
+    const m = metaOf(name); if (!m) return [];
+    const out = m.moves.map(([n, p]) => { const mv = D().move(n, fmt()); return mv && mv.c !== 'S' && mv.bp > 0 && p >= 10 ? { ...mv, share: p } : null; }).filter(Boolean);
+    return out.length ? out.slice(0, 6) : m.moves.map(([n, p]) => { const mv = D().move(n, fmt()); return mv && mv.c !== 'S' && mv.bp > 0 ? { ...mv, share: p } : null; }).filter(Boolean).slice(0, 1);
+  };
   const attacks = (set) => set.moves.map(n => n && D().move(n, fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0);
   const teamNames = () => T.sets.filter(x => x && x.species).map(x => x.species);
   const baseOf = (name) => { const r = recOf(name); return r ? (r.mg ? (r.bo || r.b || r.n) : r.n) : name; };
@@ -432,7 +438,7 @@
       ${CT.custom ? '<p class="sub">You picked these yourself, so they won\'t change as you build. <b>Back to my threats</b> goes back to following your team.</p>' : ''}
       <div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-ctrsp="${k}" aria-pressed="${CT.speed === k}">${l}</button>`).join('')}</div>
       <p class="sub" id="ctr-prev">${prevText()}</p>
-      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
+      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set (the moves Add to slot gives it) against each threat. For the threat, every attack at least 10% of them run is tried, and its strongest one against that Pokémon is shown, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
     const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(','), Object.keys(heldItems(-1)).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
@@ -454,7 +460,7 @@
     };
     const have = new Set(teamNames().map(baseOf));
     const speedOfSet = (set, tw) => { const r = recOf(set.species); return r ? speedWith(set, r, set.item === 'Choice Scarf', !!tw) : 0; };
-    const tg = CT.targets.map(n => { const set = commonSet(n); const rec = recOf(n); if (!set || !rec) return null; const mon = calcMon(C, g, set, rec); return mon ? { n, set, rec, mon, atk: attacks(set), spe: speedOfSet(set), espe: speedOfSet(set, CT.speed === 'theirtw') } : null; }).filter(Boolean);
+    const tg = CT.targets.map(n => { const set = commonSet(n); const rec = recOf(n); if (!set || !rec) return null; const mon = calcMon(C, g, set, rec); return mon ? { n, set, rec, mon, atk: threatAttacks(n), spe: speedOfSet(set), espe: speedOfSet(set, CT.speed === 'theirtw') } : null; }).filter(Boolean);
     if (!tg.length) { box(); return; }
     const targetBases = new Set(tg.map(t => baseOf(t.n)));
     const mates = matesOf(teamNames(), e);
@@ -474,8 +480,9 @@
           let off = 0, offLo = 0, offMv = '', def = 0, defMv = '';
           for (const mv of myAtk) { const r = row(C, g, me, t.mon, mv.n, field); if (r && r.hi > off) { off = r.hi; offLo = r.lo; offMv = mv.n; } }
           let defLo = 0;
-          for (const mv of t.atk) { const r = row(C, g, t.mon, me, mv.n, field); if (r && r.hi > def) { def = r.hi; defLo = r.lo; defMv = mv.n; } }
-          const v = { t: t.n, off, offLo, offMv, def, defLo, defMv, faster: CT.speed === 'tr' ? espe < t.espe : espe > t.espe, tie: espe === t.espe, spe: espe, tspe: t.espe };
+          let defShare = 100;
+          for (const mv of t.atk) { const r = row(C, g, t.mon, me, mv.n, field); if (r && r.hi > def) { def = r.hi; defLo = r.lo; defMv = mv.n; defShare = mv.share; } }
+          const v = { t: t.n, off, offLo, offMv, def, defLo, defMv, defShare, faster: CT.speed === 'tr' ? espe < t.espe : espe > t.espe, tie: espe === t.espe, spe: espe, tspe: t.espe };
           v.ver = verdict(v); return v;
         });
         const answered = vs.filter(v => v.ver[2] >= 2).length;
@@ -484,7 +491,7 @@
       }
       const pr = $('ctr-prog'); if (pr) pr.textContent = `Checking the meta… ${i} of ${pool.length}`;
       if (i < pool.length) { setTimeout(step, 0); return; }
-      const seen = new Set(); const best = out.sort((a, b) => b.score - a.score).filter(c => { const k = baseOf(c.n); if (seen.has(k)) return false; seen.add(k); return true; });
+      const seen = new Set(); const best = out.sort((a, b) => b.score - a.score).filter(c => { const k = baseOf(c.n); if (c.answered < 1 || seen.has(k)) return false; seen.add(k); return true; });
       CT.key = key; CT.res = { list: best.slice(0, 12), n: pool.length, tg: tg.map(t => t.n) };
       const el = $('bd-ctr'); if (el && atab === 'counters') renderCounters();
     }
@@ -499,7 +506,7 @@
     const block = (c, v) => {
       const me = c.n, them = v.t;
       const out = v.off ? `<b>${esc(v.offMv)}</b> does <b>${v.offLo}–${v.off}%</b> into ${esc(them)}.` : `${esc(me)} has no attack that hurts ${esc(them)}.`;
-      const inn = v.def ? `${esc(them)}'s <b>${esc(v.defMv)}</b> does <b>${v.defLo}–${v.def}%</b> into ${esc(me)}.` : `${esc(them)} can't hurt ${esc(me)}.`;
+      const inn = v.def ? `${esc(them)}'s <b>${esc(v.defMv)}</b> does <b>${v.defLo}–${v.def}%</b> into ${esc(me)}.${v.defShare < 50 ? ` <span class="sub">(Only ${Math.round(v.defShare)}% of ${esc(them)} run ${esc(v.defMv)}.)</span>` : ''}` : `${esc(them)} can't hurt ${esc(me)}.`;
       const nums = `(${v.spe}${CT.speed === 'mytw' ? ' with Tailwind' : ''} vs ${v.tspe}${CT.speed === 'theirtw' ? ' with Tailwind' : ''})`;
       const sp = v.tie ? `${esc(me)} and ${esc(them)} speed tie ${nums}.`
         : CT.speed === 'tr' ? `${esc(me)} moves ${v.faster ? 'first' : 'second'} under Trick Room ${nums}.`
@@ -508,6 +515,7 @@
       return `<div class="ctr-vs ctr-${v.ver[1]}"><div class="ctr-vh"><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <span>vs <b>${esc(them)}</b></span></div>
         <div>${out}</div><div>${inn}</div><div>${sp}</div>${risk ? `<div class="ctr-risk">${esc(risk)}</div>` : ''}</div>`;
     };
+    if (!res.list.length) return `<p class="sub">None of the ${res.n} most used Pokémon you don't have answers ${res.tg.length > 1 ? 'any of these' : 'it'} on its own. Try fewer at once, or check the Threats tab for a teammate that covers it.</p>`;
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
       <div class="ctr-key"><span><i class="dot w"></i>Good: a safe answer</span><span><i class="dot y"></i>Works, but risky</span><span><i class="dot l"></i>Bad: loses to it</span></div>
       ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}${c.swapped ? ` (${esc(c.swapped)} is taken)` : ''}</span>` : ''}${c.mega && teamMega ? `<span class="pill y" title="Only one Pokémon can Mega Evolve per battle">2nd Mega: only one can Mega Evolve</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
