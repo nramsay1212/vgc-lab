@@ -172,12 +172,13 @@
         const score = (hits.length * 2 + faster.length * 0.5 + (answers.length === 0 ? 3 : answers.length === 1 ? 1 : 0)) * (0.6 + x.u / 100);
         return { x, p, spe, hits, faster, answers, score };
       }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 8);
-      html += `<div class="card"><div class="card-head"><h3>Biggest threats</h3><span class="sub">From the 40 most-used Pokémon, using their most common moves and spread</span></div>${threats.map(t => `<div class="threat"><div class="h"><div class="kv"><b>${esc(t.x.n)}</b>${t.p.t.map(y => `<span class="ty ${esc(y)}">${esc(y)}</span>`).join(' ')}<span class="pill m">${t.x.u.toFixed(1)}% of teams</span></div><button class="linkbtn" data-tcnb="${esc(t.x.n)}">+ Notebook</button></div>
+      html += `<div class="card"><div class="card-head"><h3>Biggest threats</h3><span class="sub">From the 40 most-used Pokémon, using their most common moves and spread</span></div>${threats.map(t => `<div class="threat"><div class="h"><div class="kv"><b>${esc(t.x.n)}</b>${t.p.t.map(y => `<span class="ty ${esc(y)}">${esc(y)}</span>`).join(' ')}<span class="pill m">${t.x.u.toFixed(1)}% of teams</span><button type="button" class="linkbtn" data-ctr="${esc(t.x.n)}">Find a counter →</button></div><button class="linkbtn" data-tcnb="${esc(t.x.n)}">+ Notebook</button></div>
         <ul>${t.hits.length ? `<li>Hits ${t.hits.length} of your Pokémon super effectively: ${t.hits.map(h => `${esc(h.m.name)} (${esc(h.best.mv.n)}, ${fmtMult(h.best.e)}×)`).join(', ')}.</li>` : ''}
         <li>Usually ${t.spe} Speed, faster than ${t.faster.length} of your ${known.length}${t.faster.length ? ` (${esc(t.faster.map(m => m.name).join(', '))})` : ''}.</li>
         <li>${t.answers.length ? `Hit super effectively by ${esc(t.answers.map(m => m.name).join(', '))}.` : 'Nothing on your team hits it super effectively.'}</li></ul></div>`).join('')}</div>`;
 
       sec.threats = html; html = '';
+      sec._threats = threats.map(t => t.x.n);
       // speed tiers
       const tiers = known.map(m => ({ n: m.name, s: m.speed, mine: true })).concat(metaE.mons.slice(0, 25).filter(x => !mine.has(x.n)).map(x => { const i = D.find(x.n); if (i < 0) return null; const p = D.mon(i, fmt); const sp = x.spreads[0] ? x.spreads[0][0].split(':') : null; return { n: x.n, s: speedOf(p.s[5], sp && sp[1] ? sp[1].split('/').map(Number) : null, sp ? sp[0] : '', fmt) }; }).filter(Boolean)).sort((a, b) => b.s - a.s);
       html += `<div class="card"><div class="card-head"><h3>Speed tiers</h3><span class="sub">Your team against the 25 most-used Pokémon, each with its most common spread</span></div><div class="speedline">${tiers.map(t => `<div class="s ${t.mine ? 'mine' : ''}"><span class="num">${t.s}</span><span>${esc(t.n)}</span><span class="mini">${t.mine ? 'yours' : ''}</span></div>`).join('')}</div><p class="sub">Under Trick Room the order flips. Under Tailwind your side's numbers double.</p></div>`;

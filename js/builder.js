@@ -314,8 +314,15 @@
   // ---------- whole-team analysis (from the team checker) ----------
   function renderAnalysis() {
     const el = $('bd-analysis'); if (!el) return;
-    const tabs = [['weak', 'Weaknesses'], ['coverage', 'Coverage'], ['checklist', 'What\'s missing'], ['threats', 'Threats'], ['speed', 'Speed tiers']];
+    const tabs = [['weak', 'Weaknesses'], ['coverage', 'Coverage'], ['checklist', 'What\'s missing'], ['threats', 'Threats'], ['counters', 'Counters'], ['speed', 'Speed tiers']];
     const sec = VL.teamcheck && VL.teamcheck.analyze(exportTeam(), fmt().id);
+    if (sec && sec._threats) CT.threats = sec._threats;
+    if (atab === 'counters') {
+      el.innerHTML = `<div class="card-head"><h3>Team analysis</h3><span class="sub">Updates as you build</span></div>
+        <div class="seg bd-tabs" role="group" aria-label="Analysis">${tabs.map(([k, l]) => `<button type="button" data-atab="${k}" aria-pressed="${atab === k}">${l}</button>`).join('')}</div>
+        <div class="bd-an" id="bd-ctr"></div>`;
+      renderCounters(); return;
+    }
     el.innerHTML = `<div class="card-head"><h3>Team analysis</h3><span class="sub">Updates as you build</span></div>
       <div class="seg bd-tabs" role="group" aria-label="Analysis">${tabs.map(([k, l]) => `<button type="button" data-atab="${k}" aria-pressed="${atab === k}">${l}</button>`).join('')}</div>
       <div class="bd-an">${sec ? (sec.notes || '') + (sec[atab] || '<p class="sub">Nothing to show yet.</p>') : '<p class="sub">Add Pokémon to see what your team is weak to, what it\'s missing, and which popular Pokémon threaten it.</p>'}</div>`;
@@ -324,6 +331,111 @@
   const analysisSoon = () => { clearTimeout(anTimer); anTimer = setTimeout(renderAnalysis, 250); };
   let sideTimer = null;
   const sideSoon = () => { clearTimeout(sideTimer); sideTimer = setTimeout(renderSide, 300); };
+
+  // ---------- Counters: which Pokémon answer the ones you're struggling with ----------
+  // Every meta Pokémon you don't have yet, with its most common set, against each target's most
+  // common set: the best damage it does, the most it takes from the target's attacks, and who's faster.
+  const CT = { targets: [], custom: false, tr: false, threats: [], key: '', res: null, busy: false, tok: 0 };
+  const commonSet = (name) => {
+    const set = targetSet(name, 'common'); const m = metaOf(name); if (!set || !m) return null;
+    const rec = recOf(name);
+    set.moves = m.moves.slice(0, 4).map(x => x[0]);
+    if (rec && rec.mg && !set.item) set.item = rec.ri || '';
+    return set;
+  };
+  const attacks = (set) => set.moves.map(n => n && D().move(n, fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0);
+  const teamNames = () => T.sets.filter(x => x && x.species).map(x => x.species);
+  const baseOf = (name) => { const r = recOf(name); return r ? (r.mg ? (r.bo || r.b || r.n) : r.n) : name; };
+  function verdict(v) {
+    const { off, offLo, def, faster } = v;
+    if (def < 50 && off >= 100) return ['Hard counter', 'w', 4];
+    if (def < 50 && off >= 50) return ['Counter', 'w', 3];
+    if (faster && off >= 100) return [CT.tr ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'n', 2.5];
+    if (def < 100 && offLo >= 100) return ['Takes a hit and KOs back', 'n', 2];
+    if (def < 35) return ['Walls it', 'm', 1];
+    return ['Loses to it', 'l', 0];
+  }
+  function renderCounters() {
+    const box = $('bd-ctr'); if (!box) return;
+    const e = metaE();
+    if (!e) { box.innerHTML = `<p class="sub">Counters need usage stats for ${esc(fmt().name)}, so there's no meta to search. Current formats have them.</p>`; return; }
+    if (!CT.custom) CT.targets = CT.threats.slice(0, 3);
+    const chips = [...new Set(CT.threats.slice(0, 6).concat(CT.targets))];
+    const head = `<div class="ctr-pick"><div class="section-label">Find answers to</div>
+      <div class="kv bd-chips">${chips.map(n => `<button type="button" class="chipbtn ctr-chip" data-ctrt="${esc(n)}" aria-pressed="${CT.targets.includes(n)}">${VL.sprite(recOf(n) || n, 'xs')}${esc(n)}</button>`).join('')}
+        <button type="button" class="chipbtn" data-bd="ctradd">+ Another Pokémon</button></div>
+      <div class="kv bd-chips"><span class="mini">Speed</span><button type="button" class="chipbtn" data-ctrtr="0" aria-pressed="${!CT.tr}">Normal</button><button type="button" class="chipbtn" data-ctrtr="1" aria-pressed="${CT.tr}">Under Trick Room</button></div>
+      <p class="sub">${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each one's most common set, at level 50. Weather and terrain from either Pokémon's ability count; Intimidate, Tailwind and your teammates' support don't.</p></div>`;
+    if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
+    const key = [fmt().id, CT.tr ? 'tr' : '', CT.targets.join(','), teamNames().map(baseOf).sort().join(',')].join('|');
+    if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
+    box.innerHTML = head + '<p class="sub" id="ctr-prog">Checking the meta…</p>';
+    const tok = ++CT.tok;
+    VL.calc.engine().then(() => runCounters(tok, key, e)).catch(() => { const pr = $('ctr-prog'); if (pr) pr.textContent = 'Couldn\'t load the damage calculator.'; });
+  }
+  function runCounters(tok, key, e) {
+    const C = window.calc; const f = fmt(); const g = C.Generations.get(isChamp() ? 0 : f.gen);
+    const WEATHER = { Drought: 'Sun', 'Orichalcum Pulse': 'Sun', Drizzle: 'Rain', 'Sand Stream': 'Sand', 'Snow Warning': f.gen >= 9 || isChamp() ? 'Snow' : 'Hail' };
+    const TERRAIN = { 'Psychic Surge': 'Psychic', 'Grassy Surge': 'Grassy', 'Electric Surge': 'Electric', 'Hadron Engine': 'Electric', 'Misty Surge': 'Misty' };
+    // both abilities go off at the start; the slower one's goes last, so its weather or terrain stays
+    const pairField = (a, aSpe, b, bSpe) => {
+      const [first, last] = aSpe >= bSpe ? [a, b] : [b, a];
+      const ab = (m) => String(m.ability || '');
+      const weather = WEATHER[ab(last)] || WEATHER[ab(first)]; const terrain = TERRAIN[ab(last)] || TERRAIN[ab(first)];
+      const o = { gameType: f.doubles ? 'Doubles' : 'Singles' }; if (weather) o.weather = weather; if (terrain) o.terrain = terrain;
+      return () => new C.Field(o);
+    };
+    const have = new Set(teamNames().map(baseOf));
+    const speedOfSet = (set) => { const r = recOf(set.species); return r ? speedWith(set, r, set.item === 'Choice Scarf', false) : 0; };
+    const tg = CT.targets.map(n => { const set = commonSet(n); const rec = recOf(n); if (!set || !rec) return null; const mon = calcMon(C, g, set, rec); return mon ? { n, set, rec, mon, atk: attacks(set), spe: speedOfSet(set) } : null; }).filter(Boolean);
+    if (!tg.length) { box(); return; }
+    const targetBases = new Set(tg.map(t => baseOf(t.n)));
+    const mates = matesOf(teamNames(), e);
+    const pool = e.mons.filter(x => !have.has(baseOf(x.n)) && !targetBases.has(baseOf(x.n))).slice(0, 120);
+    const out = []; let i = 0;
+    function box() { const pr = $('ctr-prog'); if (pr) pr.textContent = 'Couldn\'t work out sets for those Pokémon in this format.'; }
+    function step() {
+      if (tok !== CT.tok) return;
+      const end = Math.min(pool.length, i + 8);
+      for (; i < end; i++) {
+        const x = pool[i]; const set = commonSet(x.n); const rec = recOf(x.n); if (!set || !rec) continue;
+        const me = calcMon(C, g, set, rec); if (!me) continue;
+        const myAtk = attacks(set); const spe = speedOfSet(set);
+        const vs = tg.map(t => {
+          const field = pairField(me, spe, t.mon, t.spe);
+          let off = 0, offLo = 0, offMv = '', def = 0, defMv = '';
+          for (const mv of myAtk) { const r = row(C, g, me, t.mon, mv.n, field); if (r && r.hi > off) { off = r.hi; offLo = r.lo; offMv = mv.n; } }
+          for (const mv of t.atk) { const r = row(C, g, t.mon, me, mv.n, field); if (r && r.hi > def) { def = r.hi; defMv = mv.n; } }
+          const v = { t: t.n, off, offLo, offMv, def, defMv, faster: CT.tr ? spe < t.spe : spe > t.spe, tie: spe === t.spe, spe, tspe: t.spe };
+          v.ver = verdict(v); return v;
+        });
+        const answered = vs.filter(v => v.ver[2] >= 2).length;
+        const score = vs.reduce((a, v) => a + v.ver[2] + Math.min(1, v.off / 100) * 0.4 + Math.max(0, 1 - v.def / 100) * 0.4, 0) + (mates[x.n] || 0) / 100 + x.u / 200;
+        out.push({ n: x.n, rec, set, u: x.u, mate: mates[x.n] || 0, vs, answered, score });
+      }
+      const pr = $('ctr-prog'); if (pr) pr.textContent = `Checking the meta… ${i} of ${pool.length}`;
+      if (i < pool.length) { setTimeout(step, 0); return; }
+      const seen = new Set(); const best = out.sort((a, b) => b.score - a.score).filter(c => { const k = baseOf(c.n); if (seen.has(k)) return false; seen.add(k); return true; });
+      CT.key = key; CT.res = { list: best.slice(0, 12), n: pool.length, tg: tg.map(t => t.n) };
+      const el = $('bd-ctr'); if (el && atab === 'counters') renderCounters();
+    }
+    step();
+  }
+  function countersHtml(res) {
+    const empty = T.sets.findIndex(x => !x || !x.species);
+    const slotLabel = empty >= 0 ? `Add to slot ${empty + 1}` : `Replace slot ${sel + 1}`;
+    const pct = (n) => `${n}%`;
+    const line = (v) => {
+      const hit = v.off ? `${v.offMv} does ${v.offLo}–${pct(v.off)}` : 'has no attack that hurts it';
+      const take = v.def ? `takes up to ${pct(v.def)} from ${v.defMv}` : 'takes nothing from its attacks';
+      const sp = v.tie ? 'speed tie' : CT.tr ? (v.faster ? `moves first under Trick Room (${v.spe} vs ${v.tspe})` : `moves second under Trick Room (${v.spe} vs ${v.tspe})`) : v.faster ? `faster (${v.spe} vs ${v.tspe})` : `slower (${v.spe} vs ${v.tspe})`;
+      return `<li><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <b>${esc(v.t)}</b>: ${esc(hit)}, ${esc(take)}, ${esc(sp)}.</li>`;
+    };
+    return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have. <b>Counter</b> = takes its best hit twice and hits back for half or more. Pokémon often seen with your team are marked.</p>
+      ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'n' : 'm'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill n">Often with your team</span>' : ''}</div>
+        <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
+        <ul>${c.vs.map(line).join('')}</ul></div>`).join('')}`;
+  }
 
   // ---------- Stat Points helper ----------
   // Finds the smallest investment that reaches a benchmark against one target Pokémon.
@@ -636,6 +748,7 @@
         const k = b.dataset.bd;
         if (k === 'helpapply' && helpApply) { helpApply(); H.open = true; renderEditor(); analysisSoon(); save(); VL.toast('Applied'); return; }
         if (k === 'pickmon') pickMon();
+        if (k === 'ctradd') { pickMonFor({ fmtId: fmt().id, names: CT.targets, onPick: (n) => { CT.custom = true; CT.targets = CT.targets.filter(x => x !== n).concat([n]).slice(-4); renderAnalysis(); } }); return; }
         if (k === 'pickitem') pickItem();
         if (k === 'common') { const s = T.sets[sel]; const rec = recOf(s.species); const m = metaOf(megaName(s, rec) || rec.n) || metaOf(rec.n); if (m) { const keep = s.ability; applyCommon(s, m, false); if (!rec.a.some(a => toId(a) === toId(s.ability))) s.ability = rec.a.some(a => toId(a) === toId(keep)) ? keep : rec.a[0]; renderSlots(); renderEditor(); analysisSoon(); save(); } }
         if (k === 'import') importDlg();
@@ -652,6 +765,11 @@
       const pr = e.target.closest('[data-preset]'); if (pr) { const v = pr.dataset.preset.split('').map(Number); const s = T.sets[sel]; s.evs = v.map(x => x ? spMax() : 0); const left = spTotal() - s.evs.reduce((a, c) => a + c, 0); if (left > 0) { const i = v.indexOf(1) === 0 ? 5 : 0; const room = spMax() - s.evs[i]; s.evs[i] += Math.min(left, room) - (Math.min(left, room) % spStep()); } if (!v.some(Boolean)) s.evs = [0, 0, 0, 0, 0, 0]; renderEditor(); analysisSoon(); save(); return; }
       const sp = e.target.closest('[data-spread]'); if (sp) { const [nat, nums] = sp.dataset.spread.split(':'); const s = T.sets[sel]; s.nature = nat; const ev = nums.split('/').map(Number); if (ev.length === 6) s.evs = ev; renderEditor(); analysisSoon(); save(); return; }
       const rt = e.target.closest('[data-rtab]'); if (rt) { rtab = rt.dataset.rtab; renderSide(); return; }
+      const tr = e.target.closest('[data-ctrtr]'); if (tr) { CT.tr = tr.dataset.ctrtr === '1'; renderCounters(); return; }
+      const ct = e.target.closest('[data-ctrt]'); if (ct) { const n = ct.dataset.ctrt; CT.custom = true; CT.targets = CT.targets.includes(n) ? CT.targets.filter(x => x !== n) : CT.targets.concat([n]).slice(-4); renderCounters(); return; }
+      const cf = e.target.closest('[data-ctr]'); if (cf) { CT.custom = true; CT.targets = [cf.dataset.ctr]; atab = 'counters'; renderAnalysis(); $('bd-analysis').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+      const ca = e.target.closest('[data-ctradd]'); if (ca) { const empty = T.sets.findIndex(x => !x || !x.species); if (empty >= 0) sel = empty; setMon(ca.dataset.ctradd); VL.sound && VL.sound.play('right'); return; }
+      const nb = e.target.closest('[data-tcnb]'); if (nb) { location.hash = 'notebook'; setTimeout(() => { const nn = $('nb-name'); if (nn) nn.value = nb.dataset.tcnb; const np = $('nb-plan'); if (np) np.focus(); }, 80); return; }
       const at = e.target.closest('[data-atab]'); if (at) { atab = at.dataset.atab; renderAnalysis(); return; }
     });
     root.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button]')) { e.preventDefault(); e.target.click(); } });

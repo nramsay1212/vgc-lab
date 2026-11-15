@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['counters-1', 'teams', 'New: Counters', 'Team analysis → <b>Counters</b> finds Pokémon that answer the ones giving your team trouble. Your biggest threats are picked to start; add any other with <b>+ Another Pokémon</b>, or tap <b>Find a counter →</b> on a threat. Each suggestion shows the damage it does, the damage it takes and who moves first, with <b>Under Trick Room</b> for slow teams. <b>Add to slot</b> puts it on your team with its most common set.'],
     ['gamerate-1', 'games', 'Games are rated by your score now', 'Each game is rated once, from your points, so playing fast counts. The results show the number you <b>played like</b>, and your rating moves part of the way toward it. Easier modes have a ceiling: when you get close to it, the results tell you which mode to move up to.'],
     ['videos-1', 'videos', 'New: Videos', 'The latest videos from 20 competitive YouTube channels, sorted into Team ideas, Learn, Tournaments and Battles. Tap one to watch it here. When a team video links its team, <b>Open team in builder</b> copies it into your Team builder.'],
     ['natures-2', 'study', 'New: Nature flashcards', 'The <b>Natures</b> tab is now flashcards for the 12 natures teams actually use. Flip, then mark whether you knew it. Missed cards come back a few cards later. You can show the name or the effect first.'],
