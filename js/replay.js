@@ -48,6 +48,15 @@
       const fromTag = tagOf(f, 'from'); const fm = fromTag.match(/^(ability|item): (.+)$/);
       if (fm) { const who = ref(tagOf(f, 'of')) || r; if (who) { const x = rev(who.k); if (fm[1] === 'ability') x.ability = fm[2]; else x.item = fm[2]; } }
       if (r && t === 'move' && !fromTag) rev(r.k).moves.add(f[3]);
+      // turn order, for working out Speed: each action with the field as it was when it happened
+      if (r && !after && cur.n > 0 && ((t === 'move' && !fromTag) || t === 'cant')) {
+        const m = S.mons[r.k];
+        // everyone on the field as they were right as this action started (the next action was ordered from this)
+        const field = {}; for (const k of Object.values(S.active)) { const x = S.mons[k]; if (x) field[k] = { name: x.name, st: x.boosts ? x.boosts.spe || 0 : 0, par: x.status === 'par', tw: (S.side[x.side] || []).includes('Tailwind') }; }
+        (cur.acts ||= []).push({ k: r.k, side: r.side, name: m ? m.name : '', move: t === 'move' ? f[3] : null, tr: S.room.includes('Trick Room'), weather: S.weather, terrain: S.terrain, field });
+        if (t === 'move' && /^(After You|Quash|Instruct|Ally Switch|Round)$/.test(f[3])) cur.skip = true;
+      }
+      if (r && ((t === '-activate' && /Quick Claw|Quick Draw/.test(f.join('|'))) || (t === '-enditem' && /Custap/.test(f[3] || '')) || /Quick Draw|Quick Claw|Custap/.test(fromTag))) (cur.quick ||= []).push(r.k);
       if (r && (t === '-item' || t === '-enditem')) rev(r.k).item = f[3];
       if (r && t === '-ability') rev(r.k).ability = f[3];
       if (r && t === '-mega') { rev(r.k).mega = true; if (f[4]) rev(r.k).item = f[4]; }
@@ -170,13 +179,72 @@
       const item = (set && set.item) || x.item || '';
       const mg = megaRec(rec, item, fmt) || (/-Mega/.test(name) ? recOf(name, fmt) : null); const show = mg || rec;
       const scarf = toId(item) === 'choicescarf' ? 1.5 : 1; const f = (v) => Math.floor(v * scarf);
-      if (set) { rows.push({ side, mine, name: show.n, lo: f(sp(show.s[5], set.evs, set.nature, fmt)), hi: null, exact: true, scarf: scarf > 1 }); continue; }
+      if (set) { rows.push({ k, side, mine, name: show.n, lo: f(sp(show.s[5], set.evs, set.nature, fmt)), hi: null, exact: true, scarf: scarf > 1 }); continue; }
       const m = e && (VL.meta.get(e, show.n) || VL.meta.get(e, rec.n)); const spread = m && m.spreads && m.spreads[0] && m.spreads[0][0];
       const common = spread ? f(sp(show.s[5], (spread.split(':')[1] || '').split('/').map(Number), spread.split(':')[0], fmt)) : null;
-      rows.push({ side, mine, name: show.n, lo: f(sp(show.s[5], [0, 0, 0, 0, 0, 0], 'Brave', fmt)), hi: f(sp(show.s[5], [0, 0, 0, 0, 0, max], 'Timid', fmt)), common, scarf: scarf > 1 });
+      rows.push({ k, side, mine, name: show.n, lo: f(sp(show.s[5], [0, 0, 0, 0, 0, 0], 'Brave', fmt)), hi: f(sp(show.s[5], [0, 0, 0, 0, 0, max], 'Timid', fmt)), common, scarf: scarf > 1 });
     }
-    const key = (r) => r.exact ? r.lo : (r.common ?? (r.lo + r.hi) / 2);
+    const clues = speedClues(d, fmt, mineSets);
+    for (const r of rows) {
+      const c = !r.mine && clues[r.k + '|' + toId(r.name)]; if (!c) continue;
+      r.why = c.why; r.scarfMaybe = c.scarfMaybe;
+      const lo = Math.max(r.lo, c.lo ?? -Infinity), hi = Math.min(r.hi, c.hi ?? Infinity);
+      if (lo > hi) r.odd = true;
+      else { const nlo = Math.ceil(lo), nhi = Math.floor(hi); r.narrowed = nlo > r.lo || nhi < r.hi; r.lo = nlo; r.hi = nhi; if (r.narrowed && r.common && (r.common < r.lo || r.common > r.hi)) r.commonOut = true; }
+    }
+    const key = (r) => r.exact ? r.lo : r.narrowed ? (r.lo + r.hi) / 2 : (r.common ?? (r.lo + r.hi) / 2);
     return rows.sort((a, b) => tr ? key(a) - key(b) : key(b) - key(a));
+  }
+  // Turn order as evidence: when one of yours and one of theirs act back to back with the same priority,
+  // the first was faster (slower under Trick Room). Your Speed is exact, so each such pair puts a floor or a
+  // ceiling on theirs. Pairs are skipped when something unseen could change the order: Quick Claw, After You,
+  // a possible Prankster, Gale Wings or Triage, or a possible weather or terrain Speed ability in that weather.
+  const SPEED_AB = { 'Swift Swim': (a) => /Rain|rain/.test(a.weather), Chlorophyll: (a) => /Sun|sunlight/.test(a.weather), 'Sand Rush': (a) => a.weather === 'Sandstorm', 'Slush Rush': (a) => /Snow|Hail/.test(a.weather), 'Surge Surfer': (a) => a.terrain === 'Electric Terrain', Protosynthesis: (a) => /Sun|sunlight/.test(a.weather), 'Quark Drive': (a) => a.terrain === 'Electric Terrain' };
+  const UNSURE_AB = ['Unburden', 'Stall', 'Mycelium Might', 'Gale Wings', 'Triage', 'Quick Draw'];
+  const stage = (n) => (n >= 0 ? (2 + n) / 2 : 2 / (2 - n));
+  function speedClues(d, fmt, mineSets) {
+    const out = {}; if (!mineSets) return out;
+    const sp = VL.teamcheck.speedOf;
+    const abil = (k, name) => { const x = d.revealed[k]; if (x && x.ability) return [x.ability]; const r = recOf(name, fmt); return r ? (r.a || []) : []; };
+    const prio = (act, abs) => {
+      if (!act.move) return null; const mv = VL.D.move(act.move, fmt); if (!mv) return null;
+      if (mv.c === 'S' && abs.includes('Prankster')) return abs.length === 1 ? (mv.p || 0) + 1 : null;
+      if (abs.some(a => UNSURE_AB.includes(a))) return null;
+      return mv.p || 0;
+    };
+    for (const T of d.turns) {
+      const acts = T.acts || []; if (T.skip || acts.length < 2) continue; const quick = T.quick || [];
+      for (let i = 0; i + 1 < acts.length; i++) {
+        const A = acts[i], B = acts[i + 1];
+        if (A.side === B.side || quick.includes(A.k) || quick.includes(B.k)) continue;
+        const me0 = A.side === R.me ? A : B, them0 = me0 === A ? B : A;
+        // both as they were when A started: that's when B's place in the order was settled
+        const at = (x) => { const f = A.field[x.k]; return { ...x, name: f ? f.name : x.name, st: f ? f.st : 0, par: f ? f.par : false, tw: f ? f.tw : false, weather: A.weather, terrain: A.terrain }; };
+        const me = at(me0), them = at(them0);
+        const set = mineSets.sets.find(x => toId(baseName(x.species)) === toId(baseName(me.name))); if (!set) continue;
+        const myRec = recOf(me.name, fmt), theirRec = recOf(them.name, fmt); if (!myRec || !theirRec) continue;
+        const myAb = set.ability ? [set.ability] : (myRec.a || []), theirAb = abil(them.k, them.name);
+        const pa = prio(A, A === me ? myAb : theirAb), pb = prio(B, B === me ? myAb : theirAb);
+        if (pa === null || pb === null || pa !== pb) continue;
+        if (theirAb.some(a => SPEED_AB[a] && SPEED_AB[a](them))) continue;
+        if (myAb.length !== 1 && myAb.some(a => SPEED_AB[a] && SPEED_AB[a](me))) continue;
+        // your effective Speed right then
+        let mine = sp(myRec.s[5], set.evs, set.nature, fmt) * stage(me.st) * (me.tw ? 2 : 1) * (me.par ? 0.5 : 1) * (toId(set.item) === 'choicescarf' && !/-Mega/.test(me.name) ? 1.5 : 1);
+        if (myAb.length === 1 && SPEED_AB[myAb[0]] && SPEED_AB[myAb[0]](me)) mine *= 2;
+        mine = Math.floor(mine);
+        // what multiplies their Speed that we can see
+        const rv = d.revealed[them.k] || {}; const scarf = toId(rv.item) === 'choicescarf' && !/-Mega/.test(them.name);
+        const mult = stage(them.st) * (them.tw ? 2 : 1) * (them.par ? 0.5 : 1) * (scarf ? 1.5 : 1);
+        const theyFirst = them0 === A; const faster = A.tr ? !theyFirst : theyFirst; // under Trick Room the first one was slower
+        const bound = mine / mult;
+        const id = them.k + '|' + toId(them.name); const c = (out[id] ||= { lo: null, hi: null, why: [] });
+        const mvName = (a) => a.move || 'its turn';
+        if (faster) { c.lo = Math.max(c.lo ?? 0, bound); if (!rv.item) c.scarfMaybe = true; }
+        else c.hi = Math.min(c.hi ?? Infinity, bound);
+        c.why.push({ b: faster ? Math.ceil(bound) : Math.floor(bound), lo: faster, t: `Turn ${T.n}: ${them.name} (${mvName(them)}) moved ${theyFirst ? 'before' : 'after'} your ${me.name} (${mvName(me)}, Speed ${mine})${A.tr ? ' under Trick Room' : ''}${them.tw ? ', their Tailwind up' : ''}${me.tw ? ', your Tailwind up' : ''}${them.st ? `, its Speed ${them.st > 0 ? '+' : ''}${them.st}` : ''}${them.par ? ', it was paralyzed' : ''}, so its Speed is ${faster ? 'at least' : 'at most'} ${faster ? Math.ceil(bound) : Math.floor(bound)}.` });
+      }
+    }
+    return out;
   }
   function infoHtml() {
     const d = R.data; const fmt = fmtOf(d); const opp = R.me === 'p1' ? 'p2' : 'p1'; const last = d.turns[d.turns.length - 1].snap;
@@ -199,13 +267,16 @@
     const top = Math.max(1, ...rows.map(r => r.hi || r.lo));
     const spRow = (r) => `<div class="${r.mine ? 'mine' : ''}">${VL.sprite(r.name, 'xs')}<span>${esc(r.name)}${r.scarf ? ' <span class="mini">Scarf</span>' : ''}</span>
       <span class="bar">${r.exact ? `<i style="left:${Math.round(100 * r.lo / top)}%;width:1.5%"></i>` : `<i style="left:${Math.round(100 * r.lo / top)}%;width:${Math.max(1.5, Math.round(100 * (r.hi - r.lo) / top))}%"></i>`}</span>
-      <span class="num">${r.exact ? r.lo : `${r.lo}–${r.hi}${r.common ? ` <span class="mini">usually ${r.common}</span>` : ''}`}</span></div>`;
+      <span class="num">${r.exact ? r.lo : r.odd ? `<span class="mid-t">doesn't fit</span>` : `${r.lo === r.hi ? r.lo : `${r.lo}–${r.hi}`}${r.narrowed ? ' <span class="mini good-t">from turn order</span>' : r.common ? ` <span class="mini">usually ${r.common}</span>` : ''}`}</span></div>`;
     return `<div class="card"><div class="card-head"><h3>Their Pokémon</h3><span class="sub">${esc(fmt.name)}</span></div>
       <div class="rp-mons">${names.map(card).join('')}</div>
       <p class="sub">Base stats, then what this replay revealed, then the most common item, ability, spread and moves for it in this format.</p></div>
       <div class="card"><div class="card-head"><h3>Speed order</h3><div class="seg" role="group" aria-label="Speed order"><button type="button" data-rptr="0" aria-pressed="${!tr}">Normal</button><button type="button" data-rptr="1" aria-pressed="${tr}">Under Trick Room</button></div></div>
         <div class="sh-speed rp-speed">${rows.map(spRow).join('')}</div>
-        <p class="sub">${tr ? 'Under Trick Room the slowest moves first, so the top of this list moves first. ' : 'Fastest first. '}${mineSets ? `Your Speed is exact, from your saved team <b>${esc(mineSets.t.name || 'Untitled team')}</b>. ` : 'No saved team matched yours, so your Speed is a range too. '}Theirs is a range from no Speed investment with a Speed-lowering nature to full Speed with a Speed-raising one, plus the most common spread's Speed. If two ranges overlap, either could move first. Mega Evolution changes Speed from the next turn; Choice Scarf is counted once the replay shows it.</p></div>`;
+        ${(() => { const ev = rows.filter(r => r.why && r.why.length); if (!ev.length) return `<p class="sub">${mineSets ? 'No turns in this game had one of yours and one of theirs move back to back with the same priority, so their Speed can\'t be narrowed down.' : 'Save this team in the Team builder so your Speed is exact; then turn order can narrow down theirs.'}</p>`;
+          return `<details class="rp-why" open><summary><b>How their Speed was worked out</b></summary>${ev.map(r => `<div class="rp-why-mon"><b>${esc(r.name)}</b>${r.odd ? ' <span class="mid-t">The turn order doesn\'t fit any normal spread, so something unseen sped it up or slowed it down (a Choice Scarf, Quick Claw, an ability or an item). Its full range is shown.</span>' : ` <span class="sub">${r.narrowed ? `${r.lo === r.hi ? r.lo : `${r.lo}–${r.hi}`}${r.commonOut ? ', so it isn\'t running the most common spread' : ''}${r.scarfMaybe ? '. If it held a hidden Choice Scarf, its real Speed could be lower' : ''}.` : 'These turns fit its whole range, so they don\'t narrow it down.'}</span>`}${(() => { const key = r.why.filter(w => r.narrowed && (w.lo ? w.b === r.lo : w.b === r.hi)); const show = key.length ? key.slice(0, 3) : r.why.slice(0, 2); const rest = r.why.length - show.length;
+            return `<ul>${show.map(w => `<li>${esc(w.t)}</li>`).join('')}${rest > 0 ? `<li class="sub">and ${rest} more turn${rest === 1 ? '' : 's'} that fit${rest === 1 ? 's' : ''} this.</li>` : ''}</ul>`; })()}</div>`).join('')}</details>`; })()}
+        <p class="sub">${tr ? 'Under Trick Room the slowest moves first, so the top of this list moves first. ' : 'Fastest first. '}${mineSets ? `Your Speed is exact, from your saved team <b>${esc(mineSets.t.name || 'Untitled team')}</b>. ` : 'No saved team matched yours, so your Speed is a range too. '}Theirs is a range from no Speed investment with a Speed-lowering nature to full Speed with a Speed-raising one, plus the most common spread's Speed. If two ranges overlap, either could move first. Where one of yours and one of theirs moved back to back, their range is narrowed using that turn order. A Choice Scarf is counted once the replay shows it.</p></div>`;
   }
 
   // ---------- drawing ----------
