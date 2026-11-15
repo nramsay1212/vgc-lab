@@ -10,7 +10,6 @@
   const toId = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const store = () => VL.store;
   const D = () => VL.D;
-  const IMMUNE = { levitate: 'Ground', eartheater: 'Ground', flashfire: 'Fire', wellbakedbody: 'Fire', waterabsorb: 'Water', stormdrain: 'Water', dryskin: 'Water', voltabsorb: 'Electric', lightningrod: 'Electric', motordrive: 'Electric', sapsipper: 'Grass' };
 
   let P = null; // the open practice
   let pending = null; // an opponent handed over from Top teams
@@ -33,14 +32,6 @@
     if (m.na) return { lo: f(sp(base, [0, 0, 0, 0, 0, 0], m.na, fmt)), hi: f(sp(base, [0, 0, 0, 0, 0, max], m.na, fmt)), scarf: scarf > 1 };
     return { lo: f(sp(base, [0, 0, 0, 0, 0, 0], 'Hardy', fmt)), hi: f(sp(base, [0, 0, 0, 0, 0, max], 'Timid', fmt)), scarf: scarf > 1 };
   }
-  function eff(type, target, fmt) { // target: {m, x}
-    const types = target.x.show ? target.x.show.t : []; if (!types.length) return 1;
-    const ab = toId(target.x.mega ? target.x.mega.a[0] : target.m.a); if (IMMUNE[ab] === type) return 0;
-    if (type === 'Ground' && toId(target.m.i) === 'airballoon') return 0;
-    return D().eff(D().chart(fmt), type, types);
-  }
-  // best damaging move of attacker into target: { e, mv }
-  function bestHit(att, target, fmt) { let best = null; for (const mv of moveRecs(att.m, fmt)) { if (mv.c === 'S' || !mv.bp) continue; const e = eff(mv.t, target, fmt); if (!best || e > best.e || (e === best.e && mv.bp > best.mv.bp)) best = { e, mv }; } return best; }
 
   // ---------- drawing ----------
   function sheetHtml(mons, fmt, mine) {
@@ -78,19 +69,10 @@
     // speed order
     const rows = [...M.map(t => ({ ...t, mine: true, r: speedRange(t.m, fmt, true) })), ...T.map(t => ({ ...t, mine: false, r: speedRange(t.m, fmt, false) }))].filter(x => x.r).sort((a, b) => b.r.hi - a.r.hi || b.r.lo - a.r.lo);
     const top = Math.max(1, ...rows.map(x => x.r.hi));
-    // matchups
-    const match = T.map(t => {
-      const answers = M.map(me => ({ n: me.x.name, h: bestHit(me, t, fmt) })).filter(a => a.h && a.h.e >= 2);
-      const threatens = M.map(me => ({ n: me.x.name, h: bestHit(t, me, fmt) })).filter(a => a.h && a.h.e >= 2);
-      return { t, answers, threatens };
-    });
     return `<div class="card"><div class="card-head"><h3>Matchup notes</h3><span class="sub">Worked out from both sheets</span></div>
       ${tools.length ? `<div class="section-label">Tools to watch for</div><div class="sh-tools">${tools.map(([k, who, why]) => `<div><b>${esc(k)}</b><span>${esc([...new Set(who)].join(', '))}</span><span class="sub">${esc(why)}</span></div>`).join('')}</div>` : ''}
-      <div class="section-label">Who beats whom on type</div>
-      <div class="scroll"><table class="list sh-match"><thead><tr><th>Their Pokémon</th><th>You hit it super effectively with</th><th>It hits super effectively</th></tr></thead><tbody>${match.map(r => `<tr><td><span class="kv">${VL.sprite(r.t.x.show || r.t.m.n, 'xs', false)}<b>${esc(r.t.x.name)}</b></span></td>
-        <td>${r.answers.map(a => `${esc(a.n)} <span class="mini">${esc(a.h.mv.n)}${a.h.e >= 4 ? ' 4×' : ''}</span>`).join(', ') || '<span class="bad-t">Nothing</span>'}</td>
-        <td>${r.threatens.map(a => `${esc(a.n)} <span class="mini">${esc(a.h.mv.n)}${a.h.e >= 4 ? ' 4×' : ''}</span>`).join(', ') || '<span class="good-t">Nothing</span>'}</td></tr>`).join('')}</tbody></table></div>
-      <p class="sub">Uses the attacking moves on each sheet, types after Mega Evolving, and immunities from abilities like Levitate. It doesn't know about damage amounts; use the damage calculator for close calls.</p>
+      <div class="section-label">Who beats whom</div>
+      <div id="sh-dmg"><p class="sub">Working out the damage both ways…</p></div>
       <div class="section-label">Speed order</div>
       <div class="sh-speed">${rows.map(x => `<div class="${x.mine ? 'mine' : ''}">${VL.sprite(x.x.show || x.m.n, 'xs', false)}<span>${esc(x.x.name)}${x.r.scarf ? ' <span class="mini">Scarf</span>' : ''}</span><span class="bar"><i style="left:${Math.round(100 * x.r.lo / top)}%;width:${Math.max(1.5, Math.round(100 * (x.r.hi - x.r.lo) / top))}%"></i></span><span class="num">${x.r.lo === x.r.hi ? x.r.lo : `${x.r.lo}–${x.r.hi}`}</span></div>`).join('')}</div>
       <p class="sub">Your Speed is exact. Team sheets don't show Stat Points, so theirs is a range from no investment to the maximum${T.some(t => t.m.na) ? ' with the nature on the sheet' : ''}. Choice Scarf is included.</p></div>`;
@@ -105,6 +87,7 @@
     if (pending) { const p = pending; pending = null; begin(p); }
     if (!P) return renderHome();
     const fmt = D().format(P.fmt);
+    setTimeout(fillDamage, 0);
     root.innerHTML = `
       <div class="card"><div class="card-head"><div><h3>${esc(P.teamName)} <span class="sub">against</span> ${esc(P.label)}</h3><div class="sub">${esc(fmt.name)} · bring ${NB()}, lead ${NL()}</div></div>
         <div class="row" style="gap:6px"><button class="btn ghost small" data-sh="random">Another random opponent</button><button class="btn ghost small" data-sh="close">Close</button></div></div></div>
@@ -152,6 +135,51 @@
     pickedFmt = sel.value;
     const msg = $('sh-msg');
     if (msg) msg.textContent = t && t.fmt && !ids.includes(t.fmt) ? `There are no tournament teams for ${D().format(t.fmt) ? D().format(t.fmt).name : 'your team\'s format'} yet, so pick another format or paste a team.` : '';
+  }
+
+  // ---------- who beats whom: real damage both ways ----------
+  // Your sets exactly as saved. Their item, ability and moves come from their sheet; sheets don't show
+  // Stat Points or EVs, so theirs use the most common spread for that Pokémon in this format.
+  async function fillDamage() {
+    const box = $('sh-dmg'); if (!box || !P) return;
+    const fmt = D().format(P.fmt); const key = P.fmt + JSON.stringify(P.mine) + JSON.stringify(P.opp);
+    try { await VL.calc.engine(); } catch (e) { box.innerHTML = '<p class="sub">Couldn\'t load the damage calculator.</p>'; return; }
+    const entry = VL.meta.forFormat(fmt.id) || await VL.meta.load(fmt.id);
+    if (!$('sh-dmg') || !P || P.fmt + JSON.stringify(P.mine) + JSON.stringify(P.opp) !== key) return;
+    const C = window.calc; const champ = !!(fmt.mod && fmt.mod.startsWith('champions'));
+    const g = C.Generations.get(champ ? 0 : fmt.gen);
+    const STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+    let guessed = 0;
+    const toCalc = (m, mine) => {
+      const x = info(m, fmt); if (!x.rec) return null;
+      let nature = m.na || 'Hardy', evs = mine && m.evs ? m.evs : null;
+      if (!evs) {
+        const mm = VL.meta.get(entry, x.show.n) || VL.meta.get(entry, m.n);
+        const sp = mm && mm.spreads && mm.spreads[0] && mm.spreads[0][0];
+        if (sp) { const [nat, nums] = sp.split(':'); const ev = (nums || '').split('/').map(Number); if (ev.length === 6) evs = ev; if (!m.na) nature = nat; guessed++; }
+      }
+      const opts = { level: 50, nature, evs: Object.fromEntries(STATS.map((k, i) => [k, (evs || [])[i] || 0])) };
+      if (m.a && !x.mega) opts.ability = m.a;
+      if (m.i) opts.item = m.i;
+      try { const mon = new C.Pokemon(g, x.show.n, opts); return { m, x, mon, atk: moveRecs(m, fmt).filter(mv => mv.c !== 'S' && mv.bp > 0), spe: mon.stats.spe }; } catch (e) { return null; }
+    };
+    const mine = P.mine.map(m => toCalc(m, true)).filter(Boolean), theirs = P.opp.map(m => toCalc(m, false)).filter(Boolean);
+    const pairField = VL.builder.pairFieldMaker(C, fmt);
+    const best = (a, d) => { const field = pairField(a.mon, a.spe, d.mon, d.spe); let b = null; for (const mv of a.atk) { const r = VL.builder.row(C, g, a.mon, d.mon, mv.n, field); if (r && (!b || r.hi > b.hi)) b = r; } return b; };
+    const tag = (r, good) => r.lo >= 100 ? `<span class="pill ${good ? 'w' : 'l'}">KOs</span>` : r.hi >= 100 ? `<span class="pill y">can KO</span>` : r.lo >= 50 ? `<span class="pill m">2 hits</span>` : '';
+    // yours: "Gholdengo's Make It Rain 150–180%"; theirs: "Shadow Ball into Gholdengo 92–110%"
+    const line = (who, r, good) => good
+      ? `<div class="sh-hit"><b>${esc(who)}'s</b> ${esc(r.n)} <b>${r.lo}–${r.hi}%</b> ${tag(r, good)}</div>`
+      : `<div class="sh-hit">${esc(r.n)} into <b>${esc(who)}</b> <b>${r.lo}–${r.hi}%</b> ${tag(r, good)}</div>`;
+    const rows = theirs.map(t => {
+      const outs = mine.map(me => ({ me, r: best(me, t) })).filter(o => o.r && o.r.hi > 0).sort((a, b) => b.r.hi - a.r.hi).slice(0, 3);
+      const ins = mine.map(me => ({ me, r: best(t, me) })).filter(o => o.r && o.r.hi > 0).sort((a, b) => b.r.hi - a.r.hi).slice(0, 3);
+      return `<div class="sh-wbw"><div class="kv sh-wbw-h">${VL.sprite(t.x.show || t.m.n, 'xs', false)}<b>${esc(t.x.name)}</b></div>
+        <div class="sh-wbw-cols"><div><div class="section-label">Your hardest hits on it</div>${outs.map(o => line(o.me.x.name, o.r, true)).join('') || '<span class="bad-t">Nothing hurts it</span>'}</div>
+        <div><div class="section-label">Its hardest hits on you</div>${ins.map(o => line(o.me.x.name, o.r, false)).join('') || '<span class="good-t">Can\'t hurt your team</span>'}</div></div></div>`;
+    });
+    box.innerHTML = `<div class="sh-wbw-list">${rows.join('')}</div>
+      <p class="sub">Each of your Pokémon's strongest attack on it, and its strongest attack on each of yours, as % of HP, top 3 each way. <b>KOs</b> = always knocks out, <b>can KO</b> = knocks out on a high roll, <b>2 hits</b> = two always do it. Your sets are as saved. ${guessed ? 'Team sheets don\'t show Stat Points, so theirs use the most common spread for each Pokémon in this format. ' : ''}Weather and terrain from abilities count; Intimidate, stat boosts, Tera and spread-move partners don't.</p>`;
   }
 
   // ---------- actions ----------

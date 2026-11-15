@@ -1000,3 +1000,11 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .mm-num.w{color:var(--win)}.mm-num.y{color:var(--warn)}.mm-num.l{color:var(--loss)}
 .mm-group summary{cursor:pointer;padding:6px 0}
 .mm-item .ctr-vh .mini{color:var(--muted)}
+.sh-hit{line-height:1.7}
+.sh-hit .pill{font-size:11px;padding:1px 6px}
+.sh-wbw-list{display:flex;flex-direction:column}
+.sh-wbw{border-top:1px solid var(--line);padding:10px 0}
+.sh-wbw-h{margin-bottom:6px}
+.sh-wbw-cols{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.sh-wbw .section-label{margin:0 0 2px}
+@media (max-width:640px){.sh-wbw-cols{grid-template-columns:1fr}}

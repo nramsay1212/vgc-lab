@@ -1007,6 +1007,8 @@
   VL.pickMon = (o) => { if (D().dex) pickMonFor(o); };
 
   VL.builder = {
+    // shared with Team sheet practice: weather and terrain for a pair, and one damage roll as % of HP
+    pairFieldMaker, row,
     render() { if (!D().dex) return; if (!bound) { bind(); bound = true; } render(); },
     open(id) { try { localStorage.setItem(LAST, id); } catch (e) { /* ignore */ } T = null; if (bound && location.hash === '#teams') render(); },
     refreshSide() { /* the builder saves its own changes; nothing to redraw from outside */ },
