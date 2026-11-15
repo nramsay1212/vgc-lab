@@ -19,6 +19,7 @@
   function parse(log) {
     const lines = String(log || '').split('\n');
     const S = { players: {}, preview: { p1: [], p2: [] }, mons: {}, order: { p1: [], p2: [] }, active: {}, weather: '', terrain: '', room: [], side: { p1: [], p2: [] } };
+    const REV = {}; const rev = (k) => (REV[k] ||= { moves: new Set(), item: '', ability: '', mega: false, tera: '' });
     const turns = [{ n: 0, events: [] }]; let cur = turns[0]; let winner = '', tier = '', gametype = '', after = false, flags = {};
     const ref = (ident) => { const m = String(ident || '').match(/^(p[12])([a-c])?: (.+)$/); return m ? { side: m[1], slot: m[2] ? m[1] + m[2] : null, k: m[1] + ':' + m[3] } : null; };
     const species = (d) => String(d || '').split(',')[0].trim();
@@ -43,6 +44,14 @@
       if (t === 'win') { winner = f[2]; ev('', `<b>${esc(f[2])} won the battle.</b>`, 'win'); continue; }
       if (t === 'tie') { ev('', '<b>The battle ended in a tie.</b>', 'win'); continue; }
       const r = ref(f[2]);
+      // what each Pokémon revealed: abilities and items named in a [from] tag belong to [of], or to the Pokémon itself
+      const fromTag = tagOf(f, 'from'); const fm = fromTag.match(/^(ability|item): (.+)$/);
+      if (fm) { const who = ref(tagOf(f, 'of')) || r; if (who) { const x = rev(who.k); if (fm[1] === 'ability') x.ability = fm[2]; else x.item = fm[2]; } }
+      if (r && t === 'move' && !fromTag) rev(r.k).moves.add(f[3]);
+      if (r && (t === '-item' || t === '-enditem')) rev(r.k).item = f[3];
+      if (r && t === '-ability') rev(r.k).ability = f[3];
+      if (r && t === '-mega') { rev(r.k).mega = true; if (f[4]) rev(r.k).item = f[4]; }
+      if (r && t === '-terastallize') rev(r.k).tera = f[3];
       if (t === 'switch' || t === 'drag' || t === 'replace') {
         if (!r) continue;
         const name = species(f[3]);
@@ -101,7 +110,8 @@
     }
     cur.snap = snap();
     const leads = { p1: [], p2: [] }; for (const side of ['p1', 'p2']) for (const k of S.order[side]) { const sl = Object.entries(turns[0].snap.active).some(([slot, key]) => key === k); if (sl) leads[side].push(k); }
-    return { players: S.players, preview: S.preview, turns, winner, tier, gametype, leads, ok: turns.length > 1 && !!S.players.p1 && !!S.players.p2 };
+    const revealed = Object.fromEntries(Object.entries(REV).map(([k, x]) => [k, { ...x, moves: [...x.moves] }]));
+    return { revealed, players: S.players, preview: S.preview, turns, winner, tier, gametype, leads, ok: turns.length > 1 && !!S.players.p1 && !!S.players.p2 };
   }
 
   // ---------- state ----------
@@ -128,6 +138,74 @@
     if (!j || !j.log) return 'Couldn\'t load that replay. Check the link, or paste the battle log below instead.';
     const saved = store().get('reviews', idOf(url));
     return start(j.log, url, saved) ? '' : 'That replay doesn\'t have a battle in it.';
+  }
+
+  // ---------- their Pokémon and the speed order ----------
+  // What the replay revealed for each Pokémon, what it usually runs, and the speed order: yours exact
+  // (from the saved team that matches), theirs a range from the slowest to the fastest it could be.
+  const toId = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const STAT6 = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'];
+  function fmtOf(d) { const id = toId(d.tier); const f = id && VL.D.format(id); return f && f.id === id ? f : VL.D.format(VL.curFormatId()); }
+  function myTeamSets(d, fmt, side) {
+    const last = d.turns[d.turns.length - 1].snap;
+    const mine = new Set([...d.preview[side], ...last.order[side].map(k => last.mons[k].name)].map(n => toId(baseName(n))));
+    let best = null, bestN = 0;
+    for (const t of store().list('teams').filter(t => t.paste)) {
+      const sets = VL.builder.parsePaste(t.paste).filter(x => x && x.species);
+      const n = sets.filter(x => mine.has(toId(baseName(x.species)))).length;
+      if (n > bestN || (n === bestN && t.fmt === fmt.id && best && best.t.fmt !== fmt.id)) { best = { t, sets }; bestN = n; }
+    }
+    return bestN >= 3 ? best : null;
+  }
+  function recOf(name, fmt) { const i = VL.D.find(name); return i >= 0 ? VL.D.mon(i, fmt) : null; }
+  function megaRec(rec, item, fmt) { const k = rec && item ? VL.D.megaOf(rec, item) : null; return k !== null && k !== undefined ? VL.D.mon(k, fmt) : null; }
+  function speedRows(d, fmt, mineSets, tr) {
+    const last = d.turns[d.turns.length - 1].snap; const sp = VL.teamcheck.speedOf; const champ = !!(fmt.mod && fmt.mod.startsWith('champions')); const max = champ ? 32 : 252;
+    const e = VL.meta.forFormat(fmt.id);
+    const rows = [];
+    for (const side of ['p1', 'p2']) for (const k of last.order[side]) {
+      const name = last.mons[k].name; const x = d.revealed[k] || {}; let rec = recOf(baseName(name), fmt); if (!rec) continue;
+      const mine = side === R.me;
+      const set = mine && mineSets ? mineSets.sets.find(s => toId(baseName(s.species)) === toId(baseName(name))) : null;
+      const item = (set && set.item) || x.item || '';
+      const mg = megaRec(rec, item, fmt) || (/-Mega/.test(name) ? recOf(name, fmt) : null); const show = mg || rec;
+      const scarf = toId(item) === 'choicescarf' ? 1.5 : 1; const f = (v) => Math.floor(v * scarf);
+      if (set) { rows.push({ side, mine, name: show.n, lo: f(sp(show.s[5], set.evs, set.nature, fmt)), hi: null, exact: true, scarf: scarf > 1 }); continue; }
+      const m = e && (VL.meta.get(e, show.n) || VL.meta.get(e, rec.n)); const spread = m && m.spreads && m.spreads[0] && m.spreads[0][0];
+      const common = spread ? f(sp(show.s[5], (spread.split(':')[1] || '').split('/').map(Number), spread.split(':')[0], fmt)) : null;
+      rows.push({ side, mine, name: show.n, lo: f(sp(show.s[5], [0, 0, 0, 0, 0, 0], 'Brave', fmt)), hi: f(sp(show.s[5], [0, 0, 0, 0, 0, max], 'Timid', fmt)), common, scarf: scarf > 1 });
+    }
+    const key = (r) => r.exact ? r.lo : (r.common ?? (r.lo + r.hi) / 2);
+    return rows.sort((a, b) => tr ? key(a) - key(b) : key(b) - key(a));
+  }
+  function infoHtml() {
+    const d = R.data; const fmt = fmtOf(d); const opp = R.me === 'p1' ? 'p2' : 'p1'; const last = d.turns[d.turns.length - 1].snap;
+    const e = VL.meta.forFormat(fmt.id); const mineSets = myTeamSets(d, fmt, R.me); const tr = !!R.trOrder;
+    const brought = new Map(last.order[opp].map(k => [toId(baseName(last.mons[k].name)), k]));
+    const names = d.preview[opp].length ? d.preview[opp] : last.order[opp].map(k => last.mons[k].name);
+    const card = (n) => {
+      const k = brought.get(toId(baseName(n))); const x = (k && d.revealed[k]) || { moves: [] };
+      const rec = recOf(baseName(n), fmt); if (!rec) return `<div class="rp-mon"><b>${esc(n)}</b></div>`;
+      const mg = megaRec(rec, x.item, fmt) || (k && /-Mega/.test(last.mons[k].name) ? recOf(last.mons[k].name, fmt) : null); const show = mg || rec;
+      const m = e && (VL.meta.get(e, show.n) || VL.meta.get(e, rec.n));
+      const seen = [x.moves.length ? `<b>Moves:</b> ${esc(x.moves.join(', '))}` : '', x.item ? `<b>Item:</b> ${esc(x.item)}` : '', x.ability ? `<b>Ability:</b> ${esc(x.ability)}` : '', x.mega ? '<b>Mega Evolved</b>' : '', x.tera ? `<b>Tera:</b> ${esc(x.tera)}` : ''].filter(Boolean);
+      const usual = m ? [m.items[0] && m.items[0][0] !== 'No item' ? m.items[0][0] : '', m.abilities[0] && m.abilities[0][0], m.spreads[0] && VL.meta.spreadText ? VL.meta.spreadText(m.spreads[0][0], !!(fmt.mod && fmt.mod.startsWith('champions'))) : '', m.moves.slice(0, 4).map(y => y[0]).join(', ')].filter(Boolean) : [];
+      return `<div class="rp-mon ${k ? '' : 'unbrought'}"><div class="kv">${VL.sprite(show, 'xs')}<b>${esc(show.n)}</b>${show.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join('')}${k ? '' : '<span class="mini">not brought</span>'}</div>
+        <div class="rp-base">${STAT6.map((l, i) => `<span><i>${l}</i> ${show.s[i]}</span>`).join('')}</div>
+        ${k ? `<div class="sub">${seen.length ? 'Seen in this game: ' + seen.join(' · ') : 'Nothing revealed in this game.'}</div>` : ''}
+        ${usual.length ? `<div class="sub">Usually: ${esc(usual.join(' · '))}</div>` : ''}</div>`;
+    };
+    const rows = speedRows(d, fmt, mineSets, tr);
+    const top = Math.max(1, ...rows.map(r => r.hi || r.lo));
+    const spRow = (r) => `<div class="${r.mine ? 'mine' : ''}">${VL.sprite(r.name, 'xs')}<span>${esc(r.name)}${r.scarf ? ' <span class="mini">Scarf</span>' : ''}</span>
+      <span class="bar">${r.exact ? `<i style="left:${Math.round(100 * r.lo / top)}%;width:1.5%"></i>` : `<i style="left:${Math.round(100 * r.lo / top)}%;width:${Math.max(1.5, Math.round(100 * (r.hi - r.lo) / top))}%"></i>`}</span>
+      <span class="num">${r.exact ? r.lo : `${r.lo}–${r.hi}${r.common ? ` <span class="mini">usually ${r.common}</span>` : ''}`}</span></div>`;
+    return `<div class="card"><div class="card-head"><h3>Their Pokémon</h3><span class="sub">${esc(fmt.name)}</span></div>
+      <div class="rp-mons">${names.map(card).join('')}</div>
+      <p class="sub">Base stats, then what this replay revealed, then the most common item, ability, spread and moves for it in this format.</p></div>
+      <div class="card"><div class="card-head"><h3>Speed order</h3><div class="seg" role="group" aria-label="Speed order"><button type="button" data-rptr="0" aria-pressed="${!tr}">Normal</button><button type="button" data-rptr="1" aria-pressed="${tr}">Under Trick Room</button></div></div>
+        <div class="sh-speed rp-speed">${rows.map(spRow).join('')}</div>
+        <p class="sub">${tr ? 'Under Trick Room the slowest moves first, so the top of this list moves first. ' : 'Fastest first. '}${mineSets ? `Your Speed is exact, from your saved team <b>${esc(mineSets.t.name || 'Untitled team')}</b>. ` : 'No saved team matched yours, so your Speed is a range too. '}Theirs is a range from no Speed investment with a Speed-lowering nature to full Speed with a Speed-raising one, plus the most common spread's Speed. If two ranges overlap, either could move first. Mega Evolution changes Speed from the next turn; Choice Scarf is counted once the replay shows it.</p></div>`;
   }
 
   // ---------- drawing ----------
@@ -157,6 +235,7 @@
           <label for="rp-note">Your note on ${R.turn === 0 ? 'team preview and leads' : `turn ${R.turn}`}<textarea id="rp-note" placeholder="${R.turn === 0 ? 'Was this the right four and the right lead?' : 'What would you do now? What did you miss?'}">${esc(R.notes[R.turn] || '')}</textarea></label>
           <div class="row" style="justify-content:space-between"><button class="btn ${R.key === R.turn ? '' : 'ghost'} small" data-rp="key">${R.key === R.turn ? '★ This is the key turn' : 'Mark as the key turn'}</button></div></div>
       </div>
+      ${infoHtml()}
       <div class="card"><label for="rp-take">Takeaway: what would you do differently next time?<textarea id="rp-take" placeholder="One or two sentences you'd want to read before your next game like this">${esc(R.takeaway)}</textarea></label></div>`;
   }
   function renderHome() {
@@ -204,6 +283,7 @@
     const dl = e.target.closest('[data-rpdel]'); if (dl) { VL.armDelete(dl, () => { store().del('reviews', dl.dataset.rpdel); render(); }); return; }
     const u = e.target.closest('[data-rpurl]'); if (u) { u.textContent = 'Loading…'; const err = await loadUrl(u.dataset.rpurl); if (err) VL.toast(err); else R.dirty = true; render(); return; }
     if (!R) return;
+    const trb = e.target.closest('[data-rptr]'); if (trb) { grabInputs(); R.trOrder = trb.dataset.rptr === '1'; render(); return; }
     const t = e.target.closest('[data-rpt]'); if (t) return go(+t.dataset.rpt);
     const me = e.target.closest('[data-rpme]'); if (me) { grabInputs(); R.me = me.dataset.rpme; R.dirty = true; render(); return; }
     const a = e.target.closest('[data-rpa]'); if (a) { grabInputs(); R.after = a.dataset.rpa === '1'; render(); return; }
