@@ -1,4 +1,4 @@
-/* VGC Lab main app: training log, review, skills, formats, notebook,
+/* VGC Lab main app: training log, review, notebook,
  * roadmap, teams and settings. Study lives in study.js, storage in store.js. */
 (function () {
   'use strict';
@@ -280,8 +280,8 @@
     const tname = Object.fromEntries(teams().map(t => [t.id, t.name]));
     const rows = all.map(g => [g.day, g.result, g.type, g.rating ?? '', g.team ? tname[g.team] || '' : '', g.arch || '', (g.opp || []).join('/'), g.mylead || '', g.opplead || '', (g.tags || []).map(t => TAGMAP[t] || t).join('; '), g.turn ? 'T' + g.turn : '', (g.note || '').replace(/\s+/g, ' ').slice(0, 220)].join(' | ')).join('\n');
     const nb = store.list('matchups').filter(m => !m.fmt || m.fmt === fid).map(m => `- ${m.name}: ${(m.plan || '').replace(/\s+/g, ' ').slice(0, 160)}`).join('\n') || '(empty)';
-    const sk = (store.get('meta', 'skills') || {}).ratings || {};
-    const skills = VL.SKILLS.map(s => `${s.name}: ${sk[s.id] ? sk[s.id] + '/5' : 'not rated'}`).join('; ');
+    // knowledge ratings from Progress (Games and the Test), with the title for each
+    const know = VL.progress ? VL.progress.AREAS.map(a => { const r = VL.progress.ratingOf(a.id); return `${a.n}: ${r === null ? 'not rated yet' : `${r} (${VL.progress.rankOf(r)})`}`; }).join('; ') : '';
     const drills = VL.study.DRILLS.map(d => { const a = VL.study.accuracy(d.id); return a === null ? null : `${d.name} ${a}%`; }).filter(Boolean).join(', ') || 'none yet';
     const prev = store.list('reports').sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
     const f = D.dex && !fid.startsWith('custom:') ? D.format(fid) : null;
@@ -292,7 +292,7 @@ Context:
 - Me: reached high Master Ball and peaked around rank ${p.peak ?? 2000} on Scarlet/Violet ladder. Long-term goal: win a World Championship someday, in whatever game is current. I want skills that carry across formats, not just this one. Teambuilding is on the back burner.
 - This week's focus: ${p.focus || '(none set)'}
 - Season goal: ${p.goal || '(none set)'}
-- My self-rated skills: ${skills}
+- My knowledge ratings (from quick games and tests, 1000 is the start, 1400 is Expert): ${know || 'none yet'}
 - Recent drill accuracy: ${drills}
 
 Game log, newest first. Columns: date | result | type | rating after | my team | their style | their 6 | my lead | their lead | mistake tags | key turn | note
@@ -305,14 +305,13 @@ ${prev ? `\nLast review said (excerpt): ${prev.text.slice(0, 600).replace(/\s+/g
 Write the review in this order, with short markdown headings and bullets:
 1. **Next week's focus**: one specific habit, plus one concrete drill to practice it.
 2. **Patterns**: the 3 most important patterns in the data. Cite counts from the log (for example "5 of 9 losses tagged Gimmick timing"). Separate decision errors from bad luck and team matchup problems.
-3. **Skill check**: where my self-ratings don't match what the log shows.
+3. **Knowledge check**: where my knowledge ratings don't match the mistakes in the log (for example a high Speed rating but many speed-related mistakes), and which area to drill.
 4. **Matchups to write up**: up to 3 Pokémon or archetypes to add to the notebook, each with a one-line starting plan.
 5. **Last focus**: one or two lines on whether the logs show progress on this week's focus.
 
 Rules: be direct and specific. Only state numbers you can count in the log. Don't invent damage calcs or usage stats. If there are fewer than 10 games or most fields are empty, say what to log more carefully and keep it short. Under 450 words.`;
   }
 
-  // ---------- skills ----------
 
   // ---------- notebook ----------
   function renderNotebook() {
