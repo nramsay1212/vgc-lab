@@ -6,8 +6,10 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node scripts/build-teams.js
+      - name: Which Showdown sprite sets have the new Megas
+        run: |
+          B=https://play.pokemonshowdown.com/sprites
+          for set in home-centered home gen5 dex ani gen5ani; do
+            curl -s "$B/$set/" -o "$set.txt"; echo "== $set: $(grep -c 'href' $set.txt) files"
+            grep -o 'href="[^"]*\(raichu\|staraptor\|heatran\|darkrai\|scolipede\|scrafty\|eelektross\|pyroar\|malamar\|barbaracle\|dragalge\|zygarde\|magearna\|zeraora\|falinks\|tatsugiri\|chimecho\|emboar\|excadrill\|audino\|golurk\|meowstic\|crabominable\|glimmora\|baxcalibur\|floette\)[^"]*"' "$set.txt" | sed 's/href="//;s/"$//' | tr '\n' ' '; echo
+          done
