@@ -27,7 +27,7 @@
 
   // ---------- format helpers ----------
   let T = null; // the open team: { id, name, fmt, sets: [6], why, weak, src }
-  let sel = 0, rtab = 'off', atab = 'weak';
+  let sel = 0, rtab = 'off', atab = 'mm';
   const fmt = () => D().format(T && T.fmt);
   const isChamp = () => { const f = fmt(); return !!(f && f.mod && f.mod.startsWith('champions')); };
   const spMax = () => (isChamp() ? 32 : 252);
@@ -362,14 +362,15 @@
   // ---------- whole-team analysis (from the team checker) ----------
   function renderAnalysis() {
     const el = $('bd-analysis'); if (!el) return;
-    const tabs = [['weak', 'Weaknesses'], ['coverage', 'Coverage'], ['checklist', 'What\'s missing'], ['threats', 'Threats'], ['counters', 'Counters'], ['speed', 'Speed tiers']];
+    const tabs = [['mm', 'Vs the meta'], ['weak', 'Weaknesses'], ['coverage', 'Coverage'], ['checklist', 'What\'s missing'], ['threats', 'Threats'], ['counters', 'Counters'], ['speed', 'Speed tiers']];
     const sec = VL.teamcheck && VL.teamcheck.analyze(exportTeam(), fmt().id);
     if (sec && sec._threats) CT.threats = sec._threats;
-    if (atab === 'counters') {
+    if (atab === 'counters' || atab === 'mm') {
       el.innerHTML = `<div class="card-head"><h3>Team analysis</h3><span class="sub">Updates as you build</span></div>
         <div class="seg bd-tabs" role="group" aria-label="Analysis">${tabs.map(([k, l]) => `<button type="button" data-atab="${k}" aria-pressed="${atab === k}">${l}</button>`).join('')}</div>
-        <div class="bd-an" id="bd-ctr"></div>`;
-      renderCounters(); return;
+        <div class="bd-an" id="${atab === 'mm' ? 'bd-mm' : 'bd-ctr'}"></div>`;
+      if (atab === 'mm') renderMatchup(); else renderCounters();
+      return;
     }
     el.innerHTML = `<div class="card-head"><h3>Team analysis</h3><span class="sub">Updates as you build</span></div>
       <div class="seg bd-tabs" role="group" aria-label="Analysis">${tabs.map(([k, l]) => `<button type="button" data-atab="${k}" aria-pressed="${atab === k}">${l}</button>`).join('')}</div>
@@ -394,12 +395,29 @@
   const attacks = (set) => set.moves.map(n => n && D().move(n, fmt())).filter(mv => mv && mv.c !== 'S' && mv.bp > 0);
   const teamNames = () => T.sets.filter(x => x && x.species).map(x => x.species);
   const baseOf = (name) => { const r = recOf(name); return r ? (r.mg ? (r.bo || r.b || r.n) : r.n) : name; };
-  function verdict(v) {
+  // weather and terrain for a pair: both abilities go off at the start, and the slower one's goes last, so it stays
+  function pairFieldMaker(C, f) {
+    const WEATHER = { Drought: 'Sun', 'Orichalcum Pulse': 'Sun', Drizzle: 'Rain', 'Sand Stream': 'Sand', 'Snow Warning': f.gen >= 9 || isChamp() ? 'Snow' : 'Hail' };
+    const TERRAIN = { 'Psychic Surge': 'Psychic', 'Grassy Surge': 'Grassy', 'Electric Surge': 'Electric', 'Hadron Engine': 'Electric', 'Misty Surge': 'Misty' };
+    return (a, aSpe, b, bSpe) => {
+      const [first, last] = aSpe >= bSpe ? [a, b] : [b, a];
+      const ab = (m) => String(m.ability || '');
+      const weather = WEATHER[ab(last)] || WEATHER[ab(first)]; const terrain = TERRAIN[ab(last)] || TERRAIN[ab(first)];
+      const o = { gameType: f.doubles ? 'Doubles' : 'Singles' }; if (weather) o.weather = weather; if (terrain) o.terrain = terrain;
+      return () => new C.Field(o);
+    };
+  }
+  function verdict(v, mode) {
+    mode = mode || CT.speed;
     const { off, offLo, def, faster } = v;
     if (def < 50 && off >= 100) return ['Hard counter', 'w', 4];
     if (def < 50 && off >= 50) return ['Counter', 'w', 3];
-    if (faster && off >= 100) return [CT.speed === 'tr' ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'y', 2.5];
+    if (faster && off >= 100) return [mode === 'tr' ? 'Moves first under Trick Room and can KO' : 'Outspeeds and can KO', 'y', 2.5];
     if (def < 100 && offLo >= 100) return ['Takes a hit and KOs back', 'y', 2];
+    // otherwise, one on one: fewer hits to knock the other out wins, and with the same number the one that moves first wins
+    const hits = (lo, hi) => (hi > 0 ? Math.ceil(100 / ((lo + hi) / 2)) : 99);
+    const myH = hits(offLo, off), theirH = hits(v.defLo ?? def, def);
+    if (myH < theirH || (myH === theirH && faster)) return ['Wins the trade', 'y', 1.8];
     if (def < 35) return ['Walls it', 'y', 1];
     return ['Loses to it', 'l', 0];
   }
@@ -432,7 +450,7 @@
       ${CT.custom ? '<p class="sub">You picked these yourself, so they won\'t change as you build. <b>Back to my threats</b> goes back to following your team.</p>' : ''}
       <div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-ctrsp="${k}" aria-pressed="${CT.speed === k}">${l}</button>`).join('')}</div>
       <p class="sub" id="ctr-prev">${prevText()}</p>
-      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each threat's most common set, at level 50. Each side uses its strongest attack among its 4 most used moves. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
+      <details class="ctr-how"><summary>How it's worked out</summary><p>${CT.custom ? '' : 'Your biggest threats from the Threats tab are picked to start. '}Tap to pick up to 4. Each Pokémon you don't have is checked with its most common set against each threat's most common set, at level 50. Each side uses its strongest attack among its 4 most used moves. Weather and terrain from either Pokémon's ability count; Intimidate and your teammates' support don't. Tailwind and Trick Room count only when you pick them under Speed. Your Tailwind doubles the suggestion's Speed; Their Tailwind doubles the threat's.</p><p><span class="good-t">Green</span> is good for you, <span class="mid-t">yellow</span> works but has a risk, <span class="bad-t">red</span> is bad. <b>Hard counter</b>: takes its best hit twice and can knock it out. <b>Counter</b>: takes its best hit twice and hits back for half or more. <b>Outspeeds and can KO</b>: moves first and can knock it out, but may not survive a hit. <b>Takes a hit and KOs back</b>: survives one hit, then can knock it out. <b>Wins the trade</b>: one on one it knocks the other out first, but only just. <b>Walls it</b>: barely hurt, but can't do much back.</p></details></div>`;
     if (!CT.targets.length) { box.innerHTML = head + '<p class="sub">Pick at least one Pokémon above.</p>'; return; }
     const key = [fmt().id, CT.speed, CT.targets.join(','), teamNames().map(baseOf).sort().join(','), Object.keys(heldItems(-1)).sort().join(',')].join('|');
     if (CT.key === key && CT.res) { box.innerHTML = head + countersHtml(CT.res); return; }
@@ -442,16 +460,7 @@
   }
   function runCounters(tok, key, e) {
     const C = window.calc; const f = fmt(); const g = C.Generations.get(isChamp() ? 0 : f.gen);
-    const WEATHER = { Drought: 'Sun', 'Orichalcum Pulse': 'Sun', Drizzle: 'Rain', 'Sand Stream': 'Sand', 'Snow Warning': f.gen >= 9 || isChamp() ? 'Snow' : 'Hail' };
-    const TERRAIN = { 'Psychic Surge': 'Psychic', 'Grassy Surge': 'Grassy', 'Electric Surge': 'Electric', 'Hadron Engine': 'Electric', 'Misty Surge': 'Misty' };
-    // both abilities go off at the start; the slower one's goes last, so its weather or terrain stays
-    const pairField = (a, aSpe, b, bSpe) => {
-      const [first, last] = aSpe >= bSpe ? [a, b] : [b, a];
-      const ab = (m) => String(m.ability || '');
-      const weather = WEATHER[ab(last)] || WEATHER[ab(first)]; const terrain = TERRAIN[ab(last)] || TERRAIN[ab(first)];
-      const o = { gameType: f.doubles ? 'Doubles' : 'Singles' }; if (weather) o.weather = weather; if (terrain) o.terrain = terrain;
-      return () => new C.Field(o);
-    };
+    const pairField = pairFieldMaker(C, f);
     const have = new Set(teamNames().map(baseOf));
     const speedOfSet = (set, tw) => { const r = recOf(set.species); return r ? speedWith(set, r, set.item === 'Choice Scarf', !!tw) : 0; };
     const tg = CT.targets.map(n => { const set = commonSet(n); const rec = recOf(n); if (!set || !rec) return null; const mon = calcMon(C, g, set, rec); return mon ? { n, set, rec, mon, atk: attacks(set), spe: speedOfSet(set), espe: speedOfSet(set, CT.speed === 'theirtw') } : null; }).filter(Boolean);
@@ -504,7 +513,7 @@
       const sp = v.tie ? `${esc(me)} and ${esc(them)} speed tie ${nums}.`
         : CT.speed === 'tr' ? `${esc(me)} moves ${v.faster ? 'first' : 'second'} under Trick Room ${nums}.`
         : `${esc(me)} is ${v.faster ? 'faster' : 'slower'} ${nums}.`;
-      const risk = v.ver[1] !== 'y' ? '' : v.ver[0] === 'Walls it' ? 'Risk: it can\'t knock it out.' : v.def >= 100 ? 'Risk: it gets knocked out if it\'s hit first.' : 'Risk: it can\'t take two hits.';
+      const risk = v.ver[1] !== 'y' ? '' : v.ver[0] === 'Walls it' ? 'Risk: it can\'t knock it out.' : v.ver[0] === 'Wins the trade' ? 'Risk: it only just wins one on one, so one extra hit from a partner swings it.' : v.def >= 100 ? 'Risk: it gets knocked out if it\'s hit first.' : 'Risk: it can\'t take two hits.';
       return `<div class="ctr-vs ctr-${v.ver[1]}"><div class="ctr-vh"><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <span>vs <b>${esc(them)}</b></span></div>
         <div>${out}</div><div>${inn}</div><div>${sp}</div>${risk ? `<div class="ctr-risk">${esc(risk)}</div>` : ''}</div>`;
     };
@@ -514,6 +523,84 @@
       ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}${c.swapped ? ` (${esc(c.swapped)} is taken)` : ''}</span>` : ''}${c.mega && teamMega ? `<span class="pill y" title="Only one Pokémon can Mega Evolve per battle">2nd Mega: only one can Mega Evolve</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
         <button type="button" class="btn small" data-ctradd="${esc(c.n)}">${slotLabel}</button></div>
         <div class="ctr-blocks">${c.vs.map(v => block(c, v)).join('')}</div></div>`).join('')}`;
+  }
+
+  // ---------- Vs the meta: how the whole team does against the most used Pokémon ----------
+  // Your actual sets against each of the 30 most used Pokémon (their most common sets): for each one,
+  // which of yours answer it and which it beats. The score weights each by how often it's used.
+  const MM = { speed: 'normal', key: '', res: null, tok: 0, n: 30 };
+  const STATUS = { well: ['Well covered', 'w', 1], ok: ['Covered', 'w', 0.8], shaky: ['Shaky', 'y', 0.45], bad: ['Problem', 'l', 0] };
+  function renderMatchup() {
+    const box = $('bd-mm'); if (!box) return;
+    const e = metaE();
+    if (!e) { box.innerHTML = `<p class="sub">This needs usage stats for ${esc(fmt().name)}, so there's no meta to test against. Current formats have them.</p>`; return; }
+    const have = T.sets.filter(x => x && x.species && recOf(x.species));
+    if (!have.length) { box.innerHTML = '<p class="sub">Add Pokémon to see how your team does against the meta.</p>'; return; }
+    const head = `<div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-mmsp="${k}" aria-pressed="${MM.speed === k}">${l}</button>`).join('')}</div>`;
+    const key = [fmt().id, MM.speed, exportTeam()].join('|');
+    if (MM.key === key && MM.res) { box.innerHTML = head + matchupHtml(MM.res); return; }
+    box.innerHTML = head + '<p class="sub" id="mm-prog">Testing your team against the meta…</p>';
+    const tok = ++MM.tok;
+    VL.calc.engine().then(() => runMatchup(tok, key, e)).catch(() => { const pr = $('mm-prog'); if (pr) pr.textContent = 'Couldn\'t load the damage calculator.'; });
+  }
+  function runMatchup(tok, key, e) {
+    const C = window.calc; const f = fmt(); const g = C.Generations.get(isChamp() ? 0 : f.gen);
+    const pairField = pairFieldMaker(C, f); const mode = MM.speed;
+    const mine = T.sets.map(s => {
+      if (!s || !s.species) return null; const rec = recOf(s.species); if (!rec) return null;
+      const mon = calcMon(C, g, s, rec); if (!mon) return null;
+      return { n: megaName(s, rec) || rec.n, s, mon, atk: attacks(s), spe: speedWith(s, rec, s.item === 'Choice Scarf', mode === 'mytw') };
+    }).filter(Boolean);
+    const list = e.mons.slice(0, MM.n); const out = []; let i = 0;
+    function step() {
+      if (tok !== MM.tok) return;
+      const end = Math.min(list.length, i + 4);
+      for (; i < end; i++) {
+        const x = list[i]; const set = commonSet(x.n); const rec = recOf(x.n); if (!set || !rec) continue;
+        const them = calcMon(C, g, set, rec); if (!them) continue;
+        const tAtk = attacks(set); const tspe = speedWith(set, rec, set.item === 'Choice Scarf', mode === 'theirtw');
+        const vs = mine.map(m => {
+          const field = pairField(m.mon, m.spe, them, tspe);
+          let off = 0, offLo = 0, offMv = '', def = 0, defLo = 0, defMv = '';
+          for (const mv of m.atk) { const r = row(C, g, m.mon, them, mv.n, field); if (r && r.hi > off) { off = r.hi; offLo = r.lo; offMv = mv.n; } }
+          for (const mv of tAtk) { const r = row(C, g, them, m.mon, mv.n, field); if (r && r.hi > def) { def = r.hi; defLo = r.lo; defMv = mv.n; } }
+          const v = { me: m.n, off, offLo, offMv, def, defLo, defMv, faster: mode === 'tr' ? m.spe < tspe : m.spe > tspe, spe: m.spe, tspe };
+          v.ver = verdict(v, mode); return v;
+        });
+        const safe = vs.filter(v => v.ver[1] === 'w'), risky = vs.filter(v => v.ver[1] === 'y' && v.ver[2] >= 1.8), loses = vs.filter(v => v.ver[1] === 'l');
+        const st = safe.length >= 2 ? 'well' : safe.length === 1 ? 'ok' : risky.length ? 'shaky' : 'bad';
+        const best = vs.slice().sort((a, b) => b.ver[2] - a.ver[2] || (b.off - b.def) - (a.off - a.def))[0];
+        out.push({ n: x.n, rec, u: x.u, st, best, safe, risky, loses });
+      }
+      const pr = $('mm-prog'); if (pr) pr.textContent = `Testing your team against the meta… ${i} of ${list.length}`;
+      if (i < list.length) { setTimeout(step, 0); return; }
+      const tw = out.reduce((a, r) => a + r.u, 0) || 1;
+      const score = Math.round(100 * out.reduce((a, r) => a + r.u * STATUS[r.st][2], 0) / tw);
+      MM.key = key; MM.res = { out, score, size: mine.length };
+      if ($('bd-mm') && atab === 'mm') renderMatchup();
+    }
+    step();
+  }
+  function matchupHtml(res) {
+    const { out, score } = res;
+    const grade = score >= 85 ? ['Excellent', 'w'] : score >= 70 ? ['Solid', 'w'] : score >= 55 ? ['Okay', 'y'] : score >= 40 ? ['Shaky', 'y'] : ['Weak', 'l'];
+    const count = (k) => out.filter(r => r.st === k).length;
+    const verb = (v) => `${esc(v.me)} (${esc(v.ver[0])}: ${esc(v.offMv || 'no attack')} does ${v.offLo}–${v.off}%, takes up to ${v.def}%)`;
+    const item = (r) => {
+      const st = STATUS[r.st];
+      const lines = [];
+      if (r.safe.length) lines.push(`<div><span class="good-t">Answered by</span> ${r.safe.map(verb).join(', ')}.</div>`);
+      else if (r.risky.length) lines.push(`<div><span class="mid-t">Only risky answers:</span> ${r.risky.map(verb).join(', ')}.</div>`);
+      else lines.push('<div><span class="bad-t">Nothing on your team answers it.</span></div>');
+      if (r.loses.length) lines.push(`<div>It beats ${r.loses.length} of your ${res.size}: ${esc(r.loses.map(v => v.me).join(', '))}.</div>`);
+      return `<div class="mm-item ctr-vs ctr-${st[1]}"><div class="ctr-vh">${VL.sprite(r.rec, 'xs')}<b>${esc(r.n)}</b><span class="mini">${r.u.toFixed(1)}% of teams</span><span class="pill ${st[1]}">${st[0]}</span>${r.st === 'shaky' || r.st === 'bad' ? `<button type="button" class="linkbtn" data-ctr="${esc(r.n)}">Find a counter →</button>` : ''}</div>${lines.join('')}</div>`;
+    };
+    const group = (keys, title, open) => { const rs = out.filter(r => keys.includes(r.st)); return rs.length ? `<details class="mm-group" ${open ? 'open' : ''}><summary><b>${title}</b> <span class="sub">${rs.length}</span></summary><div class="ctr-blocks">${rs.map(item).join('')}</div></details>` : ''; };
+    return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${MM.speed !== 'normal' ? ` (${MM.speed === 'tr' ? 'under Trick Room' : MM.speed === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
+        <div class="sub">${count('well')} well covered · ${count('ok')} covered · ${count('shaky')} shaky · ${count('bad')} problems, out of the ${out.length} most used Pokémon. More common Pokémon count for more.${res.size < 6 ? ` You have ${res.size} of 6, so this goes up as you fill the team.` : ''}</div></div></div>
+      <div class="ctr-key"><span><i class="dot w"></i>Covered: something on your team handles it safely</span><span><i class="dot y"></i>Shaky: only risky answers</span><span><i class="dot l"></i>Problem: nothing answers it</span></div>
+      ${group(['bad'], 'Problems', true)}${group(['shaky'], 'Shaky', true)}${group(['ok', 'well'], 'Covered', false)}
+      <details class="ctr-how"><summary>How it's worked out</summary><p>Your six sets as you've built them, against each of the ${out.length} most used Pokémon with its most common set, at level 50. Each side uses its strongest attack among its moves; weather and terrain from abilities count; Intimidate, Fake Out and partners don't. Well covered = 2 or more of yours handle it safely, Covered = 1, Shaky = only risky answers (it can't take two hits, only wins by moving first, or only just wins the trade), Problem = none. The score is the share of the meta you cover, with each Pokémon weighted by how often it's used.</p></details>`;
   }
 
   // ---------- Stat Points helper ----------
@@ -851,6 +938,7 @@
       const pr = e.target.closest('[data-preset]'); if (pr) { const v = pr.dataset.preset.split('').map(Number); const s = T.sets[sel]; s.evs = v.map(x => x ? spMax() : 0); const left = spTotal() - s.evs.reduce((a, c) => a + c, 0); if (left > 0) { const i = v.indexOf(1) === 0 ? 5 : 0; const room = spMax() - s.evs[i]; s.evs[i] += Math.min(left, room) - (Math.min(left, room) % spStep()); } if (!v.some(Boolean)) s.evs = [0, 0, 0, 0, 0, 0]; renderEditor(); analysisSoon(); save(); return; }
       const sp = e.target.closest('[data-spread]'); if (sp) { const [nat, nums] = sp.dataset.spread.split(':'); const s = T.sets[sel]; s.nature = nat; const ev = nums.split('/').map(Number); if (ev.length === 6) s.evs = ev; renderEditor(); analysisSoon(); save(); return; }
       const rt = e.target.closest('[data-rtab]'); if (rt) { rtab = rt.dataset.rtab; renderSide(); return; }
+      const ms = e.target.closest('[data-mmsp]'); if (ms) { MM.speed = ms.dataset.mmsp; renderMatchup(); return; }
       const sp2 = e.target.closest('[data-ctrsp]'); if (sp2) { CT.speed = sp2.dataset.ctrsp; renderCounters(); return; }
       const ct = e.target.closest('[data-ctrt]'); if (ct) { const n = ct.dataset.ctrt; CT.custom = true; CT.targets = CT.targets.includes(n) ? CT.targets.filter(x => x !== n) : CT.targets.concat([n]).slice(-4); renderCounters(); return; }
       const cf = e.target.closest('[data-ctr]'); if (cf) { CT.custom = true; CT.targets = [cf.dataset.ctr]; atab = 'counters'; renderAnalysis(); $('bd-analysis').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
