@@ -853,15 +853,15 @@
     const items = fmt().items.map(id => ({ id, ...D().item(id, fmt()) })).filter(x => x.n);
     const pop = m ? m.items.filter(x => x[0] !== 'No item').map(([n, p]) => ({ ...(items.find(i => i.n === n) || { n, d: '' }), p })) : [];
     let q = '';
-    modal(`<div class="bd-mhead"><input type="search" id="bm-q" placeholder="Search items" autocomplete="off"><button class="x" data-close aria-label="Close">×</button></div><div class="bd-list" id="bm-list"></div>`, (body) => {
+    modal(`<div class="bd-mhead"><input type="search" id="bm-q" placeholder="Search name or effect, e.g. rock 1.2" autocomplete="off"><button class="x" data-close aria-label="Close">×</button></div><div class="bd-list" id="bm-list"></div>`, (body) => {
       const held = heldItems(sel);
       const line = (it) => { const by = held[toId(it.n)]; return `<button type="button" class="bd-li ${by ? 'taken' : ''}" ${by ? 'disabled' : `data-item="${esc(it.n)}"`}>${itemIcon(it.n)}<span class="nm"><b>${esc(it.n)}</b><span class="sub">${by ? `Already on ${esc(by)}. No two Pokémon can hold the same item.` : esc(it.d || '')}</span></span>${it.p ? `<span class="mini">${it.p}%</span>` : ''}</button>`; };
       const draw = () => {
-        const f = (x) => !q || toId(x.n).includes(q);
-        const p = pop.filter(f), rest = items.filter(x => f(x) && !pop.some(y => y.n === x.n)).sort((a, b) => a.n.localeCompare(b.n));
+        const p = q ? VL.searchText(q, pop, x => [x.n, x.d]) : pop;
+        const rest = VL.searchText(q, items.filter(x => !pop.some(y => y.n === x.n)).sort((a, b) => a.n.localeCompare(b.n)), x => [x.n, x.d]);
         $('bm-list').innerHTML = `<button type="button" class="bd-li" data-item=""><span class="iicon blank"></span><span class="nm"><b>No item</b></span></button>` + (p.length ? `<div class="section-label">Popular on ${esc(rec.n)}</div>${p.map(line).join('')}<div class="section-label">All items</div>` : '') + rest.map(line).join('');
       };
-      body.addEventListener('input', (ev) => { if (ev.target.id === 'bm-q') { q = toId(ev.target.value); draw(); } });
+      body.addEventListener('input', (ev) => { if (ev.target.id === 'bm-q') { q = ev.target.value.trim(); draw(); } });
       body.addEventListener('click', (ev) => { const b = ev.target.closest('[data-item]'); if (b) { s.item = b.dataset.item; closeModal(); renderSlots(); renderEditor(); analysisSoon(); save(); } });
       draw(); setTimeout(() => $('bm-q').focus(), 30);
     });

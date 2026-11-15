@@ -605,10 +605,10 @@
 
   function renderItems() {
     const fmt = curFmt();
-    const qi = $('it-q').value.trim().toLowerCase(), qa = $('ab-q').value.trim().toLowerCase();
-    const items = fmt.items.map(id => D.item(id, fmt)).filter(Boolean).filter(it => !qi || it.n.toLowerCase().includes(qi) || it.d.toLowerCase().includes(qi));
+    const qi = $('it-q').value.trim(), qa = $('ab-q').value.trim();
+    const items = VL.searchText(qi, fmt.items.map(id => D.item(id, fmt)).filter(Boolean), it => [it.n, it.d]);
     $('it-out').innerHTML = items.slice(0, 300).map(it => `<div class="it"><b>${esc(it.n)}</b><span>${esc(it.d)}</span></div>`).join('') || '<p class="sub">No match.</p>';
-    const abs = GEN.abilities.keys(ctxFor()).map(k => D.ability(k, ctxFor().fmt)).filter(Boolean).sort((a, b) => a.n.localeCompare(b.n)).filter(a => !qa || a.n.toLowerCase().includes(qa) || a.d.toLowerCase().includes(qa));
+    const abs = VL.searchText(qa, GEN.abilities.keys(ctxFor()).map(k => D.ability(k, ctxFor().fmt)).filter(Boolean).sort((a, b) => a.n.localeCompare(b.n)), a => [a.n, a.d]);
     $('ab-out').innerHTML = abs.slice(0, 400).map(a => `<div class="it"><b>${esc(a.n)}</b><span>${esc(a.d)}</span></div>`).join('') || '<p class="sub">No match.</p>';
   }
 

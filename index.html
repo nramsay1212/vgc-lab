@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=21">
+<link rel="stylesheet" href="css/app.css?v=22">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -311,8 +311,8 @@
     </div>
     <div id="sv-items" class="sv" hidden>
       <div class="grid2">
-        <div class="card"><label for="it-q">Items in this format<input type="text" id="it-q" placeholder="Search name or effect"></label><div class="lookup-results" id="it-out"></div></div>
-        <div class="card"><label for="ab-q">Abilities in this format<input type="text" id="ab-q" placeholder="Search name or effect"></label><div class="lookup-results" id="ab-out"></div></div>
+        <div class="card"><label for="it-q">Items in this format<input type="text" id="it-q" placeholder="Search name or effect, e.g. rock 1.2"></label><div class="lookup-results" id="it-out"></div></div>
+        <div class="card"><label for="ab-q">Abilities in this format<input type="text" id="ab-q" placeholder="Search name or effect, e.g. rock 1.2"></label><div class="lookup-results" id="ab-out"></div></div>
       </div>
     </div>
     <div id="sv-glossary" class="sv" hidden>
@@ -736,34 +736,35 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=21"></script>
-<script src="js/sound.js?v=21"></script>
-<script src="js/content.js?v=21"></script>
-<script src="js/study.js?v=21"></script>
-<script src="js/sprites.js?v=21"></script>
-<script src="js/help.js?v=21"></script>
-<script src="js/meta.js?v=21"></script>
-<script src="js/calc.js?v=21"></script>
-<script src="js/companion.js?v=21"></script>
-<script src="js/teamcheck.js?v=21"></script>
-<script src="js/builder.js?v=21"></script>
-<script src="js/plan.js?v=21"></script>
-<script src="js/topteams.js?v=21"></script>
-<script src="js/news.js?v=21"></script>
-<script src="js/replay.js?v=21"></script>
-<script src="js/sheets.js?v=21"></script>
-<script src="js/battleview.js?v=21"></script>
-<script src="js/videos.js?v=21"></script>
-<script src="js/trends.js?v=21"></script>
-<script src="js/progress.js?v=21"></script>
-<script src="js/arcade.js?v=21"></script>
-<script src="js/test.js?v=21"></script>
-<script src="js/compare.js?v=21"></script>
-<script src="js/app.js?v=21"></script>
-<script src="js/hubs.js?v=21"></script>
-<script src="js/whatsnew.js?v=21"></script>
-<script src="js/firebase-config.js?v=21"></script>
-<script src="js/account.js?v=21"></script>
+<script src="js/store.js?v=22"></script>
+<script src="js/sound.js?v=22"></script>
+<script src="js/content.js?v=22"></script>
+<script src="js/search.js?v=22"></script>
+<script src="js/study.js?v=22"></script>
+<script src="js/sprites.js?v=22"></script>
+<script src="js/help.js?v=22"></script>
+<script src="js/meta.js?v=22"></script>
+<script src="js/calc.js?v=22"></script>
+<script src="js/companion.js?v=22"></script>
+<script src="js/teamcheck.js?v=22"></script>
+<script src="js/builder.js?v=22"></script>
+<script src="js/plan.js?v=22"></script>
+<script src="js/topteams.js?v=22"></script>
+<script src="js/news.js?v=22"></script>
+<script src="js/replay.js?v=22"></script>
+<script src="js/sheets.js?v=22"></script>
+<script src="js/battleview.js?v=22"></script>
+<script src="js/videos.js?v=22"></script>
+<script src="js/trends.js?v=22"></script>
+<script src="js/progress.js?v=22"></script>
+<script src="js/arcade.js?v=22"></script>
+<script src="js/test.js?v=22"></script>
+<script src="js/compare.js?v=22"></script>
+<script src="js/app.js?v=22"></script>
+<script src="js/hubs.js?v=22"></script>
+<script src="js/whatsnew.js?v=22"></script>
+<script src="js/firebase-config.js?v=22"></script>
+<script src="js/account.js?v=22"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
