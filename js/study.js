@@ -98,7 +98,6 @@
     { id: 'items', name: 'Items', desc: 'What does this held item do?' },
     { id: 'abilities', name: 'Abilities', desc: 'What does this ability do?' },
     { id: 'archetypes', name: 'Read a team', desc: 'Real top-cut teams: name the speed control and weather, and spot who sets it up and who has Fake Out, like at team preview.' },
-    { id: 'natures', name: 'Natures', desc: 'What each nature raises and lowers, which nature does what, and which one a Pokémon wants.' },
     { id: 'priority', name: 'Priority', desc: 'What priority bracket is this move in?' },
     { id: 'mechanics', name: 'Mechanics', desc: 'Damage modifiers, durations, status and the battle gimmick, for this game.' },
     { id: 'commonsets', name: 'Common sets', desc: 'How the 50 most-used Pokémon are usually built: items, abilities and moves.' },
@@ -307,31 +306,6 @@
         if (!fo.length || no.length < 3) return null;
         const right = pick(fo); const opts = shuffle([right, ...shuffle(no).slice(0, 3)]);
         return { q: `Which Pokémon on this team has <b>Fake Out</b>?${teamHtml}`, opts: opts.map(m => ({ label: VL.topteams.shownName(m), ok: m === right })), ex: why(`${esc(fo.map(m => VL.topteams.shownName(m)).join(' and '))} ${fo.length > 1 ? 'have' : 'has'} Fake Out. A Fake Out user is usually in the lead to stop your setup on turn 1.`) };
-      },
-    },
-    // three kinds of question per nature: what it does, which one does this, and which one a job needs
-    natures: {
-      keys: () => VL.NATURES.map(x => 'what:' + x.n).concat(VL.NATURES.filter(x => x.up).map(x => 'which:' + x.n), VL.NATURE_ROLES.map(r => 'fit:' + r[0])),
-      make(key, c) {
-        const [kind, name] = key.split(':'); const x = VL.natureOf(name); if (!x) return null;
-        const others = shuffle(VL.NATURES.filter(o => o.n !== x.n && o.up));
-        const ex = `<b>${esc(x.n)}</b>: ${esc(VL.natureText(x))}.${x.up ? ` Each nature raises one stat by 10% and lowers another by 10%.` : ' Hardy, Docile, Serious, Bashful and Quirky raise and lower the same stat, so they do nothing.'}${VL.natureChart(x.n)}`;
-        if (kind === 'what') {
-          const wrong = [...new Set(others.map(o => VL.natureText(o)))].filter(t => t !== VL.natureText(x)).slice(0, x.up ? 2 : 3);
-          // a near miss: the same two stats the other way round
-          const flip = x.up && VL.NATURES.find(o => o.up === x.down && o.down === x.up);
-          const opts = [VL.natureText(x), ...(flip ? [VL.natureText(flip)] : []), ...wrong].slice(0, 4);
-          if (x.up && opts.length < 4) opts.push('No effect on any stat');
-          return { q: `What does a <b>${esc(x.n)}</b> nature do?`, opts: shuffle(opts.map(t => ({ label: t, ok: t === VL.natureText(x) }))), ex };
-        }
-        if (kind === 'which') {
-          const near = others.filter(o => o.up === x.up || o.down === x.down || (o.up === x.down && o.down === x.up));
-          const names = [...new Set([...near.slice(0, 2), ...others].map(o => o.n))].slice(0, 3);
-          return { q: `Which nature gives <b>+${esc(VL.NSTAT_NAME[x.up])}</b> and <b>−${esc(VL.NSTAT_NAME[x.down])}</b>?`, opts: shuffle([{ label: x.n, ok: true }, ...names.map(n => ({ label: n, ok: false }))]), ex };
-        }
-        const role = VL.NATURE_ROLES.find(r => r[0] === x.n); if (!role) return null;
-        const names = shuffle(VL.NATURE_ROLES.filter(r => r[0] !== x.n).map(r => r[0])).slice(0, 3);
-        return { q: `${esc(role[1])}. Which nature fits best?`, opts: shuffle([{ label: x.n, ok: true }, ...names.map(n => ({ label: `${n} (${VL.natureText(VL.natureOf(n))})`, ok: false }))]).map(o => o.ok ? { ...o, label: `${x.n} (${VL.natureText(x)})` } : o), ex: `${ex}<p class="sub">${esc(role[1])}: you want the stat it uses raised, and the stat it never uses lowered.</p>` };
       },
     },
     abilities: {
@@ -663,7 +637,7 @@
     if (S.view === 'speed') renderSpeed();
     if (S.view === 'types') renderTypes();
     if (S.view === 'items') renderItems();
-    if (S.view === 'natures') { $('nat-chart').innerHTML = VL.natureChart(); $('nat-roles').innerHTML = `<table class="list"><tbody>${VL.NATURE_ROLES.map(([n, d]) => `<tr><td><b>${esc(n)}</b></td><td class="mini">${esc(VL.natureText(VL.natureOf(n)))}</td><td>${esc(d)}</td></tr>`).join('')}</tbody></table>`; }
+    if (S.view === 'natures') { $('nat-chart').innerHTML = VL.natureChart(); renderCards(); }
     if (S.view === 'priority') renderPriority();
     if (S.view === 'glossary' && VL.renderGlossary) VL.renderGlossary();
   }
@@ -671,6 +645,42 @@
   $('dex-q').addEventListener('input', renderDex);
   for (const id of ['sp-q', 'sp-min', 'sp-max']) $(id).addEventListener('input', renderSpeed);
   for (const id of ['it-q', 'ab-q']) $(id).addEventListener('input', renderItems);
+
+  // ---------- nature flashcards ----------
+  // the 12 natures teams use; "Didn't know" puts a card back three places later, "Knew it" retires it for the round
+  const FC = { deck: null, flip: false, front: 'name', known: 0 };
+  function newDeck() { FC.deck = shuffle(VL.NATURE_ROLES.map(r => r[0])); FC.flip = false; FC.known = 0; }
+  function renderCards() {
+    const box = $('nat-cards'); if (!box) return;
+    if (!FC.deck) newDeck();
+    const total = VL.NATURE_ROLES.length;
+    if (!FC.deck.length) { box.innerHTML = `<div class="fc-done"><b>All ${total} known.</b><p class="sub">Run it again tomorrow until they're instant.</p><button class="btn" data-fc="again">Go again</button></div>`; return; }
+    const n = FC.deck[0]; const x = VL.natureOf(n); const role = (VL.NATURE_ROLES.find(r => r[0] === n) || [])[1] || '';
+    const eff = VL.natureText(x);
+    const frontTxt = FC.front === 'name' ? `<div class="fc-big">${esc(n)}</div><div class="sub">What does it raise and lower?</div>` : `<div class="fc-big fc-eff">${esc(eff)}</div><div class="sub">Which nature is this?</div>`;
+    const backTxt = `<div class="fc-big">${esc(n)}</div><div class="fc-eff2">${esc(eff)}</div><div class="fc-role">${esc(role)}</div>`;
+    box.innerHTML = `<div class="seg fc-mode" role="group" aria-label="Which side shows first"><button type="button" data-fcfront="name" aria-pressed="${FC.front === 'name'}">Show the name</button><button type="button" data-fcfront="effect" aria-pressed="${FC.front === 'effect'}">Show the effect</button></div>
+      <button type="button" class="fc-card ${FC.flip ? 'flipped' : ''}" data-fc="flip" aria-label="${FC.flip ? 'Card back' : 'Tap to flip'}">${FC.flip ? backTxt : frontTxt}<span class="fc-hint">${FC.flip ? '' : 'Tap to flip'}</span></button>
+      ${FC.flip ? `<div class="row fc-btns"><button class="btn ghost" data-fc="miss" style="flex:1">Didn't know</button><button class="btn" data-fc="hit" style="flex:1">Knew it</button></div>` : '<div class="row fc-btns"><button class="btn" data-fc="flip" style="flex:1">Flip</button></div>'}
+      <div class="fc-prog"><i style="width:${Math.round(100 * FC.known / total)}%"></i></div><p class="sub">${FC.known} of ${total} known this round. On a computer: space flips, ← didn't know, → knew it.</p>`;
+  }
+  function fcAct(k) {
+    if (k === 'flip') { FC.flip = !FC.flip; }
+    else if (k === 'hit' && FC.flip) { FC.deck.shift(); FC.known++; FC.flip = false; VL.sound && VL.sound.play(FC.deck.length ? 'right' : 'finish'); }
+    else if (k === 'miss' && FC.flip) { const c = FC.deck.shift(); FC.deck.splice(Math.min(3, FC.deck.length), 0, c); FC.flip = false; VL.sound && VL.sound.play('tap'); }
+    else if (k === 'again') newDeck();
+    renderCards();
+  }
+  document.addEventListener('click', (e) => {
+    const f = e.target.closest('[data-fc]'); if (f && $('nat-cards') && $('nat-cards').contains(f)) { fcAct(f.dataset.fc); return; }
+    const fr = e.target.closest('[data-fcfront]'); if (fr) { FC.front = fr.dataset.fcfront; FC.flip = false; renderCards(); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (location.hash !== '#study' || S.view !== 'natures' || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    if (e.key === ' ') { e.preventDefault(); fcAct('flip'); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); fcAct(FC.flip ? 'hit' : 'flip'); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); if (FC.flip) fcAct('miss'); }
+  });
 
   VL.study = {
     render,

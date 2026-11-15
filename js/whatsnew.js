@@ -10,9 +10,8 @@
 
   const NOTES = [
     ['videos-1', 'videos', 'New: Videos', 'The latest videos from 20 competitive YouTube channels, sorted into Team ideas, Learn, Tournaments and Battles. Tap one to watch it here. When a team video links its team, <b>Open team in builder</b> copies it into your Team builder.'],
-    ['natures-1', 'study', 'New: Natures', 'The <b>Natures</b> tab has the full nature chart and which nature fits which job. The <b>Natures</b> drill quizzes you on what each one does.'],
+    ['natures-2', 'study', 'New: Nature flashcards', 'The <b>Natures</b> tab is now flashcards for the 12 natures teams actually use. Flip, then mark whether you knew it. Missed cards come back a few cards later. You can show the name or the effect first.'],
     ['readteam-1', 'study', 'New: Read a team', 'The <b>Read a team</b> drill shows real top-cut teams and asks what you\'d spot at team preview: their speed control, weather or terrain, who sets it up, and who has Fake Out.'],
-    ['naturerush-1', 'games', 'New: Nature Rush', '60 seconds of natures: what one does, or which one does it. It counts toward a Natures rating on Progress.'],
     ['damagewhy-1', 'games', 'Damage Guess explains itself now', 'Each round shows the move\'s type, category and power and the exact stats that meet. After you guess, <b>Why it does that much</b> walks through every multiplier.'],
     ['sound-1', 'games', 'Sounds', 'Right and wrong answers, streaks and new bests have little sounds. Turn them off with the <b>Sound</b> button above, or change the volume in Account, backup &amp; theme.'],
     ['battle-1', 'replay', 'A Showdown-style battle screen', 'Replays now show the battle like Showdown: their Pokémon at the top, yours at the bottom, with HP, status, stat changes, field effects and each team\'s party.'],

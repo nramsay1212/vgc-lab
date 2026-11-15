@@ -954,3 +954,17 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .bv-pi.unk::after{content:"?";position:absolute;right:-1px;bottom:-3px;color:#fff;font-weight:800;font-size:11px;text-shadow:0 0 3px #000}
 .bv-who b{background:rgba(15,17,22,.7);padding:1px 7px;border-radius:5px}
 .wn-note{margin-bottom:14px}.wn-note p{margin:0 0 6px}
+/* nature flashcards */
+.fc-mode{margin-bottom:10px}
+.fc-card{position:relative;width:100%;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px 16px;border-radius:14px;border:1px solid var(--line-2);background:linear-gradient(160deg,var(--raised),var(--bg-2));color:var(--ink);cursor:pointer;text-align:center;font:inherit}
+.fc-card.flipped{border-color:var(--accent);background:linear-gradient(160deg,var(--accent-soft),var(--bg-2))}
+.fc-big{font-size:30px;font-weight:700;letter-spacing:-.01em}
+.fc-big.fc-eff{font-size:22px}
+.fc-eff2{font-size:18px;font-weight:600}
+.fc-role{font-size:14px;color:var(--ink-2);max-width:440px}
+.fc-hint{position:absolute;bottom:8px;font-size:11.5px;color:var(--faint)}
+.fc-btns{margin-top:10px}
+.fc-prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:12px}
+.fc-prog i{display:block;height:100%;background:var(--win)}
+.fc-done{text-align:center;padding:24px 8px}
+.nat-more{margin-top:14px}.nat-more summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:500}
