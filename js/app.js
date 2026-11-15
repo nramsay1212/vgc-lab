@@ -313,45 +313,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
 
   // ---------- skills ----------
-  function renderSkills() {
-    const ratings = (store.get('meta', 'skills') || {}).ratings || {};
-    const losses = games().filter(g => g.result === 'L').slice(0, 50);
-    $('sk-basis').textContent = losses.length ? `Based on your last ${losses.length} losses` : 'Log and tag losses to fill in the red bars';
-    $('sk-list').innerHTML = VL.SKILLS.map(s => {
-      const hits = s.tags.length ? losses.filter(g => (g.tags || []).some(t => s.tags.includes(t))).length : 0;
-      const share = losses.length ? pct(hits, losses.length) : 0;
-      const r = ratings[s.id] || 0;
-      const accs = (s.study || []).map(id => { const a = VL.study.accuracy(id); const d = VL.study.DRILLS.find(x => x.id === id); return a === null ? null : `${d.name} ${a}%`; }).filter(Boolean);
-      return `<div class="skill"><div><h4>${esc(s.name)}</h4><p>${s.what}</p><p class="drill">Practice: ${esc(s.drill)}</p>${(s.study || []).length ? `<div class="kv" style="flex-wrap:wrap;gap:4px">${s.study.map(id => { const d = VL.study.DRILLS.find(x => x.id === id); return d ? `<button class="linkbtn ms-go" data-drill-go="${esc(id)}">Start ${esc(d.name)} →</button>` : ''; }).join('')}</div>` : ''}${accs.length ? `<p class="sub">Drill accuracy: ${esc(accs.join(' · '))}</p>` : ''}</div>
-        <div class="skill-side"><div class="dots" role="group" aria-label="Rate ${esc(s.name)}">${[1, 2, 3, 4, 5].map(v => `<button data-skill="${s.id}" data-v="${v}" class="${v <= r ? 'on' : ''}" aria-label="${v} of 5">${v}</button>`).join('')}</div>
-        ${s.tags.length ? `<div class="costbar" title="${hits} of ${losses.length} losses"><span style="width:${share}%"></span></div><span class="sub">${losses.length ? `${hits} of ${losses.length} losses` : 'no losses logged'}</span>` : `<span class="sub">${s.id === 'formats' ? 'See the Formats tab' : ''}</span>`}</div></div>`;
-    }).join('');
-  }
-
-  // ---------- formats ----------
-  function renderFormats() {
-    const g = games(); const by = {};
-    for (const x of g) { const k = x.fmt || 'unknown'; (by[k] ||= []).push(x); }
-    const rows = Object.entries(by).map(([f, list]) => {
-      const asc = list.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
-      const first = asc.slice(0, 20), after = asc.slice(20);
-      const wr = (l) => l.length ? pct(l.filter(x => x.result === 'W').length, l.length) + '%' : '–';
-      const best = Math.max(0, ...list.filter(x => Number.isFinite(x.rating)).map(x => x.rating));
-      const tc = {}; for (const x of list) if (x.result === 'L') for (const t of (x.tags || [])) tc[t] = (tc[t] || 0) + 1;
-      const top = Object.entries(tc).sort((a, b) => b[1] - a[1])[0];
-      return { f, n: list.length, first: wr(first), after: wr(after), best: best || '–', top: top ? TAGMAP[top[0]] : '–', start: asc[0].day };
-    }).sort((a, b) => (b.start || '').localeCompare(a.start || ''));
-    $('fm-table').innerHTML = rows.length ? `<table class="list"><thead><tr><th>Format</th><th>Games</th><th>First 20</th><th>After</th><th>Best rating</th><th>Top mistake</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(fmtName(r.f))}<br><span class="sub">${esc(fmtGame(r.f))}</span></td><td class="num">${r.n}</td><td class="num">${r.first}</td><td class="num">${r.after}</td><td class="num">${r.best}</td><td>${esc(r.top)}</td></tr>`).join('')}</tbody></table>`
-      : '<div class="empty">Your formats appear here as you log games.</div>';
-    const fid = curFormatId();
-    $('pb-fmt').textContent = fmtName(fid); $('rc-fmt').textContent = fmtName(fid);
-    const pb = (store.get('playbook', fid) || {}).done || {};
-    $('playbook').innerHTML = VL.PLAYBOOK.map(([id, t, d]) => `<li class="${pb[id] ? 'done' : ''}"><input type="checkbox" id="pb-${id}" data-pb="${id}" ${pb[id] ? 'checked' : ''}><label for="pb-${id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(t)}</span><span class="d">${esc(d)}</span></label></li>`).join('');
-    const rc = store.get('recaps', fid) || {};
-    for (const k of ['won', 'miss', 'next']) if (document.activeElement !== $('rc-' + k)) $('rc-' + k).value = rc[k] || '';
-    const past = store.list('recaps').filter(r => r.id !== fid && (r.won || r.miss || r.next));
-    $('rc-past').innerHTML = past.length ? '<b style="font-size:14px">Past recaps</b>' + past.map(r => `<details class="why" style="padding:10px 12px"><summary>${esc(fmtName(r.id))}</summary>${r.won ? `<p><b>Won:</b> ${esc(r.won)}</p>` : ''}${r.miss ? `<p><b>Misjudged:</b> ${esc(r.miss)}</p>` : ''}${r.next ? `<p><b>Next time:</b> ${esc(r.next)}</p>` : ''}</details>`).join('') : '';
-  }
 
   // ---------- notebook ----------
   function renderNotebook() {
@@ -377,7 +338,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     mcup: ['tournaments', 'Add an event'], mwin: ['tournaments', 'Add an event'], mday2: ['tournaments', 'Add an event'], mrcut: ['tournaments', 'Add an event'], minv: ['tournaments', 'See your Championship Points'],
     mwday2: ['tournaments', 'Add an event'], mworlds: ['tournaments', 'Add an event'], mchamp: ['tournaments', 'Add an event'], sonline: ['tournaments', 'Add an event'],
   };
-  $('sk-list').addEventListener('click', (e) => { const b = e.target.closest('[data-drill-go]'); if (b) VL.study.drill(b.dataset.drillGo); });
   $('milestones').addEventListener('click', (e) => {
     const b = e.target.closest('[data-go]'); if (!b) return; e.preventDefault();
     const go = b.dataset.go;
@@ -430,10 +390,9 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     requestAnimationFrame(() => {
       queued = false;
       const inside = (id) => { const el = $(id); return el && el.contains(document.activeElement) && document.activeElement !== document.body; };
-      renderHeader(); renderToday(); if (VL.trends) VL.trends.render(); renderLog(); renderReview(); renderSkills(); renderFormats(); renderNotebook(); renderRoadmap(); renderSettings();
+      renderHeader(); renderToday(); if (VL.trends) VL.trends.render(); renderLog(); renderReview(); renderNotebook(); renderRoadmap(); renderSettings();
       if (VL.builder && location.hash === '#teams') VL.builder.refreshSide();
       VL.study.render();
-      if (VL.teamcheck) VL.teamcheck.render();
       if (VL.arcade) VL.arcade.render();
       if (VL.test) VL.test.render();
       if (VL.compare && location.hash === '#review') VL.compare.render();
@@ -447,7 +406,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   let rsz = null; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderAll, 250); });
 
   // ---------- routing ----------
-  const TABS = ['news', 'replay', 'topteams', 'sheets', 'videos', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'predict', 'skills', 'formats', 'notebook', 'teamcheck', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
+  const TABS = ['news', 'replay', 'topteams', 'sheets', 'videos', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'notebook', 'teams', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
@@ -672,17 +631,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   };
   $('coach-past').onchange = () => { const r = store.get('reports', $('coach-past').value); if (r) $('coach-out').innerHTML = md(r.text); };
 
-  $('sk-list').addEventListener('click', e => {
-    const b = e.target.closest('[data-skill]'); if (!b) return;
-    const cur = (store.get('meta', 'skills') || {}).ratings || {};
-    store.put('meta', 'skills', { ratings: { ...cur, [b.dataset.skill]: +b.dataset.v } });
-  });
-  $('playbook').addEventListener('change', e => {
-    const id = e.target.dataset.pb; if (!id) return; const fid = curFormatId();
-    const cur = (store.get('playbook', fid) || {}).done || {};
-    store.put('playbook', fid, { done: { ...cur, [id]: e.target.checked } });
-  });
-  $('rc-save').onclick = () => { store.put('recaps', curFormatId(), { won: $('rc-won').value.trim(), miss: $('rc-miss').value.trim(), next: $('rc-next').value.trim() }); VL.toast('Recap saved'); };
   $('milestones').addEventListener('change', e => {
     if (e.target.checked) VL.sound && VL.sound.play('best');
     const id = e.target.dataset.ms; if (!id) return;

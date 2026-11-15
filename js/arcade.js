@@ -22,10 +22,41 @@
     { id: 'types', name: 'Type Rush', desc: 'Attacking type into a real Pokémon\'s typing. 60 seconds, keep the streak going.', modes: [['rush', '60 seconds']] },
   ];
 
-  // Each answer updates the rating for its skill area. Harder levels count for more.
+  // Games are rated once per game, from the score. Each mode turns your points into a
+  // "played like" number between its floor and its ceiling, and your rating moves part of
+  // the way toward it. Timed games: points measure speed and accuracy, against a strong
+  // human score (target). Round games: points against the most you could have scored.
+  // Easier modes have lower ceilings, so climbing to the top titles needs the harder modes.
   const AREA = { duel: 'speed', sort: 'speed', order: 'order', damage: 'damage', types: 'types' };
-  const DIFF = { duel: { base: 1000, spread: 1200, control: 1400 }, sort: { base: 1050, spread: 1250, tr: 1300 }, order: { normal: 1300, field: 1450 }, damage: { guess: 1300 }, types: { rush: 1100 } };
-  const rate = (s) => { if (G) G.res.push({ a: AREA[G.id], d: DIFF[G.id][G.mode], s }); };
+  const PERF = {
+    duel: { base: [700, 1700, 800], spread: [800, 1900, 650], control: [900, 2000, 550] },
+    types: { rush: [700, 1900, 900] },
+    sort: { base: [700, 1700, 350], spread: [800, 1900, 350], tr: [850, 1950, 350] },
+    order: { normal: [800, 1900, 312], field: [900, 2000, 312] },
+    damage: { guess: [800, 2000, 800] },
+  };
+  const ROUNDS = { sort: 5, order: 8, damage: 8 };
+  const TIMED = { duel: 1, types: 1 };
+  // the "played like" number for the game just finished, or null if it was too short to rate
+  function perfOf() {
+    const [lo, hi, target] = PERF[G.id][G.mode];
+    let x;
+    if (TIMED[G.id]) {
+      const secs = 60 - Math.max(0, G.left ?? 0); if (secs < 15 || !G.n) return null;
+      x = Math.pow(Math.min(1, G.score / (target * secs / 60)), 0.6);
+      // tapping fast and guessing shouldn't pay: below 75% right, the number drops off quickly
+      x *= Math.pow(Math.min(1, (G.right / G.n) / 0.75), 2);
+    } else {
+      const done = G.id === 'sort' ? G.n / 5 : G.n; if (done < 2) return null;
+      x = Math.min(1, G.score / (target * done / ROUNDS[G.id]));
+    }
+    return Math.round(lo + (hi - lo) * x);
+  }
+  // the next harder mode of this game, if there is one
+  function harder() {
+    const g = GAMES.find(x => x.id === G.id); const i = g.modes.findIndex(m => m[0] === G.mode);
+    return g.modes[i + 1] || null;
+  }
 
   // ---------- settings: format and pool ----------
   const fmt = () => D().format($('ar-format').value || (VL.curFormatId && VL.curFormatId()));
@@ -65,7 +96,7 @@
   function bindQuit() { const q = $('ar-quit'); if (q) q.onclick = () => finish(); }
   function start(id, mode) {
     stopTimer();
-    G = { id, mode, score: 0, streak: 0, best: 0, n: 0, right: 0, misses: [], round: 0, t0: Date.now(), res: [] };
+    G = { id, mode, score: 0, streak: 0, best: 0, n: 0, right: 0, misses: [], round: 0, t0: Date.now() };
     $('ar-list').hidden = true; area().hidden = false;
     ({ duel: duelNext, sort: sortNext, order: orderNext, damage: damageNext, types: typesNext})[id]();
     if (id === 'duel' || id === 'types') {
@@ -75,7 +106,7 @@
     area().scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
   function scoreHit(ok, miss) {
-    G.n++; rate(ok ? 1 : 0);
+    G.n++;
     VL.sound && VL.sound.play(!ok ? 'wrong' : (G.streak + 1) % 5 === 0 ? 'streak' : 'right');
     if (ok) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); G.score += 10 + Math.min(G.streak, 10) * 2; }
     else { G.streak = 0; if (miss) G.misses.push(miss); }
@@ -89,10 +120,17 @@
     if (G.n) VL.sound && VL.sound.play(isBest ? 'best' : 'finish');
     if (G.n) VL.store.put('arcade', key, { best: Math.max(rec.best || 0, G.score), plays: (rec.plays || 0) + 1, hist: (rec.hist || []).concat([{ s: G.score, a: G.n ? Math.round(100 * G.right / G.n) : 0, t: Date.now() }]).slice(-30) });
     if (G.n && VL.markDone) VL.markDone('drill');
-    const changes = G.n && VL.progress ? VL.progress.apply(G.res, { src: 'game', label: `${g.name} · ${g.modes.find(m => m[0] === G.mode)[1]}`, points: G.score }) : null;
+    const perf = G.n ? perfOf() : null;
+    const ar = AREA[G.id]; const before = VL.progress ? VL.progress.ratingOf(ar) : null;
+    const changes = perf !== null && VL.progress ? VL.progress.apply([{ a: ar, perf, n: G.n }], { src: 'game', label: `${g.name} · ${g.modes.find(m => m[0] === G.mode)[1]}`, points: G.score }) : null;
+    const [, ceil] = PERF[G.id][G.mode]; const up = harder();
+    const perfHtml = perf === null ? (G.n ? '<p class="sub">Too short to rate. Play at least 15 seconds or 2 rounds.</p>' : '')
+      : `<p class="perf">You played like a <b>${perf}</b> (${esc(VL.progress ? VL.progress.rankOf(perf) : '')}) this game. ${before !== null && perf < before ? 'That\'s under your rating, so it went down.' : before !== null && perf > before ? 'That\'s above your rating, so it went up.' : ''}</p>`
+        + (before !== null && before >= ceil - 100 ? `<p class="sub">This mode tops out at <b>${ceil}</b>, so your rating can't climb much further here.${up ? ` Play <b>${esc(up[1])}</b> to keep climbing.` : ''}</p>` : '');
     const acc = G.n ? Math.round(100 * G.right / G.n) : 0;
     area().innerHTML = `<div class="card-head"><h3>${esc(g.name)}: ${G.score} points</h3>${isBest && G.n ? '<span class="pill w">New best</span>' : `<span class="pill m">Best ${rec.best || 0}</span>`}</div>
       <div class="tiles"><div class="tile"><div class="k">Correct</div><div class="v">${G.right}/${G.n}</div></div><div class="tile"><div class="k">Accuracy</div><div class="v">${acc}%</div></div><div class="tile"><div class="k">Best streak</div><div class="v hot">${G.best}</div></div><div class="tile"><div class="k">Points</div><div class="v">${G.score}</div></div></div>
+      ${perfHtml}
       ${VL.progress ? VL.progress.changesHtml(changes) : ''}
       ${G.misses.length ? `<div><div class="section-label">Review your misses</div><div class="misses">${G.misses.slice(0, 25).map(m => `<div class="miss">${m}</div>`).join('')}</div></div>` : (G.n ? '<p class="sub">No misses. Try a harder level.</p>' : '')}
       <div class="row"><button class="btn" id="ar-again">Play again</button><button class="btn ghost" id="ar-back">All games</button></div>`;
@@ -173,7 +211,6 @@
     const correct = sortCorrect(); let hits = 0; c.picked.forEach((x, k) => { if (correct[k] === x) hits++; });
     VL.sound && VL.sound.play(hits === 5 ? 'streak' : hits >= 3 ? 'right' : 'wrong');
     G.n += 5; G.right += hits; G.score += hits * 10 + (hits === 5 ? 20 : 0);
-    c.picked.forEach((x, k) => rate(correct[k] === x ? 1 : 0));
     if (hits === 5) { G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`Round ${G.round}: you had ${hits}/5 in place. Correct: ${correct.map(i => `${esc(c.mons[i].n)} ${c.sets[i].v}`).join(' → ')}`); }
     renderSort(true);
   }
@@ -322,7 +359,7 @@
       const x = +$('ar-dmg').value; G.lastGuess = x;
       const dist = x < c.lo ? c.lo - x : x > c.hi ? x - c.hi : 0;
       const pts = Math.max(0, Math.round(100 - dist * 4)); G.lastPts = pts;
-      G.n++; G.score += pts; rate(pts / 100); if (dist <= 5) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`${esc(c.A.name)} ${esc(c.mv.n)} into ${esc(c.Dd.name)}: actual ${c.lo}–${c.hi}%, you guessed ${x}%.`); }
+      G.n++; G.score += pts; if (dist <= 5) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`${esc(c.A.name)} ${esc(c.mv.n)} into ${esc(c.Dd.name)}: actual ${c.lo}–${c.hi}%, you guessed ${x}%.`); }
       renderDamage(x);
     };
   }

@@ -56,12 +56,6 @@
   }
   const fmtMult = (m) => m === 0 ? '0' : m === 0.25 ? '¼' : m === 0.5 ? '½' : String(m);
 
-  function run() {
-    const out = $('tc-out');
-    if (!VL.D.dex) { out.innerHTML = ''; return; }
-    const sec = analyze($('tc-paste').value, $('tc-format').value);
-    out.innerHTML = sec ? Object.values(sec).join('') : '<div class="empty">Pick a saved team or paste one above, then press Check team.</div>';
-  }
   // Returns the analysis as named HTML sections, so the team builder can show them in tabs.
   function analyze(text, fmtId) {
     const D = VL.D; if (!D.dex) return null;
@@ -194,17 +188,5 @@
     return sec;
   }
 
-  function render() {
-    if (!VL.D.dex) return;
-    const fs = $('tc-format'); const cur = fs.value || (VL.curFormatId ? VL.curFormatId() : '');
-    fs.innerHTML = VL.D.formats().map(f => `<option value="${esc(f.id)}">${esc(f.name)} · ${esc(f.game)}</option>`).join('');
-    fs.value = VL.D.format(cur).id;
-    const ts = $('tc-team'); const ct = ts.value;
-    ts.innerHTML = '<option value="">(paste below)</option>' + VL.store.list('teams').map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
-    ts.value = ct;
-  }
-  $('tc-team').addEventListener('change', () => { const t = VL.store.get('teams', $('tc-team').value); if (t) { $('tc-paste').value = t.paste || ''; if (t.fmt && VL.D.dex && VL.D.dex.formats.some(f => f.id === t.fmt)) $('tc-format').value = t.fmt; run(); } });
-  $('tc-run').onclick = run;
-  $('tc-out').addEventListener('click', e => { const b = e.target.closest('[data-tcnb]'); if (b) { location.hash = 'notebook'; setTimeout(() => { $('nb-name').value = b.dataset.tcnb; $('nb-plan').focus(); }, 50); } });
-  VL.teamcheck = { render, run, parse, analyze, speedOf };
+  VL.teamcheck = { parse, analyze, speedOf };
 })();

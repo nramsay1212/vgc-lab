@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=8">
+<link rel="stylesheet" href="css/app.css?v=9">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -39,14 +39,10 @@
     <a href="#meta"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Meta</span></a>
     <a href="#topteams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8.5 20h7"/></svg><span>Top teams</span></a>
     <a href="#calc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg><span>Damage calculator</span></a>
-    <a href="#predict"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Prediction practice</span></a>
     <a href="#sheets"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7.5" height="16" rx="1.5"/><rect x="13" y="4" width="7.5" height="16" rx="1.5"/><path d="M6 8h2.5M6 11.5h2.5M15.5 8H18M15.5 11.5H18"/></svg><span>Team sheet practice</span></a>
     <a href="#videos"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/></svg><span>Videos</span></a>
-    <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
-    <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
     <div class="navgroup">Plan</div>
     <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
-    <a href="#teamcheck"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Team checker</span></a>
     <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Team builder</span></a>
     <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
     <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
@@ -368,7 +364,7 @@
     <header class="page-head">
       <h1>Progress</h1>
       <p class="lede">Your skill ratings over time, from every game and test. Ratings account for difficulty, so they show real improvement even as you move to harder levels.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Each area starts at 1000. Right answers raise it and misses lower it. Beating harder questions counts for more.</li><li>A rating is <b>provisional</b> until it has 10 answers. Early ratings move a lot, then settle.</li><li>Ranks: Novice under 1000, Trainer 1000+, Ace Trainer 1200+, Expert 1400+, Master 1600+, Champion 1800+.</li><li>Your overall rating averages the areas that aren't provisional. Study drills don't count, because they repeat your misses on purpose.</li><li>Use the buttons on each area to train it, then check back here.</li></ol></details>
+      <details class="howto"><summary>How to use this page</summary><ol><li>Each area starts at 1000. In <b>Games</b>, each game is rated once from your score: the results show the number you played like, and your rating moves part of the way toward it. Easier modes have a lower ceiling, so the top titles need the harder modes. In <b>Test</b>, right answers raise it and misses lower it, and harder questions count for more.</li><li>A rating is <b>provisional</b> until it has 10 answers. Early ratings move a lot, then settle.</li><li>Ranks: Novice under 1000, Trainer 1000+, Ace Trainer 1200+, Expert 1400+, Master 1600+, Champion 1800+.</li><li>Your overall rating averages the areas that aren't provisional. Study drills don't count, because they repeat your misses on purpose.</li><li>Use the buttons on each area to train it, then check back here.</li></ol></details>
     </header>
     <div class="tiles" id="pg-tiles"></div>
     <div class="card"><div class="card-head"><h3>Titles</h3><span class="sub">Ratings work like chess ratings: everyone starts at 1000, and harder questions move you more. There's no maximum.</span></div><div id="pg-ladder"></div></div>
@@ -437,38 +433,8 @@
   </section>
 
   <!-- PREDICTION PRACTICE -->
-  <section class="panel" id="p-predict">
-    <header class="page-head">
-      <h1>Prediction practice</h1>
-      <p class="lede">Train your team preview reads on top players. While you watch a tournament match, call each player&#39;s <span data-dbl>4</span><span data-sgl>3</span> and leads before they&#39;re revealed, then check yourself.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pause the video at team preview. Enter both teams and the match name.</li><li>Pick the <span data-dbl>4 and the 2 leads</span><span data-sgl>3 and the lead</span> you expect from each player, then <b>Lock in prediction</b>.</li><li>Unpause, watch, and enter what they actually brought and led.</li><li>Your accuracy is tracked over time. Read the reasoning behind any miss: why did they bring that?</li></ol></details>
-    </header>
-    <form class="card" id="pr-form" autocomplete="off">
-      <div class="card-head"><h3>New prediction</h3></div>
-      <div class="row"><label for="pr-src">Match or video<input type="text" id="pr-src" placeholder="For example: Atlanta Regionals top 8, game 1"></label></div>
-      <div class="grid2">
-        <label for="pr-a">Player 1's team<input type="text" id="pr-a" list="dl-mons" placeholder="6 Pokémon, comma-separated"></label>
-        <label for="pr-b">Player 2's team<input type="text" id="pr-b" list="dl-mons" placeholder="6 Pokémon, comma-separated"></label>
-      </div>
-      <div class="row" style="justify-content:flex-end"><button class="btn" type="submit">Next: make my picks</button></div>
-    </form>
-    <div class="card" id="pr-live" hidden></div>
-    <div class="tiles" id="pr-stats"></div>
-    <div class="card"><div class="card-head"><h3>History</h3></div><div id="pr-list"></div></div>
-  </section>
 
   <!-- TEAM CHECKER -->
-  <section class="panel" id="p-teamcheck">
-    <header class="page-head">
-      <h1>Team checker</h1>
-      <p class="lede">Check any team against the current meta: shared weaknesses, speed, the tools it has or lacks, and the Pokémon most likely to beat it.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick a saved team or paste one in Showdown format. Plain names separated by commas work too.</li><li>Moves, items, abilities and spreads make the check more accurate, but they&#39;re optional.</li><li><b>Shared weaknesses</b> are types that hit 3 or more of your Pokémon hard and that few of them resist.</li><li><b>Biggest threats</b> come from the Meta page: popular Pokémon whose common attacks hit much of your team, or that outspeed it.</li></ol></details>
-    </header>
-    <div class="card"><div class="row"><label for="tc-team">Saved team<select id="tc-team"></select></label><label for="tc-format">Format<select id="tc-format"></select></label></div>
-      <label for="tc-paste">Or paste a team<textarea id="tc-paste" style="font-family:var(--mono);font-size:12.5px;min-height:120px" placeholder="Garchomp @ Life Orb&#10;Ability: Rough Skin&#10;Jolly Nature&#10;- Earthquake&#10;- Dragon Claw&#10;..."></textarea></label>
-      <div class="row" style="justify-content:flex-end"><button class="btn" id="tc-run">Check team</button></div></div>
-    <div id="tc-out" style="display:flex;flex-direction:column;gap:16px"></div>
-  </section>
 
   <!-- TOURNAMENTS -->
   <section class="panel" id="p-tournaments">
@@ -515,51 +481,8 @@
   </section>
 
   <!-- SKILLS -->
-  <section class="panel" id="p-skills">
-    <header class="page-head">
-      <h1>Skills</h1>
-      <p class="lede">The abilities that carry from one format to the next. Rate yourself honestly, then compare your rating to what your logs say.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Tap 1–5 to rate each skill. 3 means solid, 5 means among the best players you face.</li><li>The red bar shows how often that skill was tagged in your last 50 losses.</li><li>A high rating with a big red bar means you're overrating it. That's a great weekly focus.</li></ol></details>
-    </header>
-    <div class="card accent">
-      <h3>Skills that carry across every format</h3>
-      <p class="sub" style="font-size:14.5px">Regulations change every few months, and so do the Pokémon and the battle gimmick. These skills don't. Rate yourself honestly, 1 to 5. The red bar shows how often each skill shows up in the tags on your last 50 losses, so you can check your rating against your logs.</p>
-    </div>
-    <div class="card">
-      <div class="card-head"><h3>Your skills</h3><span class="sub" id="sk-basis"></span></div>
-      <div id="sk-list"></div>
-    </div>
-  </section>
 
   <!-- FORMATS -->
-  <section class="panel" id="p-formats">
-    <header class="page-head">
-      <h1>Formats</h1>
-      <p class="lede">Your record across every regulation and game, plus a checklist for getting strong fast when the format changes.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Each row is a format you've logged games in. "First 20" vs "After" shows how fast you adapted.</li><li>When a new format starts, run the <b>New format playbook</b> from the top.</li><li>When a format ends, write a <b>recap</b>. Read old recaps before the next one starts.</li></ol></details>
-    </header>
-    <div class="card">
-      <div class="card-head"><h3>Every format you've played</h3><span class="sub">From the format saved on each game</span></div>
-      <div class="scroll" id="fm-table"></div>
-      <p class="sub">"First 20" vs "after" shows how fast you adapt to a new format. The gap should shrink each time you switch.</p>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-head"><h3>New format playbook</h3><span class="pill n" id="pb-fmt"></span></div>
-        <p class="sub">Run this every time the format changes. Progress is saved per format. Change your current format on the Today tab.</p>
-        <ul class="checklist" id="playbook"></ul>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>Format recap</h3><span class="pill n" id="rc-fmt"></span></div>
-        <p class="sub">Write this when a format ends. Read your old recaps before the next one starts.</p>
-        <label for="rc-won">What won, and why<textarea id="rc-won"></textarea></label>
-        <label for="rc-miss">What I misjudged early<textarea id="rc-miss"></textarea></label>
-        <label for="rc-next">What I'll do faster next format<textarea id="rc-next"></textarea></label>
-        <div class="row" style="justify-content:flex-end"><button class="btn small" id="rc-save">Save recap</button></div>
-        <div id="rc-past"></div>
-      </div>
-    </div>
-  </section>
 
   <!-- NOTEBOOK -->
   <section class="panel" id="p-notebook">
@@ -763,12 +686,8 @@
   <a href="#meta"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Meta</span></a>
     <a href="#topteams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8.5 20h7"/></svg><span>Top teams</span></a>
   <a href="#calc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg><span>Damage calculator</span></a>
-  <a href="#predict"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Prediction practice</span></a>
     <a href="#sheets"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7.5" height="16" rx="1.5"/><rect x="13" y="4" width="7.5" height="16" rx="1.5"/><path d="M6 8h2.5M6 11.5h2.5M15.5 8H18M15.5 11.5H18"/></svg><span>Team sheet practice</span></a>
-  <a href="#skills"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skills</span></a>
-  <a href="#formats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg><span>Formats</span></a>
   <a href="#notebook"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M3 7h3M3 12h3M3 17h3M10 8h5"/></svg><span>Notebook</span></a>
-  <a href="#teamcheck"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Team checker</span></a>
   <a href="#teams"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5.5"/></svg><span>Team builder</span></a>
   <a href="#tournaments"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Tournaments</span></a>
   <a href="#opponents"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Opponents</span></a>
@@ -817,34 +736,34 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=8"></script>
-<script src="js/sound.js?v=8"></script>
-<script src="js/content.js?v=8"></script>
-<script src="js/study.js?v=8"></script>
-<script src="js/sprites.js?v=8"></script>
-<script src="js/help.js?v=8"></script>
-<script src="js/meta.js?v=8"></script>
-<script src="js/calc.js?v=8"></script>
-<script src="js/companion.js?v=8"></script>
-<script src="js/teamcheck.js?v=8"></script>
-<script src="js/builder.js?v=8"></script>
-<script src="js/plan.js?v=8"></script>
-<script src="js/topteams.js?v=8"></script>
-<script src="js/news.js?v=8"></script>
-<script src="js/replay.js?v=8"></script>
-<script src="js/sheets.js?v=8"></script>
-<script src="js/battleview.js?v=8"></script>
-<script src="js/videos.js?v=8"></script>
-<script src="js/trends.js?v=8"></script>
-<script src="js/progress.js?v=8"></script>
-<script src="js/arcade.js?v=8"></script>
-<script src="js/test.js?v=8"></script>
-<script src="js/compare.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
-<script src="js/hubs.js?v=8"></script>
-<script src="js/whatsnew.js?v=8"></script>
-<script src="js/firebase-config.js?v=8"></script>
-<script src="js/account.js?v=8"></script>
+<script src="js/store.js?v=9"></script>
+<script src="js/sound.js?v=9"></script>
+<script src="js/content.js?v=9"></script>
+<script src="js/study.js?v=9"></script>
+<script src="js/sprites.js?v=9"></script>
+<script src="js/help.js?v=9"></script>
+<script src="js/meta.js?v=9"></script>
+<script src="js/calc.js?v=9"></script>
+<script src="js/companion.js?v=9"></script>
+<script src="js/teamcheck.js?v=9"></script>
+<script src="js/builder.js?v=9"></script>
+<script src="js/plan.js?v=9"></script>
+<script src="js/topteams.js?v=9"></script>
+<script src="js/news.js?v=9"></script>
+<script src="js/replay.js?v=9"></script>
+<script src="js/sheets.js?v=9"></script>
+<script src="js/battleview.js?v=9"></script>
+<script src="js/videos.js?v=9"></script>
+<script src="js/trends.js?v=9"></script>
+<script src="js/progress.js?v=9"></script>
+<script src="js/arcade.js?v=9"></script>
+<script src="js/test.js?v=9"></script>
+<script src="js/compare.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
+<script src="js/hubs.js?v=9"></script>
+<script src="js/whatsnew.js?v=9"></script>
+<script src="js/firebase-config.js?v=9"></script>
+<script src="js/account.js?v=9"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

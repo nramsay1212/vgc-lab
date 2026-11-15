@@ -96,7 +96,6 @@
   const PLAYBOOK_D = [
     ['rules', 'Read the full rules', 'Legal Pokémon and items, banned or restricted Pokémon, the battle gimmick, level, team size and timer.'],
     ['diff', 'List what changed', 'New Pokémon, items and moves, and what left. The Study tab updates to the new format automatically.'],
-    ['recaps', 'Read your old recaps', 'What did you misjudge early last time? Avoid it now.'],
     ['speed', 'Learn the new speed tiers', 'Run Base Speed and Who moves first drills with this format selected, until you score 90%.'],
     ['arch', 'Map the archetypes', 'Which speed control and weather or terrain modes exist, and which top threats beat each one.'],
     ['try3', 'Play three archetypes', 'Use rentals or copied teams, about 10 games each, before you commit to one.'],

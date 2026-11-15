@@ -45,7 +45,7 @@
       const tags = Object.entries(rc).filter(([t]) => t !== 'luck').sort((a, b) => b[1] - a[1]).slice(0, 3);
       const mons = {}; for (const x of use.slice(0, 30)) for (const p of (x.opp || [])) { const k = p; (mons[k] ||= { n: 0, l: 0 }); mons[k].n++; if (x.result === 'L') mons[k].l++; }
       const beat = Object.entries(mons).filter(([, v]) => v.n >= 2 && v.l >= 2).sort((a, b) => (b[1].l / b[1].n - a[1].l / a[1].n) || b[1].l - a[1].l).slice(0, 4);
-      cards.push(`<div class="card td-card"><div class="card-head"><h3>What's costing you</h3><a class="sub" href="#skills">Skills</a></div>
+      cards.push(`<div class="card td-card"><div class="card-head"><h3>What's costing you</h3><a class="sub" href="#review">Review</a></div>
         ${tags.length ? `<div class="td-rows">${tags.map(([t, n]) => { const share = pct(n, recentL.length), was = olderL.length >= 5 ? pct(oc[t] || 0, olderL.length) : null; return `<div><span>${esc(TAG[t] || t)}</span><span class="num">${n} of ${recentL.length} losses</span>${was !== null ? arrowBad(share - was) : ''}</div>`; }).join('')}</div>` : `<p class="sub">${losses.length ? 'Tag what went wrong when you log a loss, and the patterns show up here.' : 'No losses logged yet.'}</p>`}
         ${beat.length ? `<div class="section-label">Pokémon beating you lately</div><div class="td-mons">${beat.map(([n, v]) => `<span class="td-mon">${VL.sprite(n, 'sm', false)}<span>${esc(n)}<br><span class="mini">lost ${v.l} of ${v.n}</span></span></span>`).join('')}</div>` : ''}</div>`);
     } else {

@@ -48,10 +48,17 @@
     for (const res of results) {
       const a = cur[res.a] || { r: START, n: 0 };
       if (!(res.a in before)) before[res.a] = Math.round(a.r);
-      const K = a.n < 30 ? 40 : 20;
-      const E = 1 / (1 + Math.pow(10, (res.d - a.r) / 400));
-      a.r = Math.max(100, a.r + K * (Math.max(0, Math.min(1, res.s)) - E));
-      a.n++;
+      if (res.perf != null) {
+        // a whole game: move part of the way toward how you played, at most 60 points
+        const k = a.n < PROVISIONAL ? 0.5 : a.n < 60 ? 0.25 : 0.15;
+        a.r = Math.max(100, a.r + Math.max(-60, Math.min(60, k * (res.perf - a.r))));
+        a.n += res.n || 1;
+      } else {
+        const K = a.n < 30 ? 40 : 20;
+        const E = 1 / (1 + Math.pow(10, (res.d - a.r) / 400));
+        a.r = Math.max(100, a.r + K * (Math.max(0, Math.min(1, res.s)) - E));
+        a.n++;
+      }
       cur[res.a] = a;
     }
     for (const k of Object.keys(cur)) cur[k].r = Math.round(cur[k].r * 10) / 10;
@@ -175,5 +182,6 @@
     const rv = e.target.closest('[data-pgrev]'); if (rv) { const row = document.querySelector(`[data-pgrevrow="${rv.dataset.pgrev}"]`); if (row) row.hidden = !row.hidden; }
   });
 
-  VL.progress = { AREAS, apply, changesHtml, render, rankOf, nextRank, grade, overallOf, current };
+  const ratingOf = (a) => { const c = current()[a]; return c ? Math.round(c.r) : null; };
+  VL.progress = { AREAS, apply, ratingOf, changesHtml, render, rankOf, nextRank, grade, overallOf, current };
 })();

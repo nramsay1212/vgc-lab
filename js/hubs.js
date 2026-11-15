@@ -11,10 +11,10 @@
   const HUBS = [
     ['Home', ['today', 'news']],
     ['Play', ['log', 'companion', 'replay', 'review']],
-    ['Practice', ['study', 'videos', 'games', 'test', 'predict', 'sheets']],
-    ['Meta and teams', ['meta', 'topteams', 'teams', 'teamcheck', 'calc']],
-    ['Progress', ['progress', 'skills', 'roadmap']],
-    ['Plan', ['tournaments', 'opponents', 'notebook', 'formats']],
+    ['Practice', ['study', 'videos', 'games', 'test', 'sheets']],
+    ['Meta and teams', ['meta', 'topteams', 'teams', 'calc']],
+    ['Progress', ['progress', 'roadmap']],
+    ['Plan', ['tournaments', 'opponents', 'notebook']],
   ];
 
   // icons and names come from the page list in index.html, so there's one place to change them

@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['gamerate-1', 'games', 'Games are rated by your score now', 'Each game is rated once, from your points, so playing fast counts. The results show the number you <b>played like</b>, and your rating moves part of the way toward it. Easier modes have a ceiling: when you get close to it, the results tell you which mode to move up to.'],
     ['videos-1', 'videos', 'New: Videos', 'The latest videos from 20 competitive YouTube channels, sorted into Team ideas, Learn, Tournaments and Battles. Tap one to watch it here. When a team video links its team, <b>Open team in builder</b> copies it into your Team builder.'],
     ['natures-2', 'study', 'New: Nature flashcards', 'The <b>Natures</b> tab is now flashcards for the 12 natures teams actually use. Flip, then mark whether you knew it. Missed cards come back a few cards later. You can show the name or the effect first.'],
     ['readteam-1', 'study', 'New: Read a team', 'The <b>Read a team</b> drill shows real top-cut teams and asks what you\'d spot at team preview: their speed control, weather or terrain, who sets it up, and who has Fake Out.'],
