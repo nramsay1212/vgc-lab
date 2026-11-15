@@ -125,7 +125,8 @@
     const saved = store().list('sheets').sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
     root.innerHTML = `
       <div class="card"><div class="card-head"><h3>Start a practice</h3></div>
-        ${teams.length ? `<div class="row"><label for="sh-team">Your team<select id="sh-team">${teams.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')}</option>`).join('')}</select></label></div>
+        ${teams.length ? `<div class="row"><label for="sh-team">Your team<select id="sh-team">${teams.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')}</option>`).join('')}</select></label>
+          <label for="sh-fmt">Opponents from<select id="sh-fmt"><option value="">Loading formats…</option></select></label></div>
         <div class="row" style="gap:8px"><button class="btn" data-sh="random">Random top-cut opponent</button><a class="btn ghost" href="#topteams">Pick one from Top teams</a></div>
         <details><summary class="sub" style="cursor:pointer">Or paste an opponent's team</summary><textarea id="sh-paste" style="min-height:120px;font-family:var(--mono);font-size:12.5px" placeholder="Paste a team in Showdown format"></textarea><div class="row" style="justify-content:flex-end"><button class="btn ghost small" data-sh="paste">Use this team</button></div></details>
         <p class="sub" id="sh-msg" role="status"></p>`
@@ -133,6 +134,24 @@
       ${saved.length ? `<div class="card"><div class="card-head"><h3>Your plans</h3><span class="sub">${saved.length} saved</span></div>${saved.map(r => `<div class="threat"><div class="h"><div><b>${esc(r.teamName || 'Your team')}</b> <span class="sub">against</span> <b>${esc(r.label || 'a team')}</b> ${r.result ? `<span class="pill ${r.result === 'W' ? 'w' : 'l'}">${r.result === 'W' ? 'Won' : 'Lost'}</span>` : ''} <span class="mini">${r.ts ? new Date(r.ts).toLocaleDateString() : ''}</span><div class="kv" style="margin-top:4px">${VL.spriteRow((r.opp || []).map(m => m.n), 'xs')}</div></div>
         <div class="kv"><button class="btn small" data-shopen="${esc(r.id)}">Open</button><button class="linkbtn" data-shdel="${esc(r.id)}">Delete</button></div></div>
         ${r.lead && r.lead.length ? `<div class="sub">Lead ${esc(r.lead.join(' + '))}${r.back && r.back.length ? ', back ' + esc(r.back.join(', ')) : ''}</div>` : ''}${r.plan ? `<div class="sub" style="white-space:pre-wrap">${esc(r.plan)}</div>` : ''}</div>`).join('')}</div>` : ''}`;
+    fillFormats(false);
+  }
+
+  // the format menu: formats with tournament teams, starting on your team's format
+  let pickedFmt = '';
+  async function fillFormats(teamChanged) {
+    const sel = $('sh-fmt'); if (!sel) return;
+    try { await VL.topteams.load(); await VL.topteams.loadLatestSeason(); } catch (e) { /* offline: whatever is loaded */ }
+    const c = VL.topteams.formats(); const ids = Object.keys(c).filter(id => D().format(id));
+    const t = store().get('teams', ($('sh-team') || {}).value || '');
+    const want = (!teamChanged && pickedFmt) || (t && t.fmt) || VL.curFormatId();
+    const order = ids.sort((a, b) => (a === want ? -1 : b === want ? 1 : 0) || c[b] - c[a]);
+    if (!sel.isConnected) return;
+    sel.innerHTML = order.map(id => `<option value="${esc(id)}">${esc(D().format(id).name)} · ${c[id]} teams</option>`).join('') || '<option value="">No tournament teams loaded</option>';
+    sel.value = ids.includes(want) ? want : (order[0] || '');
+    pickedFmt = sel.value;
+    const msg = $('sh-msg');
+    if (msg) msg.textContent = t && t.fmt && !ids.includes(t.fmt) ? `There are no tournament teams for ${D().format(t.fmt) ? D().format(t.fmt).name : 'your team\'s format'} yet, so pick another format or paste a team.` : '';
   }
 
   // ---------- actions ----------
@@ -153,11 +172,17 @@
     store().put('sheets', P.id, { ts: prev?.ts || Date.now(), label: P.label, fmt: P.fmt, team: P.team, teamName: P.teamName, opp: P.opp.map(m => ({ n: m.n, i: m.i, a: m.a, na: m.na, m: m.m, t: m.t })), lead: pick(P.mine, P.sm, 2), back: pick(P.mine, P.sm, 1), olead: pick(P.opp, P.so, 2), oback: pick(P.opp, P.so, 1), plan: P.plan, actual: P.actual, result: P.result });
   }
   async function randomOpp() {
-    await VL.topteams.load(); const t = VL.topteams.random();
-    if (!t) { const m = $('sh-msg'); if (m) m.textContent = 'No tournament teams are loaded yet. Paste a team instead.'; return; }
+    const fsel = $('sh-fmt'); const fmt = P ? P.fmt : (fsel && fsel.value) || pickedFmt;
+    await VL.topteams.load(); try { await VL.topteams.loadLatestSeason(); } catch (e) { /* use what's loaded */ }
+    const t = VL.topteams.random(fmt);
+    if (!t) { const m = $('sh-msg'); if (m) m.textContent = `No tournament teams${fmt && D().format(fmt) ? ` for ${D().format(fmt).name}` : ''} are loaded yet. Pick another format or paste a team.`; return; }
     if (P) grab();
     if (begin({ mons: t.mons, label: `${t.who || 'Unknown player'}, ${VL.topteams.place(t.p)} at ${t.ev.name}`, fmt: t.ev.fmt })) render();
   }
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'sh-team') fillFormats(true);
+    if (e.target.id === 'sh-fmt') pickedFmt = e.target.value;
+  });
   document.addEventListener('click', (e) => {
     const root = $('sh-root'); if (!root || !root.contains(e.target)) return;
     const pk = e.target.closest('[data-shp]');

@@ -180,7 +180,16 @@
   VL.topteams = {
     render, load, eventsFor, usageFor,
     show(eventId) { S.season = ''; S.scope = eventId || 'official'; S.tag = ''; S.mon = ''; S.q = ''; location.hash = 'topteams'; render(); },
-    random(fmtDoubles) { if (!DATA) return null; const pool = DATA.events.filter(e => e.src === 'official').flatMap(e => e.teams.filter(t => t.p <= 16)); const all = pool.length ? pool : DATA.events.flatMap(e => e.teams); return all.length ? all[Math.floor(Math.random() * all.length)] : null; },
+    // a random top-cut team, from one format if given: official top 16 first, then any top 16, then anything
+    random(fmtId) {
+      if (!DATA) return null;
+      const teams = this.allTeams().filter(t => !fmtId || (t.ev && t.ev.fmt === fmtId));
+      const tiers = [teams.filter(t => t.ev.src === 'official' && t.p <= 16), teams.filter(t => t.p <= 16), teams];
+      const pool = tiers.find(x => x.length) || [];
+      return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+    },
+    // formats that have tournament teams loaded, with how many
+    formats() { const c = {}; for (const t of this.allTeams()) if (t.ev && t.ev.fmt) c[t.ev.fmt] = (c[t.ev.fmt] || 0) + 1; return c; },
     place, shownName,
     // every team loaded so far (recent events plus any seasons opened), for the archetype drill
     allTeams() { if (!DATA) return []; const seen = new Set(); const out = []; for (const evs of [DATA.events, ...Object.values(ARCH.got)]) for (const ev of evs || []) { if (seen.has(ev.id)) continue; seen.add(ev.id); for (const t of ev.teams) out.push(t); } return out; },
