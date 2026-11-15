@@ -362,7 +362,7 @@
   // ---------- whole-team analysis (from the team checker) ----------
   function renderAnalysis() {
     const el = $('bd-analysis'); if (!el) return;
-    const tabs = [['mm', 'Vs the meta'], ['weak', 'Weaknesses'], ['coverage', 'Coverage'], ['checklist', 'What\'s missing'], ['threats', 'Threats'], ['counters', 'Counters'], ['speed', 'Speed tiers']];
+    const tabs = [['mm', 'Vs the meta'], ['weak', 'Weaknesses'], ['coverage', 'Coverage'], ['checklist', 'What\'s missing'], ['counters', 'Counters'], ['speed', 'Speed tiers']];
     const sec = VL.teamcheck && VL.teamcheck.analyze(exportTeam(), fmt().id);
     if (sec && sec._threats) CT.threats = sec._threats;
     if (atab === 'counters' || atab === 'mm') {
@@ -528,7 +528,7 @@
       return `<div class="ctr-vs ctr-${v.ver[1]}"><div class="ctr-vh"><span class="pill ${v.ver[1]}">${esc(v.ver[0])}</span> <span>vs <b>${esc(them)}</b></span></div>
         <div>${out}</div><div>${inn}</div><div>${sp}</div>${risk ? `<div class="ctr-risk">${esc(risk)}</div>` : ''}</div>`;
     };
-    if (!res.list.length) return `<p class="sub">None of the ${res.n} most used Pokémon you don't have answers ${res.tg.length > 1 ? 'any of these' : 'it'} on its own. Try fewer at once, or check the Threats tab for a teammate that covers it.</p>`;
+    if (!res.list.length) return `<p class="sub">None of the ${res.n} most used Pokémon you don't have answers ${res.tg.length > 1 ? 'any of these' : 'it'} on its own. Try fewer at once, or check Vs the meta to see which of your Pokémon already handle it.</p>`;
     return `<p class="sub">The ${res.list.length} best of the ${res.n} most used Pokémon you don't have.</p>
       <div class="ctr-key"><span><i class="dot w"></i>Good: a safe answer</span><span><i class="dot y"></i>Works, but risky</span><span><i class="dot l"></i>Bad: loses to it</span></div>
       ${res.list.map(c => `<div class="threat ctr-row"><div class="h"><div class="kv">${VL.sprite(c.rec, 'xs')}<b>${esc(c.n)}</b>${c.rec.t.map(tyBadge).join('')}${c.set.item ? `<span class="mini">${esc(c.set.item)}${c.swapped ? ` (${esc(c.swapped)} is taken)` : ''}</span>` : ''}${c.mega && teamMega ? `<span class="pill y" title="Only one Pokémon can Mega Evolve per battle">2nd Mega: only one can Mega Evolve</span>` : ''}<span class="pill ${c.answered === res.tg.length ? 'w' : c.answered ? 'y' : 'l'}">Answers ${c.answered} of ${res.tg.length}</span>${c.mate >= 10 ? '<span class="pill m">Often with your team</span>' : ''}</div>
@@ -612,7 +612,7 @@
       else if (r.risky.length) lines.push(`<div><span class="mid-t">Only risky answers:</span> ${r.risky.map(verb).join(', ')}.</div>`);
       else lines.push('<div><span class="bad-t">Nothing on your team answers it.</span></div>');
       if (r.loses.length) lines.push(`<div>It beats ${r.loses.length} of your ${res.size}: ${esc(r.loses.map(v => v.me).join(', '))}.</div>`);
-      return `<div class="mm-item ctr-vs ctr-${st[1]}"><div class="ctr-vh">${VL.sprite(r.rec, 'xs')}<b>${esc(r.n)}</b><span class="mini">${r.u.toFixed(1)}% of teams</span><span class="pill ${st[1]}">${st[0]}</span>${r.st === 'shaky' || r.st === 'bad' ? `<button type="button" class="linkbtn" data-ctr="${esc(r.n)}">Find a counter →</button>` : ''}</div>${lines.join('')}</div>`;
+      return `<div class="mm-item ctr-vs ctr-${st[1]}"><div class="ctr-vh">${VL.sprite(r.rec, 'xs')}<b>${esc(r.n)}</b><span class="mini">${r.u.toFixed(1)}% of teams</span><span class="pill ${st[1]}">${st[0]}</span>${r.st === 'shaky' || r.st === 'bad' ? `<button type="button" class="linkbtn" data-ctr="${esc(r.n)}">Find a counter →</button><button type="button" class="linkbtn" data-tcnb="${esc(r.n)}">Make a plan →</button>` : ''}</div>${lines.join('')}</div>`;
     };
     const group = (keys, title, open) => { const rs = out.filter(r => keys.includes(r.st)); return rs.length ? `<details class="mm-group" ${open ? 'open' : ''}><summary><b>${title}</b> <span class="sub">${rs.length}</span></summary><div class="ctr-blocks">${rs.map(item).join('')}</div></details>` : ''; };
     return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${res.mode !== 'normal' ? ` (${res.mode === 'tr' ? 'under Trick Room' : res.mode === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
