@@ -17,7 +17,7 @@
   const GAMES = [
     { id: 'duel', name: 'Speed Duel', desc: 'Two Pokémon. Tap the one that moves first. 60 seconds, as many as you can.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['control', 'With speed control']] },
     { id: 'sort', name: 'Speed Sort', desc: 'Put 5 Pokémon in order from fastest to slowest. 5 rounds.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['tr', 'Under Trick Room']] },
-    { id: 'order', name: 'Turn Order', desc: 'Four Pokémon pick their moves. Tap them in the order they\'ll act: priority first, then Speed. 8 rounds.', modes: [['normal', 'Standard'], ['field', 'With Tailwind and Trick Room']] },
+    { id: 'order', name: 'Turn Order', desc: 'Four Pokémon pick their moves. Tap them in the order they\'ll act: priority first, then Speed. Close answers get partial points. 8 rounds.', modes: [['normal', 'Standard'], ['field', 'With Tailwind and Trick Room']] },
     { id: 'damage', name: 'Damage Guess', desc: 'A real attack with common sets. Guess how much it does before the calculator tells you. 8 rounds.', modes: [['guess', 'Guess the %']] },
     { id: 'types', name: 'Type Rush', desc: 'Attacking type into a real Pokémon\'s typing. 60 seconds, keep the streak going.', modes: [['rush', '60 seconds']] },
   ];
@@ -256,7 +256,7 @@
       <p class="q2">Tap the four Pokémon in the order they act this turn.${c.tr ? ' <b>Trick Room is up.</b>' : ''}${c.tw ? ` <b>Tailwind is up on ${c.tw.toLowerCase()}.</b>` : ''}</p>
       <div class="sortgrid four">${c.acts.map((a, i) => { const pos = c.picked.indexOf(i); const ok = done && c.order[pos] === i;
         return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-ord="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}<span class="mini">${esc(a.side)}</span>${VL.sprite(a.p, 'md', false)}<b>${esc(a.p.n)}</b><span>uses <b>${esc(a.mv.n)}</b></span><span class="sub">${esc(a.sp.label)}</span>${done ? `<span class="mini">Priority ${fp(a.prio)} · Speed ${a.eff}${a.eff !== a.v ? ' (Tailwind)' : ''}</span>` : ''}</button>`; }).join('')}</div>
-      ${done ? `<div class="explain">Order: ${c.order.map(i => `${esc(c.acts[i].p.n)} (${esc(c.acts[i].mv.n)}, ${fp(c.acts[i].prio)}, ${c.acts[i].eff})`).join(' → ')}. Higher priority always goes first; within a bracket, ${c.tr ? 'Trick Room makes the slower Pokémon go first' : 'the faster Pokémon goes first'}.</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next round'}</button></div>`
+      ${done ? `<div class="explain">${c.pairs === 6 ? '<b class="good-t">All right!</b> ' : `<b class="${c.pairs >= 4 ? 'mid-t' : 'bad-t'}">${c.pairs} of 6 pairs the right way round</b> (+${c.partial} points). `}Order: ${c.order.map(i => `${esc(c.acts[i].p.n)} (${esc(c.acts[i].mv.n)}, ${fp(c.acts[i].prio)}, ${c.acts[i].eff})`).join(' → ')}. Higher priority always goes first; within a bracket, ${c.tr ? 'Trick Room makes the slower Pokémon go first' : 'the faster Pokémon goes first'}.</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 8 ? 'See results' : 'Next round'}</button></div>`
         : `<div class="row" style="justify-content:flex-end"><button class="btn ghost small" id="ar-undo" ${c.picked.length ? '' : 'disabled'}>Undo</button></div>`}`;
     bindQuit();
     if (done) { $('ar-next').onclick = orderNext; $('ar-next').focus(); }
@@ -266,8 +266,12 @@
     const c = G.cur; if (c.picked.includes(i)) return; c.picked.push(i);
     if (c.picked.length < 4) return renderOrder();
     const ok = c.picked.every((x, k) => c.order[k] === x);
+    // partial credit: of the 6 pairs, how many did you put the right way round?
+    const at = (i) => c.order.indexOf(i); let pairs = 0;
+    for (let x = 0; x < 4; x++) for (let y = x + 1; y < 4; y++) if (at(c.picked[x]) < at(c.picked[y])) pairs++;
+    c.pairs = pairs; c.partial = ok ? 0 : pairs * 2;
     scoreHit(ok, `Round ${G.round}: ${c.order.map(i2 => `${esc(c.acts[i2].p.n)} (${esc(c.acts[i2].mv.n)}, priority ${c.acts[i2].prio > 0 ? '+' : ''}${c.acts[i2].prio}, Speed ${c.acts[i2].eff})`).join(' → ')}${c.tr ? ' · Trick Room' : ''}${c.tw ? ' · Tailwind on ' + esc(c.tw.toLowerCase()) : ''}`);
-    if (ok) G.score += 20;
+    if (ok) G.score += 20; else G.score += c.partial;
     renderOrder(true);
   }
 
