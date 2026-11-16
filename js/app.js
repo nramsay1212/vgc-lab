@@ -520,6 +520,15 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
   document.querySelectorAll('[data-pal-set]').forEach(b => b.onclick = () => { applyPalette(b.dataset.palSet); if (VL.sound) VL.sound.play('tap'); });
   applyPalette(document.documentElement.dataset.palette || 'shiny');
+  // style (Settings → Style): standard, or the pixel Minimalist style
+  function applyLook(v) {
+    document.documentElement.dataset.look = v;
+    try { localStorage.setItem('vgclab-look', v); } catch (e) { /* ignore */ }
+    document.querySelectorAll('[data-look-set]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.lookSet === v)));
+    if (VL.fitToday) requestAnimationFrame(VL.fitToday);
+  }
+  document.querySelectorAll('[data-look-set]').forEach(b => b.onclick = () => { applyLook(b.dataset.lookSet); if (VL.sound) VL.sound.play('tap'); });
+  applyLook(document.documentElement.dataset.look || 'standard');
   applyTheme(document.documentElement.dataset.theme || 'dark');
   // N = log a game (when not typing)
   document.addEventListener('keydown', e => {
@@ -558,8 +567,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (!window.matchMedia('(min-width:2400px)').matches || !c.offsetParent) return;
     const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
     const top = c.getBoundingClientRect().top + window.scrollY;
-    const dock = document.querySelector('.side'); const dockH = dock && getComputedStyle(dock).position === 'fixed' ? dock.offsetHeight : 0; // the Minimalist look's bottom menu
-    const room = Math.floor(window.innerHeight / z - top - 24 - dockH);
+    const room = Math.floor(window.innerHeight / z - top - 24);
     if (c.scrollHeight > room && room > 320) { c.style.maxHeight = room + 'px'; c.classList.add('fitted'); }
   }
   VL.fitToday = fitToday;
