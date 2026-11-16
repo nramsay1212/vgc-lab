@@ -561,6 +561,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     pendingSource = null; pendingFmt = null;
     const res = lfResult; setResult(null);
     for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
+    backHelp(null);
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false'));
     syncQs(); $('lf-tagq').open = false;
     const wasEdit = !!editingId; stopEditing();
@@ -591,6 +592,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   $('lf-cancel').onclick = () => {
     stopEditing(); setResult(null); pendingSource = null; pendingFmt = null;
     for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
+    backHelp(null);
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false')); syncQs();
     $('lf-msg').textContent = 'Editing cancelled. Nothing changed.';
   };
@@ -602,6 +604,18 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
   // ---------- fill the log form from the battle companion or a replay ----------
   let pendingSource = null, pendingFmt = null; // a game handed over from another page may be in another format
+  let previewMine = null, bringN = 4;
+  function backHelp(preview, n) {
+    if (preview !== undefined) { previewMine = preview; bringN = n || 4; }
+    const box = $('lf-backhelp'); if (!box) return;
+    const have = splitMons($('lf-mylead').value).concat(splitMons($('lf-myback').value)).map(x => x.toLowerCase());
+    const rest = (previewMine || []).filter(x => !have.includes(String(x).toLowerCase()));
+    box.innerHTML = previewMine && have.length < bringN && rest.length
+      ? `<span class="sub">The replay only shows ${have.length} of your ${bringN}. Tap the one${bringN - have.length > 1 ? 's' : ''} that stayed in the back:</span> ${rest.map(x => `<button type="button" class="chip" data-addback="${esc(x)}">${VL.sprite(x, 'xs', false)}${esc(x)}</button>`).join('')}`
+      : '';
+  }
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-addback]'); if (!b) return; const cur = splitMons($('lf-myback').value); cur.push(b.dataset.addback); $('lf-myback').value = cur.join(', '); VL.sound && VL.sound.play('tap'); backHelp(); });
+  document.addEventListener('input', (e) => { if (e.target.id === 'lf-myback' || e.target.id === 'lf-mylead') backHelp(); });
   VL.prefillLog = function (o) {
     location.hash = 'log';
     setResult(o.result || null);
@@ -609,6 +623,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (o.opplead) $('lf-opplead').value = o.opplead.join(', ');
     if (o.mylead) $('lf-mylead').value = o.mylead.join(', ');
     if (o.myback) $('lf-myback').value = o.myback.join(', ');
+    // a replay only shows the Pokémon that came in; offer the rest of your team preview for the ones that stayed in the back
+    backHelp(o.mypreview || null, o.bring || 4);
     if (o.oppName) $('lf-oppname').value = o.oppName;
     if (o.team) $('lf-team').value = o.team;
     if (o.note) $('lf-note').value = o.note;
@@ -642,13 +658,13 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     let mine = Object.keys(players).find(k => players[k].toLowerCase() === meName);
     if (!mine) return { error: Object.keys(players).length ? `Couldn't tell which player you were. The players were ${Object.values(players).join(' and ')}. Type your username exactly.` : 'That doesn\'t look like a Showdown battle log.' };
     const opp = mine === 'p1' ? 'p2' : 'p1';
-    return { result: winner ? (winner.toLowerCase() === meName ? 'W' : 'L') : null, opp: team[opp].length ? team[opp] : seen[opp], opplead: leads[opp], mylead: leads[mine], myback: seen[mine].filter(n => !leads[mine].includes(n)), oppName: players[opp], turns: turn, format };
+    return { result: winner ? (winner.toLowerCase() === meName ? 'W' : 'L') : null, opp: team[opp].length ? team[opp] : seen[opp], opplead: leads[opp], mylead: leads[mine], myback: seen[mine].filter(n => !leads[mine].includes(n)), mypreview: team[mine], oppName: players[opp], turns: turn, format };
   }
   function importReplay(log, url) {
     const me = $('rp-me').value.trim(); try { localStorage.setItem('vgclab-sdname', me); } catch (e) { /* ignore */ }
     const r = parseReplay(log, me);
     if (r.error) { $('rp-msg').textContent = r.error; return; }
-    VL.prefillLog({ ...r, note: `Imported from ${url || 'a pasted Showdown log'}. Lasted ${r.turns} turns.`, source: url || 'showdown-log' });
+    VL.prefillLog({ ...r, bring: /bss|singles/i.test(r.format || '') ? 3 : 4, note: `Imported from ${url || 'a pasted Showdown log'}. Lasted ${r.turns} turns.`, source: url || 'showdown-log' });
     $('rp-msg').textContent = 'Imported. Check the form above.';
   }
   try { $('rp-me').value = localStorage.getItem('vgclab-sdname') || ''; } catch (e) { /* ignore */ }

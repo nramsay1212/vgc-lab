@@ -150,7 +150,11 @@
     const g = C.Generations.get(champ ? 0 : fmt.gen);
     const STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
     let guessed = 0;
-    const toCalc = (m, mine) => {
+    // only one Mega Evolves per battle: your other Mega Stone holders fight as their regular form
+    const holders = P.mine.filter(m => info(m, fmt).mega).map(m => m.n);
+    const pick = holders.length > 1 ? (holders.includes(P.megaPick) ? P.megaPick : holders[0]) : '';
+    const toCalc = (m0, mine) => {
+      const m = mine && pick && m0.n !== pick && info(m0, fmt).mega ? { ...m0, i: '' } : m0;
       const x = info(m, fmt); if (!x.rec) return null;
       let nature = m.na || 'Hardy', evs = mine && m.evs ? m.evs : null;
       if (!evs) {
@@ -175,10 +179,11 @@
       const outs = mine.map(me => ({ me, r: best(me, t) })).filter(o => o.r && o.r.hi > 0).sort((a, b) => b.r.hi - a.r.hi).slice(0, 3);
       const ins = mine.map(me => ({ me, r: best(t, me) })).filter(o => o.r && o.r.hi > 0).sort((a, b) => b.r.hi - a.r.hi).slice(0, 3);
       return `<div class="sh-wbw"><div class="kv sh-wbw-h">${VL.sprite(t.x.show || t.m.n, 'xs', false)}<b>${esc(t.x.name)}</b></div>
-        <div class="sh-wbw-cols"><div><div class="section-label">Your hardest hits on it</div>${outs.map(o => line(o.me.x.name, o.r, true)).join('') || '<span class="bad-t">Nothing hurts it</span>'}</div>
-        <div><div class="section-label">Its hardest hits on you</div>${ins.map(o => line(o.me.x.name, o.r, false)).join('') || '<span class="good-t">Can\'t hurt your team</span>'}</div></div></div>`;
+        <div class="sh-wbw-cols"><div><div class="section-label">Your hardest hits on it</div>${outs.map(o => line(o.me.x.show.n, o.r, true)).join('') || '<span class="bad-t">Nothing hurts it</span>'}</div>
+        <div><div class="section-label">Its hardest hits on you</div>${ins.map(o => line(o.me.x.show.n, o.r, false)).join('') || '<span class="good-t">Can\'t hurt your team</span>'}</div></div></div>`;
     });
-    box.innerHTML = `<div class="sh-wbw-list">${rows.join('')}</div>
+    const megaRow = holders.length > 1 ? `<div class="kv bd-chips"><span class="mini">Your Mega</span>${holders.map(n => `<button type="button" class="chipbtn" data-shmega="${esc(n)}" aria-pressed="${n === pick}">${VL.sprite(n, 'xs', false)}${esc(n)}</button>`).join('')}<span class="sub">Only one can Mega Evolve per battle; the others are counted as their regular form.</span></div>` : '';
+    box.innerHTML = `${megaRow}<div class="sh-wbw-list">${rows.join('')}</div>
       <p class="sub">Each of your Pokémon's strongest attack on it, and its strongest attack on each of yours, as % of HP, top 3 each way. <b>KOs</b> = always knocks out, <b>can KO</b> = knocks out on a high roll, <b>2 hits</b> = two always do it. Your sets are as saved. ${guessed ? 'Team sheets don\'t show Stat Points, so theirs use the most common spread for each Pokémon in this format. ' : ''}Weather and terrain from abilities count; Intimidate, stat boosts, Tera and spread-move partners don't.</p>`;
   }
 
@@ -212,6 +217,7 @@
     if (e.target.id === 'sh-fmt') pickedFmt = e.target.value;
   });
   document.addEventListener('click', (e) => {
+    const mg = e.target.closest('[data-shmega]'); if (mg && P) { P.megaPick = mg.dataset.shmega; fillDamage(); return; }
     const root = $('sh-root'); if (!root || !root.contains(e.target)) return;
     const pk = e.target.closest('[data-shp]');
     if (pk && P) {

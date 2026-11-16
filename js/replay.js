@@ -338,7 +338,7 @@
     const names = (keys) => keys.map(k => baseName(last.mons[k].name));
     const myLead = names(d.leads[R.me]), myAll = names(last.order[R.me]);
     const lines = [R.takeaway, R.key ? `Key turn: ${R.key}${R.notes[R.key] ? '. ' + R.notes[R.key] : ''}` : '', ...Object.entries(R.notes).filter(([t]) => +t !== R.key).map(([t, v]) => `${+t === 0 ? 'Leads' : 'Turn ' + t}: ${v}`), R.url ? `Replay: ${R.url}` : ''].filter(Boolean);
-    VL.prefillLog({ result: d.winner ? (d.winner === d.players[R.me] ? 'W' : 'L') : null, opp: d.preview[opp].length ? d.preview[opp] : names(last.order[opp]), opplead: names(d.leads[opp]), mylead: myLead, myback: myAll.filter(n => !myLead.includes(n)), oppName: d.players[opp], note: lines.join('\n'), source: R.url || 'showdown-log', turn: R.key || null });
+    VL.prefillLog({ mypreview: d.preview[R.me].length ? d.preview[R.me] : null, bring: /singles/i.test(d.gametype || '') ? 3 : 4, result: d.winner ? (d.winner === d.players[R.me] ? 'W' : 'L') : null, opp: d.preview[opp].length ? d.preview[opp] : names(last.order[opp]), opplead: names(d.leads[opp]), mylead: myLead, myback: myAll.filter(n => !myLead.includes(n)), oppName: d.players[opp], note: lines.join('\n'), source: R.url || 'showdown-log', turn: R.key || null });
   }
 
   // ---------- events ----------

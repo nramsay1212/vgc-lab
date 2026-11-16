@@ -540,7 +540,10 @@
   // ---------- Vs the meta: how the whole team does against the most used Pokémon ----------
   // Your actual sets against each of the 30 most used Pokémon (their most common sets): for each one,
   // which of yours answer it and which it beats. The score weights each by how often it's used.
-  const MM = { speed: 'normal', cache: {}, wait: {}, n: 30 };
+  const MM = { speed: 'normal', cache: {}, wait: {}, n: 30, mega: '' };
+  // only one Pokémon can Mega Evolve per battle: with more than one Mega Stone, you pick which, and the others count as their regular form
+  const teamMegas = () => T.sets.filter(x => x && x.species && megaName(x, recOf(x.species))).map(x => x.species);
+  const megaPick = () => { const ms = teamMegas(); return ms.length > 1 ? (ms.includes(MM.mega) ? MM.mega : ms[0]) : ''; };
   const STATUS = { well: ['Well covered', 'w', 1], ok: ['Covered', 'w', 0.8], shaky: ['Shaky', 'y', 0.45], bad: ['Problem', 'l', 0] };
   function renderMatchup() {
     const box = $('bd-mm'); if (!box) return;
@@ -549,27 +552,38 @@
     const have = T.sets.filter(x => x && x.species && recOf(x.species));
     if (!have.length) { box.innerHTML = '<p class="sub">Add Pokémon to see how your team does against the meta.</p>'; return; }
     const head = `<div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-mmsp="${k}" aria-pressed="${MM.speed === k}">${l}</button>`).join('')}</div>`;
+    const ms = teamMegas(); const pick = megaPick();
+    const cmp = ms.length > 1 ? ms.map(m => { const x = MM.cache[mmKey(MM.speed, m)]; return x ? `${esc(m)} ${x.score}` : null; }) : [];
+    const megaRow = ms.length > 1 ? `<div class="kv bd-chips"><span class="mini">Mega Evolves</span>${ms.map(m => `<button type="button" class="chipbtn" data-mmmega="${esc(m)}" aria-pressed="${m === pick}">${VL.sprite(recOf(m), 'xs')}${esc(m)}</button>`).join('')}</div>
+      <p class="sub">Only one Pokémon can Mega Evolve per battle, so the others are counted as their regular form.${cmp.every(Boolean) ? ` Score with each as your Mega: <b>${cmp.join(' · ')}</b>.` : ''}</p>` : '';
     const r = MM.cache[mmKey(MM.speed)];
-    if (r) { box.innerHTML = head + matchupHtml(r); return; }
-    box.innerHTML = head + '<p class="sub" id="mm-prog">Testing your team against the meta…</p>';
+    if (r) {
+      box.innerHTML = head + megaRow + matchupHtml(r);
+      // work out the other Mega choices in the background, so the comparison fills in
+      if (ms.length > 1 && !cmp.every(Boolean)) Promise.all(ms.map(m => matchupFor(MM.speed, m))).then(() => { if ($('bd-mm') && atab === 'mm') renderMatchup(); }).catch(() => {});
+      return;
+    }
+    box.innerHTML = head + megaRow + '<p class="sub" id="mm-prog">Testing your team against the meta…</p>';
     const sp = MM.speed;
     matchupFor(sp).then(() => { if ($('bd-mm') && atab === 'mm' && MM.speed === sp) renderMatchup(); }).catch(() => { const pr = $('mm-prog'); if (pr) pr.textContent = 'Couldn\'t load the damage calculator.'; });
   }
-  const mmKey = (speed) => [fmt().id, speed, exportTeam()].join('|');
+  const mmKey = (speed, mega) => [fmt().id, speed, mega ?? megaPick(), exportTeam()].join('|');
   // the matchup for one speed setting, worked out once and kept
-  function matchupFor(speed) {
-    const key = mmKey(speed);
+  function matchupFor(speed, mega) {
+    mega = mega ?? megaPick(); const key = mmKey(speed, mega);
     if (MM.cache[key]) return Promise.resolve(MM.cache[key]);
     if (MM.wait[key]) return MM.wait[key];
     const e = metaE(); if (!e) return Promise.resolve(null);
     if (Object.keys(MM.cache).length > 24) MM.cache = {};
-    return (MM.wait[key] = VL.calc.engine().then(() => new Promise(done => runMatchup(speed, e, done))).then(r => { MM.cache[key] = r; delete MM.wait[key]; return r; }, err => { delete MM.wait[key]; throw err; }));
+    return (MM.wait[key] = VL.calc.engine().then(() => new Promise(done => runMatchup(speed, e, done, mega))).then(r => { MM.cache[key] = r; delete MM.wait[key]; return r; }, err => { delete MM.wait[key]; throw err; }));
   }
-  function runMatchup(mode, e, done) {
+  function runMatchup(mode, e, done, mega) {
     const C = window.calc; const f = fmt(); const g = C.Generations.get(isChamp() ? 0 : f.gen);
     const pairField = pairFieldMaker(C, f);
-    const mine = T.sets.map(s => {
-      if (!s || !s.species) return null; const rec = recOf(s.species); if (!rec) return null;
+    const mine = T.sets.map(s0 => {
+      if (!s0 || !s0.species) return null; const rec = recOf(s0.species); if (!rec) return null;
+      // a Mega Stone holder that isn't the one Mega Evolving fights as its regular form (the stone does nothing)
+      const s = mega && s0.species !== mega && megaName(s0, rec) ? { ...s0, item: '' } : s0;
       const mon = calcMon(C, g, s, rec); if (!mon) return null;
       return { n: megaName(s, rec) || rec.n, s, mon, atk: attacks(s), spe: speedWith(s, rec, s.item === 'Choice Scarf', mode === 'mytw') };
     }).filter(Boolean);
@@ -597,7 +611,7 @@
       if (i < list.length) { setTimeout(step, 0); return; }
       const tw = out.reduce((a, r) => a + r.u, 0) || 1;
       const score = Math.round(100 * out.reduce((a, r) => a + r.u * STATUS[r.st][2], 0) / tw);
-      done({ out, score, size: mine.length, mode });
+      done({ out, score, size: mine.length, mode, mega });
     }
     step();
   }
@@ -616,7 +630,7 @@
       return `<div class="mm-item ctr-vs ctr-${st[1]}"><div class="ctr-vh">${VL.sprite(r.rec, 'xs')}<b>${esc(r.n)}</b><span class="mini">${r.u.toFixed(1)}% of teams</span><span class="pill ${st[1]}">${st[0]}</span>${r.st === 'shaky' || r.st === 'bad' ? `<button type="button" class="linkbtn" data-ctr="${esc(r.n)}">Find a counter →</button><button type="button" class="linkbtn" data-tcnb="${esc(r.n)}">Make a plan →</button>` : ''}</div>${lines.join('')}</div>`;
     };
     const group = (keys, title, open) => { const rs = out.filter(r => keys.includes(r.st)); return rs.length ? `<details class="mm-group" ${open ? 'open' : ''}><summary><b>${title}</b> <span class="sub">${rs.length}</span></summary><div class="ctr-blocks">${rs.map(item).join('')}</div></details>` : ''; };
-    return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${res.mode !== 'normal' ? ` (${res.mode === 'tr' ? 'under Trick Room' : res.mode === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
+    return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${res.mega ? ` with ${esc(res.mega)} as your Mega` : ''}${res.mode !== 'normal' ? ` (${res.mode === 'tr' ? 'under Trick Room' : res.mode === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
         <div class="sub">${count('well')} well covered · ${count('ok')} covered · ${count('shaky')} shaky · ${count('bad')} problems, out of the ${out.length} most used Pokémon. More common Pokémon count for more.${res.size < 6 ? ` You have ${res.size} of 6, so this goes up as you fill the team.` : ''}</div></div></div>
       <div class="ctr-key"><span><i class="dot w"></i>Covered: something on your team handles it safely</span><span><i class="dot y"></i>Shaky: only risky answers</span><span><i class="dot l"></i>Problem: nothing answers it</span></div>
       ${group(['bad'], 'Problems', true)}${group(['shaky'], 'Shaky', true)}${group(['ok', 'well'], 'Covered', false)}
@@ -958,6 +972,7 @@
       const pr = e.target.closest('[data-preset]'); if (pr) { const v = pr.dataset.preset.split('').map(Number); const s = T.sets[sel]; s.evs = v.map(x => x ? spMax() : 0); const left = spTotal() - s.evs.reduce((a, c) => a + c, 0); if (left > 0) { const i = v.indexOf(1) === 0 ? 5 : 0; const room = spMax() - s.evs[i]; s.evs[i] += Math.min(left, room) - (Math.min(left, room) % spStep()); } if (!v.some(Boolean)) s.evs = [0, 0, 0, 0, 0, 0]; renderEditor(); analysisSoon(); save(); return; }
       const sp = e.target.closest('[data-spread]'); if (sp) { const [nat, nums] = sp.dataset.spread.split(':'); const s = T.sets[sel]; s.nature = nat; const ev = nums.split('/').map(Number); if (ev.length === 6) s.evs = ev; renderEditor(); analysisSoon(); save(); return; }
       const rt = e.target.closest('[data-rtab]'); if (rt) { rtab = rt.dataset.rtab; renderSide(); return; }
+      const mg = e.target.closest('[data-mmmega]'); if (mg) { MM.mega = mg.dataset.mmmega; renderMatchup(); return; }
       const ms = e.target.closest('[data-mmsp]'); if (ms) { MM.speed = ms.dataset.mmsp; renderMatchup(); return; }
       const sp2 = e.target.closest('[data-ctrsp]'); if (sp2) { CT.speed = sp2.dataset.ctrsp; renderCounters(); return; }
       const ct = e.target.closest('[data-ctrt]'); if (ct) { const n = ct.dataset.ctrt; CT.custom = true; CT.targets = CT.targets.includes(n) ? CT.targets.filter(x => x !== n) : CT.targets.concat([n]).slice(-4); renderCounters(); return; }

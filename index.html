@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=37">
+<link rel="stylesheet" href="css/app.css?v=38">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -158,7 +158,7 @@
       </label>
       <div class="row">
         <label for="lf-mylead"><span>My <span class="term" data-term="lead">lead</span></span><input type="text" id="lf-mylead" placeholder="Pokémon A, Pokémon B"></label>
-        <label for="lf-myback">My back 2<input type="text" id="lf-myback"></label>
+        <label for="lf-myback">My back 2<input type="text" id="lf-myback"><span id="lf-backhelp" class="lf-backhelp"></span></label>
         <label for="lf-opplead">Their lead<input type="text" id="lf-opplead"></label>
         <label for="lf-turn" style="flex:0 1 120px"><span>Key turn <span class="term" data-term="keyturn">?</span></span><input type="number" id="lf-turn" min="1"></label>
       </div>
@@ -741,35 +741,35 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=37"></script>
-<script src="js/sound.js?v=37"></script>
-<script src="js/content.js?v=37"></script>
-<script src="js/search.js?v=37"></script>
-<script src="js/study.js?v=37"></script>
-<script src="js/sprites.js?v=37"></script>
-<script src="js/help.js?v=37"></script>
-<script src="js/meta.js?v=37"></script>
-<script src="js/calc.js?v=37"></script>
-<script src="js/companion.js?v=37"></script>
-<script src="js/teamcheck.js?v=37"></script>
-<script src="js/builder.js?v=37"></script>
-<script src="js/plan.js?v=37"></script>
-<script src="js/topteams.js?v=37"></script>
-<script src="js/news.js?v=37"></script>
-<script src="js/replay.js?v=37"></script>
-<script src="js/sheets.js?v=37"></script>
-<script src="js/battleview.js?v=37"></script>
-<script src="js/videos.js?v=37"></script>
-<script src="js/trends.js?v=37"></script>
-<script src="js/progress.js?v=37"></script>
-<script src="js/arcade.js?v=37"></script>
-<script src="js/test.js?v=37"></script>
-<script src="js/compare.js?v=37"></script>
-<script src="js/app.js?v=37"></script>
-<script src="js/hubs.js?v=37"></script>
-<script src="js/whatsnew.js?v=37"></script>
-<script src="js/firebase-config.js?v=37"></script>
-<script src="js/account.js?v=37"></script>
+<script src="js/store.js?v=38"></script>
+<script src="js/sound.js?v=38"></script>
+<script src="js/content.js?v=38"></script>
+<script src="js/search.js?v=38"></script>
+<script src="js/study.js?v=38"></script>
+<script src="js/sprites.js?v=38"></script>
+<script src="js/help.js?v=38"></script>
+<script src="js/meta.js?v=38"></script>
+<script src="js/calc.js?v=38"></script>
+<script src="js/companion.js?v=38"></script>
+<script src="js/teamcheck.js?v=38"></script>
+<script src="js/builder.js?v=38"></script>
+<script src="js/plan.js?v=38"></script>
+<script src="js/topteams.js?v=38"></script>
+<script src="js/news.js?v=38"></script>
+<script src="js/replay.js?v=38"></script>
+<script src="js/sheets.js?v=38"></script>
+<script src="js/battleview.js?v=38"></script>
+<script src="js/videos.js?v=38"></script>
+<script src="js/trends.js?v=38"></script>
+<script src="js/progress.js?v=38"></script>
+<script src="js/arcade.js?v=38"></script>
+<script src="js/test.js?v=38"></script>
+<script src="js/compare.js?v=38"></script>
+<script src="js/app.js?v=38"></script>
+<script src="js/hubs.js?v=38"></script>
+<script src="js/whatsnew.js?v=38"></script>
+<script src="js/firebase-config.js?v=38"></script>
+<script src="js/account.js?v=38"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
