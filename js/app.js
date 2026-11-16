@@ -525,10 +525,25 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   function pixelGrid() {
     const z = (parseFloat(getComputedStyle(document.documentElement).zoom) || 1) * (window.devicePixelRatio || 1);
     const seg = Math.max(2, Math.round(6 * z)), per = seg + Math.max(1, Math.round(2 * z));
+    document.documentElement.style.setProperty('--dp', (1 / z) + 'px'); // one screen pixel, for sizes that must land on whole pixels
     document.documentElement.style.setProperty('--px-seg', (seg / z) + 'px');
     document.documentElement.style.setProperty('--px-per', (per / z) + 'px');
   }
-  pixelGrid(); window.addEventListener('resize', pixelGrid);
+  // rows of small squares (the win/loss strip, the color swatches) start on a whole screen pixel,
+  // so every square and gap is drawn the same instead of some edges going soft
+  function snapRows() {
+    const z = (parseFloat(getComputedStyle(document.documentElement).zoom) || 1) * (window.devicePixelRatio || 1);
+    document.querySelectorAll('.td-strip, .pal-sw').forEach(el => {
+      el.style.transform = '';
+      const r = el.getBoundingClientRect(); if (!r.width) return;
+      const dx = (Math.round(r.left * z) - r.left * z) / z, dy = (Math.round(r.top * z) - r.top * z) / z;
+      if (Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001) el.style.transform = `translate(${dx}px, ${dy}px)`;
+    });
+  }
+  VL.snapRows = snapRows;
+  pixelGrid(); window.addEventListener('resize', () => { pixelGrid(); requestAnimationFrame(snapRows); });
+  window.addEventListener('hashchange', () => setTimeout(snapRows, 80));
+  new MutationObserver(() => { clearTimeout(snapRows.t); snapRows.t = setTimeout(snapRows, 60); }).observe(document.getElementById('main') || document.body, { childList: true, subtree: true });
   // style (Settings → Style): standard, or the pixel Minimalist style
   function applyLook(v) {
     document.documentElement.dataset.look = v;
