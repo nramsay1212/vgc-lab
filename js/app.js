@@ -512,6 +512,14 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
   document.querySelectorAll('[data-tfont-set]').forEach(b => b.onclick = () => { applyTitleFont(b.dataset.tfontSet); if (VL.sound) VL.sound.play('tap'); });
   applyTitleFont(document.documentElement.dataset.titlefont || 'workbench');
+  // colors (Settings → Colors): shiny teal and pink, or the original indigo and orange
+  function applyPalette(v) {
+    document.documentElement.dataset.palette = v;
+    try { localStorage.setItem('vgclab-palette', v); } catch (e) { /* ignore */ }
+    document.querySelectorAll('[data-pal-set]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.palSet === v)));
+  }
+  document.querySelectorAll('[data-pal-set]').forEach(b => b.onclick = () => { applyPalette(b.dataset.palSet); if (VL.sound) VL.sound.play('tap'); });
+  applyPalette(document.documentElement.dataset.palette || 'shiny');
   applyTheme(document.documentElement.dataset.theme || 'dark');
   // N = log a game (when not typing)
   document.addEventListener('keydown', e => {

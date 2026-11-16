@@ -405,7 +405,7 @@ table.matrix td.x2{background:var(--loss-soft);color:var(--loss);font-weight:600
 table.matrix td.x05{background:var(--win-soft);color:var(--win)}
 table.matrix td.x025{background:var(--win-soft);color:var(--win);font-weight:600}
 table.matrix td.x0{background:var(--ink);color:var(--bg);font-weight:600}
-table.matrix tr.flag td,table.matrix tr.flag th{box-shadow:inset 0 0 0 999px rgba(255,90,174,.08)}
+table.matrix tr.flag td,table.matrix tr.flag th{box-shadow:inset 0 0 0 999px var(--hot-soft)}
 .check{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px}
 .check:first-child{border-top:0}
 .check .mark{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;margin-top:1px}
@@ -1146,3 +1146,23 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .side .brand span{font-size:15px}
 @media (max-height:760px){.side .brand img{max-width:140px}}
 .mtop .brand img{height:34px}
+/* Colors → Original: the indigo and orange the app had before the shiny colors */
+:root[data-palette="original"],:root[data-palette="original"][data-theme="dark"]{
+  --accent:#6E79E8; --accent-2:#8C95F0; --accent-soft:rgba(110,121,232,.14); --accent-ink:#FFFFFF;
+  --hot:#F2683C; --hot-soft:rgba(242,104,60,.14);
+  --glow:radial-gradient(1200px 380px at 50% -140px, rgba(110,121,232,.18), transparent 70%);
+}
+:root[data-palette="original"][data-theme="light"]{
+  --accent:#4C57CF; --accent-2:#3C47BD; --accent-soft:rgba(76,87,207,.10); --accent-ink:#FFFFFF;
+  --hot:#D9531F; --hot-soft:rgba(217,83,31,.10);
+  --glow:radial-gradient(1200px 380px at 50% -160px, rgba(76,87,207,.10), transparent 70%);
+}
+@media (prefers-color-scheme: light){
+  :root[data-palette="original"][data-theme="system"]{
+    --accent:#4C57CF; --accent-2:#3C47BD; --accent-soft:rgba(76,87,207,.10); --accent-ink:#FFFFFF;
+    --hot:#D9531F; --hot-soft:rgba(217,83,31,.10);
+    --glow:radial-gradient(1200px 380px at 50% -160px, rgba(76,87,207,.10), transparent 70%);
+  }
+}
+.pal-sw{display:inline-flex;gap:3px;margin-right:6px;vertical-align:-2px}
+.pal-sw i{width:11px;height:11px;border-radius:3px;display:inline-block}
