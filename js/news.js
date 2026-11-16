@@ -114,13 +114,18 @@
   // fit the feed on one screen: cut it off at the bottom with a fade and a "Show all" bar
   function fit() {
     const ls = document.querySelector('#nw-root .nw-list'), bar = $('nw-all'); if (!ls || !bar) return;
-    ls.style.maxHeight = ''; ls.classList.remove('clipped'); bar.hidden = true;
+    const lay = document.querySelector('#nw-root .nw-layout');
+    const side = document.querySelector('#nw-root .nw-side');
+    ls.style.maxHeight = ''; ls.classList.remove('clipped'); bar.hidden = true; if (lay) lay.classList.remove('fitted'); if (side) side.style.height = '';
     if (open || !ls.offsetParent) return;
     // on very wide screens the page is zoomed, so the window's height is measured in zoomed units
     const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
     const bottomBar = document.querySelector('.bottombar'); const below = bottomBar && getComputedStyle(bottomBar).display !== 'none' ? bottomBar.getBoundingClientRect().height : 0;
     const room = Math.max(220, window.innerHeight / z - (ls.getBoundingClientRect().top + window.scrollY) - below - 70);
-    if (ls.scrollHeight > room + 40) { ls.style.maxHeight = room + 'px'; ls.classList.add('clipped'); bar.hidden = false; }
+    if (ls.scrollHeight > room + 40) { ls.style.maxHeight = room + 'px'; ls.classList.add('clipped'); bar.hidden = false;
+      // the side column ends where the feed does (side by side only, not when stacked on a phone)
+      if (lay && side && getComputedStyle(lay).gridTemplateColumns.split(' ').length > 1) { lay.classList.add('fitted'); side.style.height = lay.firstElementChild.offsetHeight + 'px'; }
+    }
   }
   let fitT = null; window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fit, 150); });
   document.addEventListener('click', (e) => {
