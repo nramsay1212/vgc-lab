@@ -124,10 +124,24 @@
     const room = Math.max(220, window.innerHeight / z - (ls.getBoundingClientRect().top + window.scrollY) - below - 70);
     if (ls.scrollHeight > room + 40) { ls.style.maxHeight = room + 'px'; ls.classList.add('clipped'); bar.hidden = false;
       // the side column ends where the feed does (side by side only, not when stacked on a phone)
-      if (lay && side && getComputedStyle(lay).gridTemplateColumns.split(' ').length > 1) { lay.classList.add('fitted'); side.style.height = lay.firstElementChild.offsetHeight + 'px'; }
+      const sideBySide = lay && side && getComputedStyle(lay).gridTemplateColumns.split(' ').length > 1;
+      if (sideBySide) { lay.classList.add('fitted'); side.style.height = lay.firstElementChild.offsetHeight + 'px'; }
+      // then trim by however much the page still runs past the bottom, so the short view never scrolls
+      const docH = () => document.documentElement.scrollHeight / z;
+      const viewH = window.innerHeight / z;
+      for (let i = 0; i < 3; i++) {
+        const over = Math.ceil(docH() - viewH);
+        if (over <= 0) break;
+        const h = Math.max(160, ls.getBoundingClientRect().height / z - over - 2);
+        ls.style.maxHeight = h + 'px';
+        if (sideBySide) side.style.height = lay.firstElementChild.offsetHeight + 'px';
+        if (h === 160) break;
+      }
     }
   }
   let fitT = null; window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fit, 150); });
+  // opening or closing "About this page" changes the room left for the feed
+  document.addEventListener('toggle', (e) => { if (e.target.closest && e.target.closest('#p-news .page-head')) fit(); }, true);
   document.addEventListener('click', (e) => {
     if (e.target.closest('#nw-all')) { open = true; fit(); const o = $('nw-older'); if (o) o.hidden = false; VL.sound && VL.sound.play('tap'); return; }
     const f = e.target.closest('[data-nwf]'); if (f) { filter = f.dataset.nwf; shown = 40; open = false; render(); return; }
