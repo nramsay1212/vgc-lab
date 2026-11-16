@@ -1095,6 +1095,13 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
   .td-format{grid-column:2;grid-row:3/5;align-self:stretch}
   .td-now{grid-column:3;grid-row:1/5;align-self:stretch}
   .td-sess{grid-column:4;grid-row:1/5;align-self:stretch}
+  /* and the content inside the stretched cards spreads out to fill them instead of leaving a gap at the bottom */
+  .td-results{justify-content:space-between}
+  .td-costing .td-rows,.td-now .td-rows.news{flex:1 1 auto;justify-content:space-around}
+  .td-costing .td-rows>div,.td-now .td-rows.news>div{flex:1 1 auto;max-height:76px}
+  .td-format #fmt-view{flex:1 1 auto;display:flex;flex-direction:column;gap:4px}
+  .td-format #fmt-view .grid3{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+  .td-format #fmt-view .num{font-size:30px!important}
   #p-today .tile{padding:10px 16px}
   #p-today .page-head{flex-direction:row;align-items:baseline;gap:18px;flex-wrap:wrap}
   #p-today .page-head .howto{flex:1 1 auto}
