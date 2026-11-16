@@ -558,7 +558,8 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (!window.matchMedia('(min-width:2400px)').matches || !c.offsetParent) return;
     const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
     const top = c.getBoundingClientRect().top + window.scrollY;
-    const room = Math.floor(window.innerHeight / z - top - 24);
+    const dock = document.querySelector('.side'); const dockH = dock && getComputedStyle(dock).position === 'fixed' ? dock.offsetHeight : 0; // the Minimalist look's bottom menu
+    const room = Math.floor(window.innerHeight / z - top - 24 - dockH);
     if (c.scrollHeight > room && room > 320) { c.style.maxHeight = room + 'px'; c.classList.add('fitted'); }
   }
   VL.fitToday = fitToday;

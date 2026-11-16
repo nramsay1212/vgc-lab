@@ -14,7 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=68">
+<link rel="stylesheet" href="css/app.css?v=69">
+<link rel="stylesheet" href="css/pixel.css?v=69">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench';document.documentElement.dataset.palette=localStorage.getItem('vgclab-palette')||'shiny'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
@@ -655,10 +656,11 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><h3>Colors</h3><span class="sub">Kept on this device. Works with Dark and Light.</span></div>
-      <div class="seg" role="radiogroup" aria-label="Colors" id="pal-seg">
+      <div class="card-head"><h3>Look</h3><span class="sub">Kept on this device. Shiny and Original work with Dark and Light; Minimalist is always dark, with the menu along the bottom.</span></div>
+      <div class="seg" role="radiogroup" aria-label="Look" id="pal-seg">
         <button type="button" role="radio" data-pal-set="shiny" aria-checked="true"><span class="pal-sw"><i style="background:#2CC6CB"></i><i style="background:#FF5AAE"></i></span>Shiny Toxicroak</button>
         <button type="button" role="radio" data-pal-set="original" aria-checked="false"><span class="pal-sw"><i style="background:#6E79E8"></i><i style="background:#F2683C"></i></span>Original</button>
+        <button type="button" role="radio" data-pal-set="pixel" aria-checked="false"><span class="pal-sw"><i class="pxl" style="background:#D81159"></i><i class="pxl" style="background:#00E5FF"></i></span>Minimalist</button>
       </div>
     </div>
     <div class="card">
@@ -749,36 +751,36 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=68"></script>
-<script src="js/sound.js?v=68"></script>
-<script src="js/content.js?v=68"></script>
-<script src="js/search.js?v=68"></script>
-<script src="js/study.js?v=68"></script>
-<script src="js/sprites.js?v=68"></script>
-<script src="js/help.js?v=68"></script>
-<script src="js/meta.js?v=68"></script>
-<script src="js/calc.js?v=68"></script>
-<script src="js/companion.js?v=68"></script>
-<script src="js/teamcheck.js?v=68"></script>
-<script src="js/builder.js?v=68"></script>
-<script src="js/plan.js?v=68"></script>
-<script src="js/topteams.js?v=68"></script>
-<script src="js/news.js?v=68"></script>
-<script src="js/replay.js?v=68"></script>
-<script src="js/sheets.js?v=68"></script>
-<script src="js/teamcompare.js?v=68"></script>
-<script src="js/battleview.js?v=68"></script>
-<script src="js/videos.js?v=68"></script>
-<script src="js/trends.js?v=68"></script>
-<script src="js/progress.js?v=68"></script>
-<script src="js/arcade.js?v=68"></script>
-<script src="js/test.js?v=68"></script>
-<script src="js/compare.js?v=68"></script>
-<script src="js/app.js?v=68"></script>
-<script src="js/hubs.js?v=68"></script>
-<script src="js/whatsnew.js?v=68"></script>
-<script src="js/firebase-config.js?v=68"></script>
-<script src="js/account.js?v=68"></script>
+<script src="js/store.js?v=69"></script>
+<script src="js/sound.js?v=69"></script>
+<script src="js/content.js?v=69"></script>
+<script src="js/search.js?v=69"></script>
+<script src="js/study.js?v=69"></script>
+<script src="js/sprites.js?v=69"></script>
+<script src="js/help.js?v=69"></script>
+<script src="js/meta.js?v=69"></script>
+<script src="js/calc.js?v=69"></script>
+<script src="js/companion.js?v=69"></script>
+<script src="js/teamcheck.js?v=69"></script>
+<script src="js/builder.js?v=69"></script>
+<script src="js/plan.js?v=69"></script>
+<script src="js/topteams.js?v=69"></script>
+<script src="js/news.js?v=69"></script>
+<script src="js/replay.js?v=69"></script>
+<script src="js/sheets.js?v=69"></script>
+<script src="js/teamcompare.js?v=69"></script>
+<script src="js/battleview.js?v=69"></script>
+<script src="js/videos.js?v=69"></script>
+<script src="js/trends.js?v=69"></script>
+<script src="js/progress.js?v=69"></script>
+<script src="js/arcade.js?v=69"></script>
+<script src="js/test.js?v=69"></script>
+<script src="js/compare.js?v=69"></script>
+<script src="js/app.js?v=69"></script>
+<script src="js/hubs.js?v=69"></script>
+<script src="js/whatsnew.js?v=69"></script>
+<script src="js/firebase-config.js?v=69"></script>
+<script src="js/account.js?v=69"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
