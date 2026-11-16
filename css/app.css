@@ -1113,3 +1113,13 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
   .td-sess.fitted .checklist{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:6px}
 }
 .td-sess details.why{margin-top:2px;background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:10px 0 0}
+/* Progress: all seven rating cards on one line on big screens */
+@media (min-width:2400px){
+  #pg-areas{grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+  #pg-areas .areacard{padding:12px 12px 12px}
+  #pg-areas .areacard .h b{font-size:13px}
+  #pg-areas .areacard .num{font-size:22px!important}
+  #pg-areas .areacard svg{max-width:52%;height:auto}
+  #pg-areas .areacard .sub{font-size:11.5px;line-height:1.35}
+  #pg-areas .areacard>.kv:last-child{margin-top:auto;flex-wrap:wrap;gap:6px}
+}
