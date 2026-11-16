@@ -499,6 +499,14 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#08090A';
   }
   document.querySelectorAll('[data-theme-set]').forEach(b => b.onclick = () => applyTheme(b.dataset.themeSet));
+  // title font (Settings → Title font), saved on this device
+  function applyTitleFont(f) {
+    document.documentElement.dataset.titlefont = f;
+    try { localStorage.setItem('vgclab-titlefont', f); } catch (e) { /* ignore */ }
+    document.querySelectorAll('[data-tfont-set]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.tfontSet === f)));
+  }
+  document.querySelectorAll('[data-tfont-set]').forEach(b => b.onclick = () => { applyTitleFont(b.dataset.tfontSet); if (VL.sound) VL.sound.play('tap'); });
+  applyTitleFont(document.documentElement.dataset.titlefont || 'workbench');
   applyTheme(document.documentElement.dataset.theme || 'dark');
   // N = log a game (when not typing)
   document.addEventListener('keydown', e => {
