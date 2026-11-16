@@ -87,7 +87,7 @@
     const rows = ids.map(id => all.find(t => t.id === id)).filter(Boolean).map(t => ({ t, s: stats(t), style: (c.style || {})[t.id] || '' }));
     root.innerHTML = `<div class="row tc-controls">
         <div class="seg" role="group" aria-label="Which games">${[['all', 'Both'], ['climb', 'Climb'], ['test', 'Testing']].map(([k, l]) => `<button type="button" data-tcmode="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div>
-        ${rest.length ? `<label class="tc-add">Add a team<select id="tc-add"><option value="">Pick a saved team…</option>${rest.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')} · ${count(t)} game${count(t) === 1 ? '' : 's'}</option>`).join('')}</select></label>` : ''}
+        ${rest.length ? `<label class="tc-add"><span class="sr-only">Add a team</span><select id="tc-add"><option value="">+ Add a team…</option>${rest.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')} · ${count(t)} game${count(t) === 1 ? '' : 's'}</option>`).join('')}</select></label>` : ''}
       </div>
       ${summary(rows)}
       ${rows.length ? `<div class="tc-grid">${rows.map(r => card(r.t, r.s, r.style)).join('')}</div>` : '<div class="card"><p class="sub" style="margin:0">Add a team above to start comparing.</p></div>'}

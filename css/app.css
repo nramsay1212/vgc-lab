@@ -1026,8 +1026,9 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .lf-backhelp:empty{display:none}
 .lf-backhelp .chip{display:inline-flex;align-items:center;gap:4px}
 /* team comparison */
-.tc-controls{align-items:flex-end;gap:12px;margin-bottom:12px}
-.tc-add{flex:0 1 320px}
+.tc-controls{align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.tc-controls .tc-add{flex:1 1 140px;max-width:300px;display:block;margin:0}
+.tc-add select{width:100%;height:100%;min-height:38px}
 .tc-grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;align-items:start}
 .tc-card{display:flex;flex-direction:column;gap:6px}
 .tc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -1040,3 +1041,5 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .tc-prog i{display:block;height:100%;background:var(--accent)}
 .tc-card .section-label{margin-top:8px}
 .tc-links{margin-top:6px}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
