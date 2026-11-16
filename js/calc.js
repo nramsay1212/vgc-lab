@@ -256,6 +256,16 @@
 
   VL.calc = {
     render,
+    // from Today's warm-up: their Pokémon as the Defender (most common set), your team ready in the Attacker's quick pick
+    openTrouble(name, teamId) {
+      S.fmt = VL.curFormatId ? VL.curFormatId() : S.fmt;
+      S.def = { ...blank(), mon: name };
+      const i = VL.D.find(name); if (i >= 0) { const p = VL.D.mon(i, fmt()); S.def.mon = p.n; S.def.ability = p.a[0] || ''; }
+      commonSet('def');
+      if (teamId) S.qteams = { ...(S.qteams || {}), atk: teamId };
+      S.qopen = { ...(S.qopen || {}), atk: true };
+      save(); location.hash = 'calc'; render();
+    },
     engine: loadEngine,
     load(metaKey, name, side) {
       const e = VL.meta.lookup(metaKey);

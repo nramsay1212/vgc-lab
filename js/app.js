@@ -136,11 +136,20 @@
     const todayGames = g.filter(x => x.day === key); const w = todayGames.filter(x => x.result === 'W').length;
     $('today-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     $('today-games').textContent = todayGames.length ? `${todayGames.length} logged today · ${w}–${todayGames.length - w}` : 'No games logged today';
-    const threats = monStats(g.slice(0, 60)).filter(m => m.n >= 2).sort((a, b) => (a.w / a.n) - (b.w / b.n) || b.n - a.n).slice(0, 3).map(m => m.name);
+    // warm-up threats: what's beating the team you used last in this format (any game logged with it),
+    // falling back to your climb games in this format, then to all your climb games
+    const worst = (list) => monStats(list.slice(0, 60)).filter(m => m.n >= 2 && m.w < m.n).sort((a, b) => (a.w / a.n) - (b.w / b.n) || b.n - a.n).slice(0, 3).map(m => m.name);
+    const lastWithTeam = inFmt.find(x => x.team);
+    const warmTeam = lastWithTeam ? store.get('teams', lastWithTeam.team) : null;
+    let threats = [], threatWho = 'you';
+    if (warmTeam) { threats = worst(games().filter(x => x.team === warmTeam.id)); if (threats.length) threatWho = warmTeam.name || 'your team'; }
+    if (!threats.length) threats = worst(inFmt);
+    if (!threats.length) threats = worst(g);
+    const calcLink = (n) => `<a href="#calc" data-warmcalc="${esc(n)}" data-warmteam="${esc(threatWho !== 'you' && warmTeam ? warmTeam.id : '')}">${esc(n)}</a>`;
     let weakest = null;
     for (const d of VL.study.DRILLS) { const a = VL.study.accuracy(d.id); if (a !== null && (weakest === null || a < weakest.a)) weakest = { a, n: d.name }; }
     const desc = {
-      warm: threats.length ? `Run your main attacks into ${threats.map(esc).join(', ')}, the Pokémon beating you most lately, and check who outspeeds whom.` : 'Pick 3 threats you see a lot. Run your main attacks into them in a damage calc and check who outspeeds whom. After a few logged games this fills in from your losses.',
+      warm: threats.length ? `Run your main attacks into ${threats.map(calcLink).join(', ')}, the Pokémon beating ${threatWho === 'you' ? 'you' : esc(threatWho)} most lately, and check who outspeeds whom. Tap a name to open it in the damage calculator.` : 'Pick 3 threats you see a lot. Run your main attacks into them in a damage calc and check who outspeeds whom. After a few logged games this fills in from your losses.',
       drill: weakest ? `One round in Study or one game in Games. Your weakest drill right now is ${esc(weakest.n)} (${weakest.a}%).` : 'One round in Study or one game in Games. Speed Duel is a good start.',
     };
     $('checklist').innerHTML = VL.SESSION.map(s => {
@@ -519,6 +528,10 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       if (!box) { box = document.createElement('label'); box.id = 'fmt-custom-wrap'; box.htmlFor = 'fmt-custom'; box.innerHTML = 'Format name<input type="text" id="fmt-custom" placeholder="For example: Generation 10 VGC Regulation A">'; $('fmt-select').parentElement.after(box); }
       box.hidden = false; $('fmt-custom').value = profile().customFormat || ''; $('fmt-custom').focus();
     } else if (box) box.hidden = true;
+  });
+  $('checklist').addEventListener('click', e => {
+    const a = e.target.closest('[data-warmcalc]'); if (!a) return;
+    e.preventDefault(); if (VL.calc && VL.calc.openTrouble) VL.calc.openTrouble(a.dataset.warmcalc, a.dataset.warmteam || '');
   });
   $('checklist').addEventListener('change', e => {
     const id = e.target.dataset.ck; if (!id) return;
