@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['tc-1', 'teamcompare', 'New: Team comparison', 'Compare the teams you\'ve played side by side: record, progress toward 10 games, most common mistakes, the Pokémon you lose to and your best and worst leads. Games count for a team when you pick it under <b>Team</b> on the Log form. Give each team a style to follow your archetype plan.'],
     ['mega-pick-1', 'teams', 'Pick your Mega', 'With more than one Mega Stone on your team, <b>Vs the meta</b> asks which one <b>Mega Evolves</b>; the others count as their regular form, since only one can Mega Evolve per battle. It also shows your score with each choice, so you can see which Mega covers more. Team sheet practice has the same choice.'],
     ['backhelp-1', 'log', 'Your full bring of 4', 'A replay only shows the Pokémon that came in. When an imported game shows fewer than 4 of yours, buttons under <b>My back</b> list the rest of your team so you can tap the one that stayed in the back.'],
     ['modes-1', 'log', 'Climb or Testing', 'At the top of the form, pick <b>Climb</b> for your real ladder games or <b>Testing</b> when you\'re trying out a team. Testing games are marked Test in the list and kept out of your climb record, Today\'s rating and the weekly review. Review has a <b>Games</b> menu (Climb, Testing or Both) to look at either. The app remembers which one you picked last.'],

@@ -12,7 +12,7 @@
     ['Home', ['today', 'news']],
     ['Play', ['log', 'companion', 'replay', 'review']],
     ['Practice', ['study', 'videos', 'games', 'test', 'sheets']],
-    ['Meta and teams', ['meta', 'topteams', 'teams', 'calc']],
+    ['Meta and teams', ['meta', 'topteams', 'teams', 'teamcompare', 'calc']],
     ['Progress', ['progress', 'roadmap']],
     ['Plan', ['tournaments', 'opponents', 'notebook']],
   ];

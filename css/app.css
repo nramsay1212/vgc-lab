@@ -1025,3 +1025,18 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .lf-backhelp{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px;font-weight:400}
 .lf-backhelp:empty{display:none}
 .lf-backhelp .chip{display:inline-flex;align-items:center;gap:4px}
+/* team comparison */
+.tc-controls{align-items:flex-end;gap:12px;margin-bottom:12px}
+.tc-add{flex:0 1 320px}
+.tc-grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;align-items:start}
+.tc-card{display:flex;flex-direction:column;gap:6px}
+.tc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tc-name{font-size:16px}
+.tc-mons{min-height:28px}
+.tc-style select{width:auto}
+.tc-rec{display:flex;align-items:baseline;gap:8px}
+.tc-rec .num{font-size:28px;font-weight:700}
+.tc-prog{height:6px;border-radius:3px;background:var(--hover);overflow:hidden}
+.tc-prog i{display:block;height:100%;background:var(--accent)}
+.tc-card .section-label{margin-top:8px}
+.tc-links{margin-top:6px}
