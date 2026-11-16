@@ -14,10 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=43">
-<link rel="stylesheet" href="css/designs.css?v=43">
-<script>try{document.documentElement.dataset.design=localStorage.getItem('vgclab-design')||'original'}catch(e){}
-try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
+<link rel="stylesheet" href="css/app.css?v=44">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
 <div class="app">
@@ -668,18 +666,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
       <div class="row" style="align-items:center"><label class="vd-check" for="snd-on"><input type="checkbox" id="snd-on" checked> Play sounds</label><label for="snd-vol" style="flex:1 1 220px">Volume<input type="range" id="snd-vol" min="5" max="100" value="60"></label></div>
     </div>
     <div class="card">
-      <div class="card-head"><h3>Design</h3><span class="sub">How the whole app looks. Kept on this device.</span></div>
-      <div class="dz-grid" role="radiogroup" aria-label="Design" id="design-pick">
-        <button type="button" role="radio" class="dz" data-design-set="original" aria-checked="true"><span class="dz-sw" style="--a:#08090A;--b:#6E79E8;--c:#F2683C;--d:#111214"></span><b>Original</b><small>The indigo look from before</small></button>
-        <button type="button" role="radio" class="dz" data-design-set="modern" aria-checked="false"><span class="dz-sw" style="--a:#07090A;--b:#23B8B4;--c:#FF4FA3;--d:#101516"></span><b>Modern</b><small>Sleek dark, shiny teal and pink</small></button>
-        <button type="button" role="radio" class="dz" data-design-set="minimal" aria-checked="false"><span class="dz-sw" style="--a:#FFFFFF;--b:#0B8A87;--c:#D41F78;--d:#FAFAFA"></span><b>Minimal</b><small>White, quiet, thin lines</small></button>
-        <button type="button" role="radio" class="dz" data-design-set="japanese" aria-checked="false"><span class="dz-sw" style="--a:#F5F0E4;--b:#1F6F6D;--c:#C8326F;--d:#1D1A16"></span><b>Japanese</b><small>Washi paper, ink and a pink seal</small></button>
-        <button type="button" role="radio" class="dz" data-design-set="neon" aria-checked="false"><span class="dz-sw" style="--a:#05060B;--b:#21F3E8;--c:#FF2BD6;--d:#121729"></span><b>Neon</b><small>Glowing teal and pink on a grid</small></button>
-        <button type="button" role="radio" class="dz" data-design-set="retro" aria-checked="false"><span class="dz-sw" style="--a:#FBF8EC;--b:#19C6D1;--c:#E2339E;--d:#111111"></span><b>Retro</b><small>Cream print, pixel letters</small></button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h3>Theme</h3><span class="sub" id="theme-note"></span></div>
+      <div class="card-head"><h3>Theme</h3></div>
       <div class="seg" role="radiogroup" aria-label="Theme" id="theme-seg">
         <button type="button" role="radio" data-theme-set="dark" aria-checked="true">Dark</button>
         <button type="button" role="radio" data-theme-set="light" aria-checked="false">Light</button>
@@ -765,36 +752,36 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=43"></script>
-<script src="js/sound.js?v=43"></script>
-<script src="js/content.js?v=43"></script>
-<script src="js/search.js?v=43"></script>
-<script src="js/study.js?v=43"></script>
-<script src="js/sprites.js?v=43"></script>
-<script src="js/help.js?v=43"></script>
-<script src="js/meta.js?v=43"></script>
-<script src="js/calc.js?v=43"></script>
-<script src="js/companion.js?v=43"></script>
-<script src="js/teamcheck.js?v=43"></script>
-<script src="js/builder.js?v=43"></script>
-<script src="js/plan.js?v=43"></script>
-<script src="js/topteams.js?v=43"></script>
-<script src="js/news.js?v=43"></script>
-<script src="js/replay.js?v=43"></script>
-<script src="js/sheets.js?v=43"></script>
-<script src="js/teamcompare.js?v=43"></script>
-<script src="js/battleview.js?v=43"></script>
-<script src="js/videos.js?v=43"></script>
-<script src="js/trends.js?v=43"></script>
-<script src="js/progress.js?v=43"></script>
-<script src="js/arcade.js?v=43"></script>
-<script src="js/test.js?v=43"></script>
-<script src="js/compare.js?v=43"></script>
-<script src="js/app.js?v=43"></script>
-<script src="js/hubs.js?v=43"></script>
-<script src="js/whatsnew.js?v=43"></script>
-<script src="js/firebase-config.js?v=43"></script>
-<script src="js/account.js?v=43"></script>
+<script src="js/store.js?v=44"></script>
+<script src="js/sound.js?v=44"></script>
+<script src="js/content.js?v=44"></script>
+<script src="js/search.js?v=44"></script>
+<script src="js/study.js?v=44"></script>
+<script src="js/sprites.js?v=44"></script>
+<script src="js/help.js?v=44"></script>
+<script src="js/meta.js?v=44"></script>
+<script src="js/calc.js?v=44"></script>
+<script src="js/companion.js?v=44"></script>
+<script src="js/teamcheck.js?v=44"></script>
+<script src="js/builder.js?v=44"></script>
+<script src="js/plan.js?v=44"></script>
+<script src="js/topteams.js?v=44"></script>
+<script src="js/news.js?v=44"></script>
+<script src="js/replay.js?v=44"></script>
+<script src="js/sheets.js?v=44"></script>
+<script src="js/teamcompare.js?v=44"></script>
+<script src="js/battleview.js?v=44"></script>
+<script src="js/videos.js?v=44"></script>
+<script src="js/trends.js?v=44"></script>
+<script src="js/progress.js?v=44"></script>
+<script src="js/arcade.js?v=44"></script>
+<script src="js/test.js?v=44"></script>
+<script src="js/compare.js?v=44"></script>
+<script src="js/app.js?v=44"></script>
+<script src="js/hubs.js?v=44"></script>
+<script src="js/whatsnew.js?v=44"></script>
+<script src="js/firebase-config.js?v=44"></script>
+<script src="js/account.js?v=44"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

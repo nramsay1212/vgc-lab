@@ -489,18 +489,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#08090A';
   }
   document.querySelectorAll('[data-theme-set]').forEach(b => b.onclick = () => applyTheme(b.dataset.themeSet));
-  // design (saved per device). Dark / Light only changes Original and Modern; the others have one look.
-  function applyDesign(d) {
-    document.documentElement.dataset.design = d;
-    try { localStorage.setItem('vgclab-design', d); } catch (e) { /* ignore */ }
-    document.querySelectorAll('[data-design-set]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.designSet === d)));
-    const fixed = !['original', 'modern'].includes(d);
-    const note = $('theme-note'); if (note) note.textContent = fixed ? 'This design has one look, so Dark and Light only change Original and Modern.' : '';
-    $('theme-seg').classList.toggle('dim', fixed);
-    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#08090A';
-  }
-  document.querySelectorAll('[data-design-set]').forEach(b => b.onclick = () => { applyDesign(b.dataset.designSet); if (VL.sound) VL.sound.play('tap'); });
-  applyDesign(document.documentElement.dataset.design || 'original');
   applyTheme(document.documentElement.dataset.theme || 'dark');
   // N = log a game (when not typing)
   document.addEventListener('keydown', e => {
