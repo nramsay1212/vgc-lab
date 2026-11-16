@@ -106,7 +106,7 @@
       <p><b>Meta</b> shows what's popular this month and <b>Top teams</b> shows the full team sheets from recent Regionals. The <b>Damage calculator</b> runs real calcs. <b>Team sheet practice</b> trains your team preview reads against real top-cut teams.</p>`],
     ['Plan ahead', `<p><b>Notebook</b> holds your game plans against specific threats. <b>Team builder</b> builds teams with legal moves, live stats and a Stat Points helper, and shows what a team is weak to or missing.</p>
       <p><b>Tournaments</b> tracks your events and Championship Points, <b>Opponents</b> keeps notes on players you meet, and <b>Roadmap</b> shows the path to the top and where you are on it.</p>`],
-    ['Tips', `<ul><li>Dotted words like <span class="term" data-term="wincon">win condition</span> explain themselves when you tap them.</li><li>Every page has a <b>How to use this page</b> section near the top.</li><li>The app updates itself: new games, Pokémon and items appear automatically each week.</li><li>On a phone, add it to your home screen to use it like an app.</li></ul>`],
+    ['Tips', `<ul><li>Dotted words like <span class="term" data-term="wincon">win condition</span> explain themselves when you tap them.</li><li>Every page has an <b>About this page</b> section near the top.</li><li>The app updates itself: new games, Pokémon and items appear automatically each week.</li><li>On a phone, add it to your home screen to use it like an app.</li></ul>`],
   ];
   let step = 0;
   const TOUR_KEY = 'vgclab-toured2'; // bump when the tour changes so everyone sees the new one once

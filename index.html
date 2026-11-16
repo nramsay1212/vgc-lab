@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=48">
+<link rel="stylesheet" href="css/app.css?v=49">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -65,8 +65,7 @@
   <section class="panel" id="p-today">
     <header class="page-head">
       <h1>Today</h1>
-      <p class="lede">Where you stand right now: your recent results and trends, what's changing in the game, and today's training plan.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Set one <b>focus</b> for the week. It's the single habit you'll practice in every game.</li><li>Check that <b>Current format</b> is the game and regulation you're playing, so new games are filed under it.</li><li>Work through the session list. Checking 3 of the first 6 items keeps your streak alive.</li><li>Open <b>Why the session is built this way</b> at the bottom to see the reasoning behind each item.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Where you stand right now: your recent results and trends, what's changing in the game, and today's training plan.</p><ol><li>Set one <b>focus</b> for the week. It's the single habit you'll practice in every game.</li><li>Check that <b>Current format</b> is the game and regulation you're playing, so new games are filed under it.</li><li>Work through the session list. Checking 3 of the first 6 items keeps your streak alive.</li><li>Open <b>Why the session is built this way</b> at the bottom to see the reasoning behind each item.</li></ol></div></details>
     </header>
     <div class="tiles kpis">
       <div class="tile"><div class="k">Day streak</div><div class="v hot" id="cd-streak">0</div></div>
@@ -127,8 +126,7 @@
   <section class="panel" id="p-log">
     <header class="page-head">
       <h1>Log a game</h1>
-      <p class="lede">Record every game right after it ends. This one minute is what makes Review, Skills and the Notebook useful.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Only <b>Win/Loss</b> is required. Everything else makes your stats better.</li><li><b>Their 6</b> powers "Toughest Pokémon" in Review. Start typing and names autocomplete.</li><li><b>Tags</b> are what lost the game, or nearly did. Be honest: tag your own mistakes, not just bad luck.</li><li><b>What I'd do differently</b> is the most valuable field. Write the turn and the better play.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Record every game right after it ends. This one minute is what makes Review, Skills and the Notebook useful.</p><ol><li>Only <b>Win/Loss</b> is required. Everything else makes your stats better.</li><li><b>Their 6</b> powers "Toughest Pokémon" in Review. Start typing and names autocomplete.</li><li><b>Tags</b> are what lost the game, or nearly did. Be honest: tag your own mistakes, not just bad luck.</li><li><b>What I'd do differently</b> is the most valuable field. Write the turn and the better play.</li></ol></div></details>
     </header>
     <form class="card" id="log-form" autocomplete="off">
       <div class="card-head"><h3 id="lf-title">New game</h3><span class="sub" id="log-fmt"></span></div>
@@ -198,8 +196,7 @@
   <section class="panel" id="p-review">
     <header class="page-head">
       <h1>Review</h1>
-      <p class="lede">Find the patterns in your games: what's costing you, which Pokémon beat you, which leads work. Use it once a week to pick your next focus.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick what to look at with <b>Show</b>: this format, everything, or the last 30 days.</li><li>The biggest bar in <b>What's costing you games</b> is usually your next weekly focus.</li><li>Add Pokémon from <b>Toughest Pokémon</b> to your Notebook and write a plan for them.</li><li>Every Sunday, use <b>Copy review prompt</b>, paste it into Claude, and save the answer here.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Find the patterns in your games: what's costing you, which Pokémon beat you, which leads work. Use it once a week to pick your next focus.</p><ol><li>Pick what to look at with <b>Show</b>: this format, everything, or the last 30 days.</li><li>The biggest bar in <b>What's costing you games</b> is usually your next weekly focus.</li><li>Add Pokémon from <b>Toughest Pokémon</b> to your Notebook and write a plan for them.</li><li>Every Sunday, use <b>Copy review prompt</b>, paste it into Claude, and save the answer here.</li></ol></div></details>
     </header>
     <div class="row" style="justify-content:flex-end;align-items:center">
       <label for="rv-mode" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px">Games
@@ -252,8 +249,7 @@
   <section class="panel" id="p-study">
     <header class="page-head">
       <h1>Study</h1>
-      <p class="lede">Drills and reference for everything you should know instantly: type matchups, speed, items, abilities, priority and mechanics, for any game.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Choose a <b>Study format</b>. Pokémon, stats and rules change to match that game.</li><li>Do one 10-question <b>drill</b> a day. Questions you miss come back more often until you get them.</li><li>Use the <b>reference</b> tabs during or after games: Pokémon lookup, speed tiers, type chart and more.</li><li>Number keys 1–6 answer drill questions fast on a computer.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Drills and reference for everything you should know instantly: type matchups, speed, items, abilities, priority and mechanics, for any game.</p><ol><li>Choose a <b>Study format</b>. Pokémon, stats and rules change to match that game.</li><li>Do one 10-question <b>drill</b> a day. Questions you miss come back more often until you get them.</li><li>Use the <b>reference</b> tabs during or after games: Pokémon lookup, speed tiers, type chart and more.</li><li>Number keys 1–6 answer drill questions fast on a computer.</li></ol></div></details>
     </header>
     <div class="card">
       <div class="row">
@@ -335,8 +331,7 @@
   <section class="panel" id="p-games">
     <header class="page-head">
       <div class="kv" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><h1>Games</h1><button type="button" class="btn ghost small" data-sound-toggle aria-pressed="true">🔊 Sound on</button></div>
-      <p class="lede">Fast, scored games for the knowledge that has to be instant in a real battle: speed, turn order, damage and type matchups. Every game ends by reviewing what you missed, with the real numbers.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick the format and which Pokémon to play with. <b>Top 50 in the meta</b> drills exactly what you'll face.</li><li>Start on the easier level of a game, then move up when you're scoring well.</li><li>Read the review at the end of every game. That's where most of the learning happens.</li><li>One game counts as your daily study drill on the Today page.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Fast, scored games for the knowledge that has to be instant in a real battle: speed, turn order, damage and type matchups. Every game ends by reviewing what you missed, with the real numbers.</p><ol><li>Pick the format and which Pokémon to play with. <b>Top 50 in the meta</b> drills exactly what you'll face.</li><li>Start on the easier level of a game, then move up when you're scoring well.</li><li>Read the review at the end of every game. That's where most of the learning happens.</li><li>One game counts as your daily study drill on the Today page.</li></ol></div></details>
     </header>
     <div class="card"><div class="row">
       <label for="ar-format">Format<select id="ar-format"></select></label>
@@ -351,8 +346,7 @@
   <section class="panel" id="p-test">
     <header class="page-head">
       <h1>Test</h1>
-      <p class="lede">An exam over everything in Study: type matchups, speed, priority, items, abilities, mechanics and common sets. No feedback until the end, so it measures what you actually know.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li><b>Difficulty</b>: Standard checks the basics. Hard uses close calls, look-alike answers and tricky mechanics. Expert adds exact Speed numbers, abilities that change type matchups, and questions like "which move does it NOT run". Harder tests count for more in your ratings.</li><li>Take a <b>Full test</b> now to set a baseline. Retake it every couple of weeks to measure real improvement.</li><li>Use a <b>Quick test</b> when you're short on time, and an <b>area test</b> to dig into your weakest area.</li><li>At the end you get a grade, a breakdown by category, your rating changes, and a review of every question you missed.</li><li>Every test updates your ratings on the Progress page.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">An exam over everything in Study: type matchups, speed, priority, items, abilities, mechanics and common sets. No feedback until the end, so it measures what you actually know.</p><ol><li><b>Difficulty</b>: Standard checks the basics. Hard uses close calls, look-alike answers and tricky mechanics. Expert adds exact Speed numbers, abilities that change type matchups, and questions like "which move does it NOT run". Harder tests count for more in your ratings.</li><li>Take a <b>Full test</b> now to set a baseline. Retake it every couple of weeks to measure real improvement.</li><li>Use a <b>Quick test</b> when you're short on time, and an <b>area test</b> to dig into your weakest area.</li><li>At the end you get a grade, a breakdown by category, your rating changes, and a review of every question you missed.</li><li>Every test updates your ratings on the Progress page.</li></ol></div></details>
     </header>
     <div id="te-setup" style="display:flex;flex-direction:column;gap:16px">
       <div class="card"><div class="row">
@@ -369,8 +363,7 @@
   <section class="panel" id="p-progress">
     <header class="page-head">
       <h1>Progress</h1>
-      <p class="lede">Your skill ratings over time, from every game and test. Ratings account for difficulty, so they show real improvement even as you move to harder levels.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Each area starts at 1000. In <b>Games</b>, each game is rated once from your score: the results show the number you played like, and your rating moves part of the way toward it. Easier modes have a lower ceiling, so the top titles need the harder modes. In <b>Test</b>, right answers raise it and misses lower it, and harder questions count for more.</li><li>A rating is <b>provisional</b> until it has 10 answers. Early ratings move a lot, then settle.</li><li>Ranks: Novice under 1000, Trainer 1000+, Ace Trainer 1200+, Expert 1400+, Master 1600+, Champion 1800+.</li><li>Your overall rating averages the areas that aren't provisional. Study drills don't count, because they repeat your misses on purpose.</li><li>Use the buttons on each area to train it, then check back here.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Your skill ratings over time, from every game and test. Ratings account for difficulty, so they show real improvement even as you move to harder levels.</p><ol><li>Each area starts at 1000. In <b>Games</b>, each game is rated once from your score: the results show the number you played like, and your rating moves part of the way toward it. Easier modes have a lower ceiling, so the top titles need the harder modes. In <b>Test</b>, right answers raise it and misses lower it, and harder questions count for more.</li><li>A rating is <b>provisional</b> until it has 10 answers. Early ratings move a lot, then settle.</li><li>Ranks: Novice under 1000, Trainer 1000+, Ace Trainer 1200+, Expert 1400+, Master 1600+, Champion 1800+.</li><li>Your overall rating averages the areas that aren't provisional. Study drills don't count, because they repeat your misses on purpose.</li><li>Use the buttons on each area to train it, then check back here.</li></ol></div></details>
     </header>
     <div class="tiles" id="pg-tiles"></div>
     <div class="card"><div class="card-head"><h3>Titles</h3><span class="sub">Ratings work like chess ratings: everyone starts at 1000, and harder questions move you more. There's no maximum.</span></div><div id="pg-ladder"></div></div>
@@ -387,8 +380,7 @@
   <section class="panel" id="p-companion">
     <header class="page-head">
       <h1>Battle companion</h1>
-      <p class="lede">Keep this open on your phone next to your Switch. It counts field turns, tracks what your opponent reveals, and turns the game into a log entry when it ends.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick the format, then at <span class="term" data-term="preview">team preview</span> tap each slot to add their 6 and tap <b>Start battle</b>.</li><li>Tap <b>Next turn</b> at the start of every turn. Timers count down on their own.</li><li>When Tailwind, Trick Room, weather, terrain or screens go up, tap it. The card shows how many turns are left, counting the current one.</li><li>On each opponent card, record what they reveal: item, ability, moves. Tap <b>Protected</b> when they Protect, and the card warns you when a second Protect in a row is likely to fail.</li><li>When the game ends, tap <b>Won</b> or <b>Lost</b>. The log form opens already filled in.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Keep this open on your phone next to your Switch. It counts field turns, tracks what your opponent reveals, and turns the game into a log entry when it ends.</p><ol><li>Pick the format, then at <span class="term" data-term="preview">team preview</span> tap each slot to add their 6 and tap <b>Start battle</b>.</li><li>Tap <b>Next turn</b> at the start of every turn. Timers count down on their own.</li><li>When Tailwind, Trick Room, weather, terrain or screens go up, tap it. The card shows how many turns are left, counting the current one.</li><li>On each opponent card, record what they reveal: item, ability, moves. Tap <b>Protected</b> when they Protect, and the card warns you when a second Protect in a row is likely to fail.</li><li>When the game ends, tap <b>Won</b> or <b>Lost</b>. The log form opens already filled in.</li></ol></div></details>
     </header>
     <div id="cp-setup" class="card">
       <div class="card-head"><h3>New battle</h3><span class="sub" id="cp-fmt"></span></div>
@@ -418,8 +410,7 @@
   <section class="panel" id="p-meta">
     <header class="page-head">
       <h1>Meta</h1>
-      <p class="lede">What people are actually playing: the most-used Pokémon in a format and how they&#39;re usually built. Updated every week from Smogon&#39;s usage statistics.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick a format. Ladder data is from best-of-1 games; best-of-3 data is closer to tournament play.</li><li>Tap a Pokémon to see its common items, abilities, moves, spreads and teammates.</li><li>Use <b>Open in calculator</b> to load its most common set into the damage calculator.</li><li>In Study, choose the pool <b>Top 50 in the meta</b> to drill exactly what you&#39;ll face.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">What people are actually playing: the most-used Pokémon in a format and how they&#39;re usually built. Updated every week from Smogon&#39;s usage statistics.</p><ol><li>Pick a format. Ladder data is from best-of-1 games; best-of-3 data is closer to tournament play.</li><li>Tap a Pokémon to see its common items, abilities, moves, spreads and teammates.</li><li>Use <b>Open in calculator</b> to load its most common set into the damage calculator.</li><li>In Study, choose the pool <b>Top 50 in the meta</b> to drill exactly what you&#39;ll face.</li></ol></div></details>
     </header>
     <div class="card"><div class="row"><label for="mt-format">Format<select id="mt-format"></select></label><label for="mt-from">Numbers from<select id="mt-from"><option value="ladder">Showdown ladder</option><option value="events">Tournament team sheets</option></select></label><label for="mt-q">Find<input type="text" id="mt-q" placeholder="Name"></label></div><p class="sub" id="mt-src"></p></div>
     <div class="grid-meta"><div class="card" style="padding:8px"><div id="mt-list" class="metalist"></div></div><div class="card" id="mt-detail"></div></div>
@@ -429,8 +420,7 @@
   <section class="panel" id="p-calc">
     <header class="page-head">
       <h1>Damage calculator</h1>
-      <p class="lede">See exactly how much an attack does. Uses the same engine as Pokémon Showdown&#39;s calculator, set to the rules of the format you pick.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li><b>Quick picks:</b> tap one of your team's Pokémon to load it with your exact set, or one of the Pokémon giving that team trouble (from the games you logged with it) to load its most common set. Put yours as the Attacker to check your offense, or as the Defender to check what it survives. Tap <b>Quick pick</b> to open or close it, and change the team with its <b>Team</b> menu (each side can use a different saved team).</li><li>Pick the attacker and defender. <b>Load common set</b> fills in the most-used build from the Meta page.</li><li>Set <span class="term" data-term="statpoints">Stat Points</span> (Champions) or effort values (older games), nature, item and ability for each side.</li><li>Add field effects like weather, terrain, screens or Helping Hand.</li><li>Results show the damage range and how many hits it takes. Use <b>Swap</b> to calc the other direction.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">See exactly how much an attack does. Uses the same engine as Pokémon Showdown&#39;s calculator, set to the rules of the format you pick.</p><ol><li><b>Quick picks:</b> tap one of your team's Pokémon to load it with your exact set, or one of the Pokémon giving that team trouble (from the games you logged with it) to load its most common set. Put yours as the Attacker to check your offense, or as the Defender to check what it survives. Tap <b>Quick pick</b> to open or close it, and change the team with its <b>Team</b> menu (each side can use a different saved team).</li><li>Pick the attacker and defender. <b>Load common set</b> fills in the most-used build from the Meta page.</li><li>Set <span class="term" data-term="statpoints">Stat Points</span> (Champions) or effort values (older games), nature, item and ability for each side.</li><li>Add field effects like weather, terrain, screens or Helping Hand.</li><li>Results show the damage range and how many hits it takes. Use <b>Swap</b> to calc the other direction.</li></ol></div></details>
     </header>
     <div class="card"><div class="row"><label for="cl-format">Format<select id="cl-format"></select></label></div><p class="sub" id="cl-note"></p></div>
     <div class="grid2" id="cl-sides"></div>
@@ -446,8 +436,7 @@
   <section class="panel" id="p-tournaments">
     <header class="page-head">
       <h1>Tournaments</h1>
-      <p class="lede">Every event you enter: placement, record and <span class="term" data-term="cp">Championship Points</span>, with a running season total that follows the best-finish limits.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>After each event, add it here with your record and placement.</li><li>Enter the Championship Points you earned. The season total only counts your best finishes of each event type, the same way the official standings do.</li><li>Tick <b>Made top cut</b> or <b>Made Day 2</b> and the matching Roadmap milestones update automatically.</li><li>Seasons run September to August, the same as the official season.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Every event you enter: placement, record and <span class="term" data-term="cp">Championship Points</span>, with a running season total that follows the best-finish limits.</p><ol><li>After each event, add it here with your record and placement.</li><li>Enter the Championship Points you earned. The season total only counts your best finishes of each event type, the same way the official standings do.</li><li>Tick <b>Made top cut</b> or <b>Made Day 2</b> and the matching Roadmap milestones update automatically.</li><li>Seasons run September to August, the same as the official season.</li></ol></div></details>
     </header>
     <div class="tiles" id="tn-tiles"></div>
     <form class="card" id="tn-form" autocomplete="off">
@@ -479,8 +468,7 @@
   <section class="panel" id="p-opponents">
     <header class="page-head">
       <h1>Opponents</h1>
-      <p class="lede">Notes on players you face more than once, like regulars at your local events. Your record and the teams you&#39;ve seen fill in from your game log.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>When you log a game, type the opponent&#39;s name in <b>Opponent</b>. The player is added here automatically.</li><li>Write what you learned: how they play, what they like to lead, how they react to pressure.</li><li>Read their card before you play them again.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Notes on players you face more than once, like regulars at your local events. Your record and the teams you&#39;ve seen fill in from your game log.</p><ol><li>When you log a game, type the opponent&#39;s name in <b>Opponent</b>. The player is added here automatically.</li><li>Write what you learned: how they play, what they like to lead, how they react to pressure.</li><li>Read their card before you play them again.</li></ol></div></details>
     </header>
     <div class="card"><div class="row"><label for="op-q">Find<input type="text" id="op-q" placeholder="Name"></label><label for="op-new">Add a player<input type="text" id="op-new" placeholder="Name"></label><button class="btn small" id="op-add" style="height:36px">Add</button></div></div>
     <div class="cards" id="op-list"></div>
@@ -494,8 +482,7 @@
   <section class="panel" id="p-notebook">
     <header class="page-head">
       <h1>Matchup notebook</h1>
-      <p class="lede">Your game plan against specific threats. When you see one at team preview, read its card before you pick your 4.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Add a card for any Pokémon or <span class="term" data-term="archetype">archetype</span> you struggle with.</li><li>Write the plan as instructions to yourself: what to lead, what to target, what to keep healthy.</li><li>Each card shows your record against that threat, pulled from your game log.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Your game plan against specific threats. When you see one at team preview, read its card before you pick your 4.</p><ol><li>Add a card for any Pokémon or <span class="term" data-term="archetype">archetype</span> you struggle with.</li><li>Write the plan as instructions to yourself: what to lead, what to target, what to keep healthy.</li><li>Each card shows your record against that threat, pulled from your game log.</li></ol></div></details>
     </header>
     <form class="card" id="nb-form" autocomplete="off">
       <div class="card-head"><h3 id="nb-title">Add a matchup</h3><span class="sub">One card per threat or archetype. Write the plan you'll follow at team preview.</span></div>
@@ -526,8 +513,7 @@
   <section class="panel" id="p-roadmap">
     <header class="page-head">
       <h1>Roadmap</h1>
-      <p class="lede">The long path to a World Championship: where you are now, the milestones along the way, and this season's events.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Your current stage is highlighted. Some milestones tick themselves off from your logs and drills.</li><li>Check the event list to plan which tournaments to enter. Every one is Bo3 practice.</li><li>Read <b>How Worlds invites work</b> to see how <span class="term" data-term="cp">Championship Points</span> add up.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">The long path to a World Championship: where you are now, the milestones along the way, and this season's events.</p><ol><li>Your current stage is highlighted. Some milestones tick themselves off from your logs and drills.</li><li>Check the event list to plan which tournaments to enter. Every one is Bo3 practice.</li><li>Read <b>How Worlds invites work</b> to see how <span class="term" data-term="cp">Championship Points</span> add up.</li></ol></div></details>
     </header>
     <div class="card">
       <div class="card-head"><h3>The long road</h3><span class="sub">Each stage can take a season or more. That's normal.</span></div>
@@ -560,8 +546,7 @@
   <section class="panel wide" id="p-teamcompare">
     <header class="page-head">
       <h1>Team comparison</h1>
-      <p class="lede">The teams you&#39;ve played, side by side: record, most common mistakes, the Pokémon you lose to and your best leads. Try a few styles for about 10 games each, then commit to the one that works.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Save each team you&#39;re trying in the Team builder (or open one from Top teams).</li><li>When you log a game, pick that team under <b>Team</b> on the Log form. That&#39;s how games count here.</li><li>Add the teams to compare, and give each a style, like Trick Room, Tailwind or Rain.</li><li>Use <b>Both</b>, <b>Climb</b> or <b>Testing</b> to choose which games count.</li><li>Once each team has 10 games, the summary says which is ahead. Commit to that one for 30 to 50 games.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">The teams you&#39;ve played, side by side: record, most common mistakes, the Pokémon you lose to and your best leads. Try a few styles for about 10 games each, then commit to the one that works.</p><ol><li>Save each team you&#39;re trying in the Team builder (or open one from Top teams).</li><li>When you log a game, pick that team under <b>Team</b> on the Log form. That&#39;s how games count here.</li><li>Add the teams to compare, and give each a style, like Trick Room, Tailwind or Rain.</li><li>Use <b>Both</b>, <b>Climb</b> or <b>Testing</b> to choose which games count.</li><li>Once each team has 10 games, the summary says which is ahead. Commit to that one for 30 to 50 games.</li></ol></div></details>
     </header>
     <div id="tc-root"><p class="sub">Loading…</p></div>
   </section>
@@ -569,8 +554,7 @@
   <section class="panel wide" id="p-teams">
     <header class="page-head">
       <h1>Team builder</h1>
-      <p class="lede">Build and save teams with everything legal in your format, see how each Pokémon does against the meta, and find out what your team is weak to or missing as you build.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Tap a slot to pick a Pokémon. The most used ones come first, and Pokémon that often pair with your team are marked. Its most common set is filled in for you.</li><li>Change the item, ability, nature, moves and <span class="term" data-term="statpoints">Stat Points</span>. Only legal options for the format are shown.</li><li>On the right, see your Pokémon's damage against the most used Pokémon, their damage against it, and where it sits in speed.</li><li>Below, <b>Team analysis</b> opens on <b>Vs the meta</b>: how your team does against the 30 most used Pokémon. It also shows shared weaknesses, coverage gaps, what's missing, and <b>Counters</b> for the Pokémon giving you trouble.</li><li>Teams save automatically. Use <b>Import</b> and <b>Showdown export</b> to move teams to and from Showdown, and <b>Notes</b> to write why it works. When you log a game, pick the team so its record builds up.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Build and save teams with everything legal in your format, see how each Pokémon does against the meta, and find out what your team is weak to or missing as you build.</p><ol><li>Tap a slot to pick a Pokémon. The most used ones come first, and Pokémon that often pair with your team are marked. Its most common set is filled in for you.</li><li>Change the item, ability, nature, moves and <span class="term" data-term="statpoints">Stat Points</span>. Only legal options for the format are shown.</li><li>On the right, see your Pokémon's damage against the most used Pokémon, their damage against it, and where it sits in speed.</li><li>Below, <b>Team analysis</b> opens on <b>Vs the meta</b>: how your team does against the 30 most used Pokémon. It also shows shared weaknesses, coverage gaps, what's missing, and <b>Counters</b> for the Pokémon giving you trouble.</li><li>Teams save automatically. Use <b>Import</b> and <b>Showdown export</b> to move teams to and from Showdown, and <b>Notes</b> to write why it works. When you log a game, pick the team so its record builds up.</li></ol></div></details>
     </header>
     <div id="bd-root"><p class="sub">Loading the Pokémon data…</p></div>
   </section>
@@ -580,8 +564,7 @@
   <section class="panel" id="p-news">
     <header class="page-head">
       <h1>News</h1>
-      <p class="lede">What's new in competitive Pokémon: rule and data changes, monthly meta shifts, tournament results, headlines and upcoming events. It updates itself every day.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Check here when you open the app. A dot on <b>News</b> in the menu means something is new since your last visit.</li><li>Use the filters to see just one kind of news.</li><li><b>Game and data changes</b> appear on their own whenever a new regulation, Pokémon, item or balance change reaches the data.</li><li>Headlines link out to the site that wrote them.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">What's new in competitive Pokémon: rule and data changes, monthly meta shifts, tournament results, headlines and upcoming events. It updates itself every day.</p><ol><li>Check here when you open the app. A dot on <b>News</b> in the menu means something is new since your last visit.</li><li>Use the filters to see just one kind of news.</li><li><b>Game and data changes</b> appear on their own whenever a new regulation, Pokémon, item or balance change reaches the data.</li><li>Headlines link out to the site that wrote them.</li></ol></div></details>
     </header>
     <div id="nw-root"><p class="sub">Loading the news…</p></div>
   </section>
@@ -590,8 +573,7 @@
   <section class="panel" id="p-replay">
     <header class="page-head">
       <h1>Replay review</h1>
-      <p class="lede">Step through a Pokémon Showdown replay one turn at a time. See what happened and everyone's HP, mark the turn the game swung, and write what you'd do differently.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>On Showdown, press <b>Upload and share replay</b> after a game and copy the link.</li><li>Paste the link here and press <b>Load replay</b>. Pick which player you were.</li><li>Step through the turns with the arrows (or your keyboard's arrow keys). Stop where the game turned and press <b>Mark as the key turn</b>.</li><li>Write a note on any turn: what you'd do now. Add a one-line takeaway at the end.</li><li><b>Save review</b> keeps it here. <b>Log this game</b> sends the result, teams, key turn and notes to the game log.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Step through a Pokémon Showdown replay one turn at a time. See what happened and everyone's HP, mark the turn the game swung, and write what you'd do differently.</p><ol><li>On Showdown, press <b>Upload and share replay</b> after a game and copy the link.</li><li>Paste the link here and press <b>Load replay</b>. Pick which player you were.</li><li>Step through the turns with the arrows (or your keyboard's arrow keys). Stop where the game turned and press <b>Mark as the key turn</b>.</li><li>Write a note on any turn: what you'd do now. Add a one-line takeaway at the end.</li><li><b>Save review</b> keeps it here. <b>Log this game</b> sends the result, teams, key turn and notes to the game log.</li></ol></div></details>
     </header>
     <div id="rr-root"></div>
   </section>
@@ -600,8 +582,7 @@
   <section class="panel wide" id="p-topteams">
     <header class="page-head">
       <h1>Top teams</h1>
-      <p class="lede">The teams that placed highest at recent Regionals, Internationals and big online tournaments, with full team sheets. New results are added automatically.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick an event, or look across all of them.</li><li>Filter by style (sun, rain, Trick Room and so on) or by a Pokémon to see how top players build around it.</li><li>Open a team to see every item, ability, nature and move.</li><li><b>Open in builder</b> copies it to your teams so you can study or change it. <b>Practice against it</b> opens it in Team sheet practice.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">The teams that placed highest at recent Regionals, Internationals and big online tournaments, with full team sheets. New results are added automatically.</p><ol><li>Pick an event, or look across all of them.</li><li>Filter by style (sun, rain, Trick Room and so on) or by a Pokémon to see how top players build around it.</li><li>Open a team to see every item, ability, nature and move.</li><li><b>Open in builder</b> copies it to your teams so you can study or change it. <b>Practice against it</b> opens it in Team sheet practice.</li></ol></div></details>
     </header>
     <div id="tt-root"><p class="sub">Loading tournament teams…</p></div>
   </section>
@@ -610,8 +591,7 @@
   <section class="panel wide" id="p-sheets">
     <header class="page-head">
       <h1>Team sheet practice</h1>
-      <p class="lede">At official events both players see each other's full team sheet before the match. Practice that here: read an opponent's sheet against your team, choose what to bring and lead, write a plan, then review it.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick one of your saved teams.</li><li>Pick an opponent: a random top-cut team, a specific one from <b>Top teams</b>, or paste any team.</li><li>Read both sheets and the matchup notes: speed order, who threatens whom, and tools to watch for.</li><li>Tap your Pokémon to choose what you bring and lead. Do the same for what you expect from them. Write your plan.</li><li><b>Save plan</b>. Afterward, come back and note what actually happened, or save the plan to your Notebook.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">At official events both players see each other's full team sheet before the match. Practice that here: read an opponent's sheet against your team, choose what to bring and lead, write a plan, then review it.</p><ol><li>Pick one of your saved teams.</li><li>Pick an opponent: a random top-cut team, a specific one from <b>Top teams</b>, or paste any team.</li><li>Read both sheets and the matchup notes: speed order, who threatens whom, and tools to watch for.</li><li>Tap your Pokémon to choose what you bring and lead. Do the same for what you expect from them. Write your plan.</li><li><b>Save plan</b>. Afterward, come back and note what actually happened, or save the plan to your Notebook.</li></ol></div></details>
     </header>
     <div id="sh-root"></div>
   </section>
@@ -619,8 +599,7 @@
   <section class="panel wide" id="p-videos">
     <header class="page-head">
       <h1>Videos</h1>
-      <p class="lede">The latest videos from top competitive players on YouTube, sorted into team ideas, lessons, tournaments and battles to learn from. When a video links its team, you can open that team straight in the Team builder.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Pick what you're after: <b>Team ideas</b>, <b>Learn</b>, <b>Tournaments</b> or <b>Battles</b>.</li><li>Tap a video to watch it here. It's marked as watched.</li><li>On a team video with a team link, tap <b>Open team in builder</b> to copy the team into your Team builder, or <b>Practice against it</b> to plan around it.</li><li>Watching good players is practice too: pause at team preview and guess their bring and leads before they're shown.</li><li>New videos are added every day.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">The latest videos from top competitive players on YouTube, sorted into team ideas, lessons, tournaments and battles to learn from. When a video links its team, you can open that team straight in the Team builder.</p><ol><li>Pick what you're after: <b>Team ideas</b>, <b>Learn</b>, <b>Tournaments</b> or <b>Battles</b>.</li><li>Tap a video to watch it here. It's marked as watched.</li><li>On a team video with a team link, tap <b>Open team in builder</b> to copy the team into your Team builder, or <b>Practice against it</b> to plan around it.</li><li>Watching good players is practice too: pause at team preview and guess their bring and leads before they're shown.</li><li>New videos are added every day.</li></ol></div></details>
     </header>
     <div id="vd-root"><p class="sub">Loading videos…</p></div>
   </section>
@@ -629,8 +608,7 @@
   <section class="panel" id="p-settings">
     <header class="page-head">
       <h1>Account, backup & theme</h1>
-      <p class="lede">Your account keeps your data safe and the same on every device. You can also download backups and choose how the app looks.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li>Sign in with the same username and password on your phone and computer. Your data syncs between them on its own.</li><li>Everything also saves on the device, so the app works offline and syncs when you're back online.</li><li>There's no email on accounts, so write your password down. A forgotten password can't be reset.</li><li>Download a backup now and then. It's one file you can restore anywhere.</li></ol></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Your account keeps your data safe and the same on every device. You can also download backups and choose how the app looks.</p><ol><li>Sign in with the same username and password on your phone and computer. Your data syncs between them on its own.</li><li>Everything also saves on the device, so the app works offline and syncs when you're back online.</li><li>There's no email on accounts, so write your password down. A forgotten password can't be reset.</li><li>Download a backup now and then. It's one file you can restore anywhere.</li></ol></div></details>
     </header>
     <div class="card accent">
       <div class="card-head"><h3>Your account</h3></div>
@@ -752,36 +730,36 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=48"></script>
-<script src="js/sound.js?v=48"></script>
-<script src="js/content.js?v=48"></script>
-<script src="js/search.js?v=48"></script>
-<script src="js/study.js?v=48"></script>
-<script src="js/sprites.js?v=48"></script>
-<script src="js/help.js?v=48"></script>
-<script src="js/meta.js?v=48"></script>
-<script src="js/calc.js?v=48"></script>
-<script src="js/companion.js?v=48"></script>
-<script src="js/teamcheck.js?v=48"></script>
-<script src="js/builder.js?v=48"></script>
-<script src="js/plan.js?v=48"></script>
-<script src="js/topteams.js?v=48"></script>
-<script src="js/news.js?v=48"></script>
-<script src="js/replay.js?v=48"></script>
-<script src="js/sheets.js?v=48"></script>
-<script src="js/teamcompare.js?v=48"></script>
-<script src="js/battleview.js?v=48"></script>
-<script src="js/videos.js?v=48"></script>
-<script src="js/trends.js?v=48"></script>
-<script src="js/progress.js?v=48"></script>
-<script src="js/arcade.js?v=48"></script>
-<script src="js/test.js?v=48"></script>
-<script src="js/compare.js?v=48"></script>
-<script src="js/app.js?v=48"></script>
-<script src="js/hubs.js?v=48"></script>
-<script src="js/whatsnew.js?v=48"></script>
-<script src="js/firebase-config.js?v=48"></script>
-<script src="js/account.js?v=48"></script>
+<script src="js/store.js?v=49"></script>
+<script src="js/sound.js?v=49"></script>
+<script src="js/content.js?v=49"></script>
+<script src="js/search.js?v=49"></script>
+<script src="js/study.js?v=49"></script>
+<script src="js/sprites.js?v=49"></script>
+<script src="js/help.js?v=49"></script>
+<script src="js/meta.js?v=49"></script>
+<script src="js/calc.js?v=49"></script>
+<script src="js/companion.js?v=49"></script>
+<script src="js/teamcheck.js?v=49"></script>
+<script src="js/builder.js?v=49"></script>
+<script src="js/plan.js?v=49"></script>
+<script src="js/topteams.js?v=49"></script>
+<script src="js/news.js?v=49"></script>
+<script src="js/replay.js?v=49"></script>
+<script src="js/sheets.js?v=49"></script>
+<script src="js/teamcompare.js?v=49"></script>
+<script src="js/battleview.js?v=49"></script>
+<script src="js/videos.js?v=49"></script>
+<script src="js/trends.js?v=49"></script>
+<script src="js/progress.js?v=49"></script>
+<script src="js/arcade.js?v=49"></script>
+<script src="js/test.js?v=49"></script>
+<script src="js/compare.js?v=49"></script>
+<script src="js/app.js?v=49"></script>
+<script src="js/hubs.js?v=49"></script>
+<script src="js/whatsnew.js?v=49"></script>
+<script src="js/firebase-config.js?v=49"></script>
+<script src="js/account.js?v=49"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
