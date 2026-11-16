@@ -1140,10 +1140,6 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 }
 .tf-prev{color:var(--hot);font-size:15px}
 .mtop .brand span{white-space:nowrap}
-/* logo: black lines in light mode, white lines in dark mode */
-.logo-d{display:none}
-:root[data-theme="dark"] .logo-l{display:none} :root[data-theme="dark"] .logo-d{display:inline-block}
-@media (prefers-color-scheme: dark){ :root[data-theme="system"] .logo-l{display:none} :root[data-theme="system"] .logo-d{display:inline-block} }
 /* sidebar: big logo on top, the app name centered under it */
 .side .brand{flex-direction:column;align-items:center;gap:6px;padding:4px 6px 14px;text-align:center}
 .side .brand img{height:auto;width:100%;max-width:190px;margin:0}
