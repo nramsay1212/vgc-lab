@@ -1056,3 +1056,8 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
   .nw-layout.fitted .nw-side>.card:last-child{flex:1 1 auto;min-height:0;overflow:auto}
   .nw-layout.fitted .nw-side>.card>:last-child{margin-top:auto}
 }
+/* Damage calculator quick picks */
+.cl-quick{display:flex;flex-direction:column;gap:6px;padding:10px 12px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg-2)}
+.cl-qrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.cl-qchip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px;min-height:36px;text-align:left;line-height:1.2}
+.cl-qchip .mini{display:block;color:var(--muted)}

@@ -35,6 +35,59 @@
   const spMax = () => isChamp() ? 32 : 252;
   const spTotal = () => isChamp() ? 66 : 510;
 
+  // ---------- quick picks: your saved teams and the Pokémon beating you ----------
+  const teamsList = () => VL.store.list('teams').filter(t => t && t.paste).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  function pickTeam() {
+    const ts = teamsList(); if (!ts.length) return null;
+    if (S.qteam) { const t = ts.find(x => x.id === S.qteam); if (t) return t; }
+    // default: the team from your latest climb game, else the newest saved team
+    const g = VL.store.list('games').filter(x => x.team && !(VL.isTestGame && VL.isTestGame(x))).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
+    return (g && ts.find(x => x.id === g.team)) || ts[0];
+  }
+  const teamSets = (t) => t && VL.builder && VL.builder.parsePaste ? VL.builder.parsePaste(t.paste).filter(x => x && x.species) : [];
+  function trouble() {
+    // the same rule as Today's "Pokémon beating you lately": your last 40 climb games in this format
+    const fid = fmt().id;
+    let list = VL.store.list('games').filter(x => !(VL.isTestGame && VL.isTestGame(x))).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    const inFmt = list.filter(x => x.fmt === fid); if (inFmt.length >= 5) list = inFmt;
+    const m = {};
+    for (const x of list.slice(0, 40)) for (const n of (x.opp || [])) { const k = n.toLowerCase(); (m[k] ||= { n: n, seen: 0, l: 0 }); m[k].seen++; if (x.result === 'L') m[k].l++; }
+    return Object.values(m).filter(v => v.l >= 2 || (v.l >= 1 && v.seen <= 2 && v.l === v.seen && list.length < 10))
+      .sort((a, b) => (b.l / b.seen - a.l / a.seen) || b.l - a.l).slice(0, 6);
+  }
+  function quickHtml(key) {
+    const t = pickTeam(); const sets = teamSets(t); const tr = trouble();
+    const on = (n) => toId(S[key].mon).startsWith(toId(n)) || toId(n) === toId(S[key].mon);
+    const chip = (attr, n, sub) => `<button type="button" class="chipbtn cl-qchip" ${attr} aria-pressed="${on(n)}">${VL.sprite ? VL.sprite(n, 'sm', false) : ''}<span>${esc(n)}${sub ? `<span class="mini">${esc(sub)}</span>` : ''}</span></button>`;
+    const mine = sets.length ? sets.map((x, k) => chip(`data-qmine="${k}"`, x.species, '')).join('') : `<span class="sub">Save a team in the team builder to pick from it here.</span>`;
+    const bad = tr.length ? tr.map(v => chip(`data-qbad="${esc(v.n)}"`, v.n, `lost ${v.l} of ${v.seen}`)).join('') : `<span class="sub">Log a few games and the Pokémon beating you show up here.</span>`;
+    return `<div class="cl-quick">
+      <div class="section-label">${key === 'atk' ? 'Attack with' : 'Take a hit with'} your team${t ? ` · <span class="mini">${esc(t.name || 'Saved team')}</span>` : ''}</div><div class="cl-qrow">${mine}</div>
+      <div class="section-label">Pokémon giving you trouble <span class="mini">· loads their most common set</span></div><div class="cl-qrow">${bad}</div>
+    </div>`;
+  }
+  function loadMine(key, k) {
+    const set = teamSets(pickTeam())[k]; if (!set) return;
+    const champ = isChamp(); const s = { ...blank(), moves: ['', '', '', ''] };
+    s.mon = set.species; const i = VL.D.find(s.mon); if (i >= 0) s.mon = VL.D.mon(i, fmt()).n;
+    s.item = set.item || ''; s.ability = set.ability || (i >= 0 ? VL.D.mon(i, fmt()).a[0] || '' : ''); s.nature = set.nature || 'Hardy';
+    const ev = (set.evs || []).map(v => +v || 0);
+    // a regular-game paste (EVs up to 252) used in Champions: 8 EVs is about 1 Stat Point
+    const big = ev.some(v => v > 32);
+    s.sp = ev.length === 6 ? ev.map(v => Math.min(spMax(), champ && big ? Math.floor((v + 4) / 8) : v)) : [0, 0, 0, 0, 0, 0];
+    if (set.tera && genNum() === 9 && !champ) s.tera = set.tera;
+    const dmg = (set.moves || []).filter(Boolean).filter(n => { const mv = VL.D.move(n, fmt()); return !mv || mv.c !== 'S'; });
+    s.moves = [0, 1, 2, 3].map(j => dmg[j] || '');
+    s.mega = true; S[key] = s; save(); render();
+    VL.toast(`${set.species} loaded with your set`);
+  }
+  function loadBad(key, name) {
+    S[key] = { ...blank(), mon: name };
+    const i = VL.D.find(name); if (i >= 0) { const p = VL.D.mon(i, fmt()); S[key].mon = p.n; S[key].ability = p.a[0] || ''; }
+    const ok = commonSet(key); save(); render();
+    if (ok) VL.toast(`${S[key].mon} loaded with its most common set`);
+  }
+
   function sideHtml(key, title) {
     const s = S[key]; const champ = isChamp(); const gen = genNum();
     const natOpts = Object.entries(NATURES).map(([n, [p, m]]) => `<option value="${n}" ${s.nature === n ? 'selected' : ''}>${n}${p ? ` (+${SHORT[p]}, −${SHORT[m]})` : ''}</option>`).join('');
@@ -45,6 +98,7 @@
     const canMega = !!(sp && s.item && (megaFor(s.item, sp.n) || megaFor(s.item, sp.b)));
     return `<div class="card" data-side="${key}">
       <div class="card-head"><h3>${title}</h3><button class="btn ghost small" data-common>Load common set</button></div>
+      ${quickHtml(key)}
       <label>Pokémon<input type="text" data-f="mon" list="dl-calc-mons" value="${esc(s.mon)}" placeholder="Start typing a name"></label>
       ${sp ? `<div class="kv">${sp.t.map(t => `<span class="ty ${esc(t)}">${esc(t)}</span>`).join(' ')}<span class="mini">Base ${sp.s.join(' / ')}</span></div>` : ''}
       <div class="row"><label>Nature<select data-f="nature">${natOpts}</select></label><label>Ability<select data-f="ability">${abOpts}</select></label></div>
@@ -119,6 +173,8 @@
     $('cl-note').innerHTML = isChamp()
       ? 'Champions rules: Level 50, no individual values, and Stat Points instead of effort values. The engine\'s Champions support is newer than the rest, so treat results as very close rather than exact, and check surprising numbers in-game.'
       : `Generation ${fmt().gen} rules, Level 50, individual values set to 31.`;
+    const ts = teamsList(); const cur = pickTeam(); const tsel = $('cl-team');
+    if (tsel) { tsel.innerHTML = ts.length ? ts.map(t => `<option value="${esc(t.id)}" ${cur && cur.id === t.id ? 'selected' : ''}>${esc(t.name || 'Saved team')}</option>`).join('') : '<option value="">No saved teams yet</option>'; tsel.disabled = !ts.length; }
     $('cl-sides').innerHTML = sideHtml('atk', 'Attacker') + sideHtml('def', 'Defender');
     $('cl-field').innerHTML = fieldHtml();
     fillLists();
@@ -163,6 +219,8 @@
     if (t.dataset.move !== undefined) { s.moves[+t.dataset.move] = t.value.trim(); save(); compute(); }
   });
   $('cl-sides').addEventListener('click', e => {
+    const q = e.target.closest('[data-qmine],[data-qbad]');
+    if (q) { const key = q.closest('[data-side]').dataset.side; if (q.dataset.qmine !== undefined) loadMine(key, +q.dataset.qmine); else loadBad(key, q.dataset.qbad); if (VL.sound) VL.sound.play('tap'); return; }
     const b = e.target.closest('[data-common]'); if (!b) return;
     const key = b.closest('[data-side]').dataset.side;
     if (commonSet(key)) { save(); render(); VL.toast('Loaded the most common set'); }
@@ -172,6 +230,7 @@
     S.field[k] = e.target.type === 'checkbox' ? e.target.checked : (k === 'doubles' ? e.target.value === '1' : e.target.value);
     save(); compute();
   });
+  if ($('cl-team')) $('cl-team').addEventListener('change', () => { S.qteam = $('cl-team').value || ''; save(); render(); });
   $('cl-format').addEventListener('change', () => { S.fmt = $('cl-format').value; const f = fmt(); S.field.doubles = f.doubles; for (const k of ['atk', 'def']) S[k].sp = S[k].sp.map(v => Math.min(spMax(), v)); save(); render(); });
   $('cl-swap').onclick = () => { const a = S.atk; S.atk = { ...S.def, moves: S.def.moves || ['', '', '', ''] }; S.def = { ...a }; const e = VL.meta.forFormat(fmt().id); const m = VL.meta.get(e, S.atk.mon); if (m && !S.atk.moves.some(Boolean)) commonSet('atk'); save(); render(); };
 
