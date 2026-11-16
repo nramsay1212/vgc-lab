@@ -33,8 +33,10 @@
   }
 
   function current() { return (store.get('ratings', 'current') || {}).areas || {}; }
+  // only the areas that still exist: ratings from removed games (like Nature Rush's natures) stay saved but don't count
   function overallOf(areas) {
-    const rs = Object.values(areas).filter(a => a && a[1] >= PROVISIONAL).map(a => a[0]);
+    const live = new Set(AREAS.map(a => a.id));
+    const rs = Object.entries(areas).filter(([k, a]) => live.has(k) && a && a[1] >= PROVISIONAL).map(([, a]) => a[0]);
     return rs.length ? rs.reduce((x, y) => x + y, 0) / rs.length : null;
   }
   const asPairs = (areas) => Object.fromEntries(Object.entries(areas).map(([k, v]) => [k, [v.r, v.n]]));
@@ -166,11 +168,13 @@
       : '<div class="empty">No tests yet. Your first one sets a baseline to measure improvement against.</div>';
 
     // game trends
-    const ar = store.list('arcade');
+    // only games and modes that still exist (old scores from removed games, like Nature Rush, stay saved but hidden)
+    const live = (r) => { const [gid, mode] = r.id.split(':'); const g = (VL.arcadeGames || []).find(x => x.id === gid); return !!(g && g.modes.some(x => x[0] === mode)); };
+    const ar = store.list('arcade').filter(live);
     $('pg-games').innerHTML = ar.length ? `<div class="cards">${ar.sort((a, b) => (b.plays || 0) - (a.plays || 0)).map(r => {
       const [gid, mode] = r.id.split(':'); const g = (VL.arcadeGames || []).find(x => x.id === gid); const m = g && g.modes.find(x => x[0] === mode);
       const sc = (r.hist || []).map(h => h.s);
-      return `<div class="nb-card"><div class="h"><b>${esc(g ? g.name : gid)}</b><span class="mini">${esc(m ? m[1] : mode)}</span></div><div class="kv" style="justify-content:space-between"><span><span class="num" style="font-size:20px">${r.best || 0}</span> <span class="mini">best</span></span>${spark(sc.slice(-20), 'var(--accent)')}</div><span class="mini">${r.plays || 0} plays · last ${sc.length ? sc[sc.length - 1] : '–'}</span></div>`;
+      return `<div class="nb-card"><div class="h"><b>${esc(g ? g.name : gid)}</b><span class="mini">${esc(m ? m[1] : mode)}</span></div><div class="kv" style="justify-content:space-between"><span><span class="num" style="font-size:20px">${r.best || 0}</span> <span class="mini">best</span></span>${spark(sc.slice(-20), 'var(--accent)')}</div><span class="mini">${r.plays || 0} play${(r.plays || 0) === 1 ? '' : 's'} · last ${sc.length ? sc[sc.length - 1] : '–'}</span></div>`;
     }).join('')}</div>` : '<div class="empty">Play some games and your scores will show up here.</div>';
   }
   function grade(p) { return p >= 90 ? 'A' : p >= 80 ? 'B' : p >= 70 ? 'C' : p >= 60 ? 'D' : 'F'; }
