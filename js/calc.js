@@ -46,30 +46,41 @@
     return (g && ts.find(x => x.id === g.team)) || ts[0];
   }
   const teamSets = (t) => t && VL.builder && VL.builder.parsePaste ? VL.builder.parsePaste(t.paste).filter(x => x && x.species) : [];
-  function trouble() {
-    // the same rule as Today's "Pokémon beating you lately": your last 40 climb games in this format
-    const fid = fmt().id;
-    let list = VL.store.list('games').filter(x => !(VL.isTestGame && VL.isTestGame(x))).sort((a, b) => (b.ts || 0) - (a.ts || 0));
-    const inFmt = list.filter(x => x.fmt === fid); if (inFmt.length >= 5) list = inFmt;
+  // Pokémon beating a team: games logged with that team (climb and testing both count, since it's about the team).
+  // No games with the team yet: fall back to all your climb games in this format, and say so.
+  function trouble(team) {
+    const fid = fmt().id; const byTs = (a, b) => (b.ts || 0) - (a.ts || 0);
+    const all = VL.store.list('games').sort(byTs);
+    let list = team ? all.filter(x => x.team === team.id) : [];
+    let scope = 'team';
+    if (!list.length) {
+      scope = 'all'; list = all.filter(x => !(VL.isTestGame && VL.isTestGame(x)));
+      const inFmt = list.filter(x => x.fmt === fid); if (inFmt.length >= 5) list = inFmt;
+    }
     const m = {};
     for (const x of list.slice(0, 40)) for (const n of (x.opp || [])) { const k = n.toLowerCase(); (m[k] ||= { n: n, seen: 0, l: 0 }); m[k].seen++; if (x.result === 'L') m[k].l++; }
-    return Object.values(m).filter(v => v.l >= 2 || (v.l >= 1 && v.seen <= 2 && v.l === v.seen && list.length < 10))
+    const few = list.length < 10;
+    const mons = Object.values(m).filter(v => v.l >= 2 || (few && v.l >= 1))
       .sort((a, b) => (b.l / b.seen - a.l / a.seen) || b.l - a.l).slice(0, 6);
+    return { mons, scope, games: Math.min(40, list.length) };
   }
   function quickHtml(key) {
-    const ts = teamsList(); const t = pickTeam(key); const sets = teamSets(t); const tr = trouble();
+    const ts = teamsList(); const t = pickTeam(key); const sets = teamSets(t); const T = trouble(t); const tr = T.mons;
     const on = (n) => toId(S[key].mon).startsWith(toId(n)) || toId(n) === toId(S[key].mon);
     const chip = (attr, n, sub) => `<button type="button" class="chipbtn cl-qchip" ${attr} aria-pressed="${on(n)}">${VL.sprite ? VL.sprite(n, 'sm', false) : ''}<span>${esc(n)}${sub ? `<span class="mini">${esc(sub)}</span>` : ''}</span></button>`;
     const mine = sets.length ? sets.map((x, k) => chip(`data-qmine="${k}"`, x.species, '')).join('') : `<span class="sub">Save a team in the team builder to pick from it here.</span>`;
-    const bad = tr.length ? tr.map(v => chip(`data-qbad="${esc(v.n)}"`, v.n, `lost ${v.l} of ${v.seen}`)).join('') : `<span class="sub">Log a few games and the Pokémon beating you show up here.</span>`;
+    const bad = tr.length ? tr.map(v => chip(`data-qbad="${esc(v.n)}"`, v.n, `lost ${v.l} of ${v.seen}`)).join('')
+      : `<span class="sub">${T.scope === 'team' ? `Nothing has beaten this team more than once in its ${T.games} logged game${T.games === 1 ? '' : 's'}.` : 'Log a few games and the Pokémon beating you show up here.'}</span>`;
+    const badLabel = T.scope === 'team' ? `Giving this team trouble <span class="mini">· from its last ${T.games} game${T.games === 1 ? '' : 's'}, loads their most common set</span>`
+      : `Giving you trouble <span class="mini">· no games logged with this team yet, so this is from all your climb games</span>`;
     const open = !S.qopen || S.qopen[key] !== false;
     const teamSel = ts.length ? `<label class="cl-qteam">Team<select data-qteam>${ts.map(x => `<option value="${esc(x.id)}" ${t && t.id === x.id ? 'selected' : ''}>${esc(x.name || 'Saved team')}</option>`).join('')}</select></label>` : '';
     return `<details class="cl-quick" data-qopen ${open ? 'open' : ''}>
-      <summary><span>Quick pick</span><span class="mini">${t ? esc(t.name || 'Saved team') : 'No saved teams'}${tr.length ? ` · ${tr.length} giving you trouble` : ''}</span></summary>
+      <summary><span>Quick pick</span><span class="mini">${t ? esc(t.name || 'Saved team') : 'No saved teams'}${tr.length ? ` · ${tr.length} giving ${T.scope === 'team' ? 'this team' : 'you'} trouble` : ''}</span></summary>
       <div class="cl-qbody">
         ${teamSel}
         <div class="section-label">${key === 'atk' ? 'Attack with' : 'Take a hit with'} this team</div><div class="cl-qrow">${mine}</div>
-        <div class="section-label">Pokémon giving you trouble <span class="mini">· loads their most common set</span></div><div class="cl-qrow">${bad}</div>
+        <div class="section-label">${badLabel}</div><div class="cl-qrow">${bad}</div>
       </div>
     </details>`;
   }
