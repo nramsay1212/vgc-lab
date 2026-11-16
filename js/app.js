@@ -520,6 +520,15 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   }
   document.querySelectorAll('[data-pal-set]').forEach(b => b.onclick = () => { applyPalette(b.dataset.palSet); if (VL.sound) VL.sound.play('tap'); });
   applyPalette(document.documentElement.dataset.palette || 'shiny');
+  // Minimalist's striped bars: size the blocks and gaps in whole screen pixels, so every block is the same width
+  // even with page zoom (the 1.15 zoom on very wide screens) or Windows display scaling
+  function pixelGrid() {
+    const z = (parseFloat(getComputedStyle(document.documentElement).zoom) || 1) * (window.devicePixelRatio || 1);
+    const seg = Math.max(2, Math.round(6 * z)), per = seg + Math.max(1, Math.round(2 * z));
+    document.documentElement.style.setProperty('--px-seg', (seg / z) + 'px');
+    document.documentElement.style.setProperty('--px-per', (per / z) + 'px');
+  }
+  pixelGrid(); window.addEventListener('resize', pixelGrid);
   // style (Settings → Style): standard, or the pixel Minimalist style
   function applyLook(v) {
     document.documentElement.dataset.look = v;

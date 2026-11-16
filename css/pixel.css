@@ -48,8 +48,8 @@
   display:block;height:10px;border-radius:0;background:var(--raised);border:1px solid var(--line);margin-top:5px;overflow:hidden}
 [data-look="minimal"] .metarow .ub{width:100%;max-width:220px}
 [data-look="minimal"] .metarow .ub span,[data-look="minimal"] .kvlist .bar2 span,[data-look="minimal"] .bar .fill,[data-look="minimal"] .costbar span,[data-look="minimal"] .drill-card .meter span{
-  border-radius:0;opacity:1;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 8px)}
-[data-look="minimal"] .bar .fill.acc,[data-look="minimal"] .kvlist .bar2 span{background:repeating-linear-gradient(90deg,var(--hot) 0 6px,transparent 6px 8px)}
+  border-radius:0;opacity:1;background:repeating-linear-gradient(90deg,var(--accent) 0 var(--px-seg,6px),transparent var(--px-seg,6px) var(--px-per,8px))}
+[data-look="minimal"] .bar .fill.acc,[data-look="minimal"] .kvlist .bar2 span{background:repeating-linear-gradient(90deg,var(--hot) 0 var(--px-seg,6px),transparent var(--px-seg,6px) var(--px-per,8px))}
 [data-look="minimal"] .metarow{border-radius:0;grid-template-columns:28px 28px 1fr 64px}
 [data-look="minimal"] .metarow[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 [data-look="minimal"] .metarow .rk{font-family:var(--px);font-size:10px}
