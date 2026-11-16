@@ -67,16 +67,35 @@
   }
   function emit(fromSync) { for (const fn of listeners) { try { fn(fromSync); } catch (e) { console.error(e); } } }
 
+  // ---------- doubles and singles keep separate records ----------
+  // Your games, teams, notebook, reviews, plans and daily checklists belong to one play style; switching
+  // style shows only that style's records. Knowledge (ratings, tests, drills, training games) and settings
+  // are shared. A record's style is its `style` field; older records without one go by their format,
+  // else count as doubles (everything was doubles before singles existed). Daily checklists are keyed by
+  // date, so singles days are stored under "S~<date>".
+  const SCOPED = new Set(['games', 'matchups', 'teams', 'days', 'reports', 'recaps', 'playbook', 'events', 'opponents', 'predictions', 'reviews', 'sheets']);
+  const curStyle = () => (VL.style ? VL.style() : 'doubles');
+  const recStyle = (id, r) => r.style || (String(id).startsWith('S~') ? 'singles' : null) || (r.fmt && VL.styleOfFmt ? VL.styleOfFmt(r.fmt) : null) || 'doubles';
+  const dayId = (id) => (curStyle() === 'singles' && !String(id).startsWith('S~') ? 'S~' + id : id);
   const store = {
     ready: null,
     onChange(fn) { listeners.add(fn); },
-    list(c) { return Object.entries(state[c] || {}).filter(([, r]) => r && !r.del).map(([id, r]) => ({ id, ...r })); },
-    get(c, id) { const r = state[c] && state[c][id]; return r && !r.del ? { id, ...r } : null; },
+    list(c) {
+      const all = Object.entries(state[c] || {}).filter(([, r]) => r && !r.del);
+      if (!SCOPED.has(c)) return all.map(([id, r]) => ({ id, ...r }));
+      const st = curStyle();
+      return all.filter(([id, r]) => recStyle(id, r) === st).map(([id, r]) => ({ id: c === 'days' ? String(id).replace(/^S~/, '') : id, ...r }));
+    },
+    // every record of a collection, whichever play style it belongs to
+    listAll(c) { return Object.entries(state[c] || {}).filter(([, r]) => r && !r.del).map(([id, r]) => ({ id, ...r })); },
+    get(c, id) { if (c === 'days') id = dayId(id); const r = state[c] && state[c][id]; return r && !r.del ? { id: c === 'days' ? String(id).replace(/^S~/, '') : id, ...r } : null; },
     put(c, id, body) {
+      if (c === 'days') id = dayId(id);
       const rec = { ...body, u: Date.now() }; delete rec.id;
+      if (SCOPED.has(c) && !rec.style) { const prev = state[c][id]; rec.style = prev && !prev.del ? recStyle(id, prev) : curStyle(); }
       state[c][id] = rec; scheduleSave(); emit(false); sync.soon(); VL.account && VL.account.soon();
     },
-    del(c, id) { state[c][id] = { del: true, u: Date.now() }; scheduleSave(); emit(false); sync.soon(); VL.account && VL.account.soon(); },
+    del(c, id) { if (c === 'days') id = dayId(id); state[c][id] = { del: true, u: Date.now() }; scheduleSave(); emit(false); sync.soon(); VL.account && VL.account.soon(); },
     // ---- used by account sync ----
     // every record (tombstones included) changed after time t
     changedSince(t) { const out = []; for (const c of COLLS) for (const [id, r] of Object.entries(state[c] || {})) if (r && (r.u || 0) > t) out.push({ c, i: id, r }); return out; },

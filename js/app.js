@@ -32,6 +32,11 @@
     return f ? f.name : id;
   }
   VL.curFormatId = curFormatId;
+  // which play style a format belongs to (used to sort older records that don't say)
+  VL.styleOfFmt = (fid) => { if (!fid || !D.dex || String(fid).startsWith('custom:')) return null; const f = D.dex.formats.find(x => x.id === fid); return f ? (f.doubles ? 'doubles' : 'singles') : null; };
+  // focus, season goal and best rank are kept per play style
+  const sk = (k) => (VL.style && VL.style() === 'singles' ? k + 'Singles' : k);
+  const pv = (p, k) => p[sk(k)];
   VL.fmtName = fmtName;
 
   // ---------- play style (doubles or singles) ----------
@@ -117,8 +122,8 @@
   }
   function renderToday() {
     const p = profile();
-    $('focus-text').textContent = p.focus || 'No focus set yet. Pick one habit to drill in every game this week.';
-    if (document.activeElement !== $('focus-input')) $('focus-input').value = p.focus || '';
+    $('focus-text').textContent = pv(p, 'focus') || 'No focus set yet. Pick one habit to drill in every game this week.';
+    if (document.activeElement !== $('focus-input')) $('focus-input').value = pv(p, 'focus') || '';
     const g = climbGames(); const fid = curFormatId();
     const inFmt = g.filter(x => x.fmt === fid);
     const rated = inFmt.filter(x => Number.isFinite(x.rating));
@@ -128,9 +133,9 @@
       <div class="grid3" style="margin-top:6px">
         <div><div class="sub">Current rating</div><div class="num" style="font-size:20px">${rated.length ? rated[0].rating : '–'}</div></div>
         <div><div class="sub">Games this format</div><div class="num" style="font-size:20px">${inFmt.length}</div></div>
-        <div><div class="sub">Season goal</div><div style="font-size:16px;font-weight:600">${esc(p.goal || 'Not set')}</div></div>
+        <div><div class="sub">Season goal</div><div style="font-size:16px;font-weight:600">${esc(pv(p, 'goal') || 'Not set')}</div></div>
       </div>`;
-    $('fmt-goal').value = p.goal || ''; $('fmt-peak').value = p.peak ?? 2000;
+    $('fmt-goal').value = pv(p, 'goal') || ''; $('fmt-peak').value = pv(p, 'peak') ?? 2000;
 
     const key = dayKey(); const day = store.get('days', key) || { done: {} };
     const todayGames = g.filter(x => x.day === key); const w = todayGames.filter(x => x.result === 'W').length;
@@ -315,9 +320,9 @@
 
 Context:
 - Format: ${fmtName(fid)}${f ? ` (${f.game}, ${f.doubles ? 'doubles' : 'singles'}, gimmick: ${f.gimmick})` : ''}.
-- Me: reached high Master Ball and peaked around rank ${p.peak ?? 2000} on Scarlet/Violet ladder. Long-term goal: win a World Championship someday, in whatever game is current. I want skills that carry across formats, not just this one. I mostly play proven teams from top players and sometimes experiment with my own changes; those experiments are logged separately as testing games.
-- This week's focus: ${p.focus || '(none set)'}
-- Season goal: ${p.goal || '(none set)'}
+- Me: reached high Master Ball and peaked around rank ${pv(p, 'peak') ?? 2000} on Scarlet/Violet ladder. Long-term goal: win a World Championship someday, in whatever game is current. I want skills that carry across formats, not just this one. I mostly play proven teams from top players and sometimes experiment with my own changes; those experiments are logged separately as testing games.
+- This week's focus: ${pv(p, 'focus') || '(none set)'}
+- Season goal: ${pv(p, 'goal') || '(none set)'}
 - My knowledge ratings (from quick games and tests, 1000 is the start, 1400 is Expert): ${know || 'none yet'}
 - Recent drill accuracy: ${drills}
 
@@ -518,12 +523,12 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
 
   // ---------- events ----------
   $('focus-edit').onclick = () => { $('focus-form').hidden = !$('focus-form').hidden; if (!$('focus-form').hidden) $('focus-input').focus(); };
-  $('focus-save').onclick = () => { putProfile({ focus: $('focus-input').value.trim() }); $('focus-form').hidden = true; VL.toast('Focus saved'); VL.sound && VL.sound.play('save'); };
+  $('focus-save').onclick = () => { putProfile({ [sk('focus')]: $('focus-input').value.trim() }); $('focus-form').hidden = true; VL.toast('Focus saved'); VL.sound && VL.sound.play('save'); };
   $('focus-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('focus-save').click(); } });
   $('fmt-edit').onclick = () => { $('fmt-form').hidden = !$('fmt-form').hidden; };
   $('fmt-save').onclick = () => {
     const v = $('fmt-select').value; const peak = parseInt($('fmt-peak').value, 10);
-    const patch = { goal: $('fmt-goal').value.trim(), peak: Number.isFinite(peak) ? peak : null };
+    const patch = { [sk('goal')]: $('fmt-goal').value.trim(), [sk('peak')]: Number.isFinite(peak) ? peak : null };
     if (v === 'custom') {
       const name = $('fmt-custom') ? $('fmt-custom').value.trim() : '';
       if (!name) { VL.toast('Type the format name first'); return; }
