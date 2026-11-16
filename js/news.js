@@ -105,7 +105,8 @@
         <div class="card"><div class="kv" style="flex-wrap:wrap;gap:6px">${FILTERS.map(([k, l]) => `<button class="chipbtn" data-nwf="${k}" aria-pressed="${filter === k}">${l}${k !== 'all' && counts[k] ? ` <span class="mini">${counts[k]}</span>` : ''}</button>`).join('')}</div>
           <div class="nw-list">${html || `<div class="empty">${filter === 'game' ? 'No game or data changes recorded yet. When a new regulation, Pokémon, item or balance change reaches the data, it shows up here on its own.' : 'Nothing here yet.'}</div>`}</div>
           <button type="button" class="nw-all" id="nw-all" hidden>Show all ${Math.min(list.length, shown)} items</button>
-          ${list.length > shown ? `<div class="row" id="nw-older" style="justify-content:center"${open ? '' : ' hidden'}><button class="btn ghost" id="nw-more">Show older</button></div>` : ''}</div>
+          ${list.length > shown ? `<div class="row" id="nw-older" style="justify-content:center"${open ? '' : ' hidden'}><button class="btn ghost" id="nw-more">Show older</button></div>` : ''}
+          <button type="button" class="nw-all" id="nw-less"${open ? '' : ' hidden'}>Show less</button></div>
         <div class="nw-side">${calendarHtml(6)}${moversHtml()}</div>
       </div>`;
     requestAnimationFrame(fit);
@@ -143,7 +144,8 @@
   // opening or closing "About this page" changes the room left for the feed
   document.addEventListener('toggle', (e) => { if (e.target.closest && e.target.closest('#p-news .page-head')) fit(); }, true);
   document.addEventListener('click', (e) => {
-    if (e.target.closest('#nw-all')) { open = true; fit(); const o = $('nw-older'); if (o) o.hidden = false; VL.sound && VL.sound.play('tap'); return; }
+    if (e.target.closest('#nw-all')) { open = true; fit(); const o = $('nw-older'); if (o) o.hidden = false; const l = $('nw-less'); if (l) l.hidden = false; VL.sound && VL.sound.play('tap'); return; }
+    if (e.target.closest('#nw-less')) { open = false; shown = 40; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); VL.sound && VL.sound.play('tap'); return; }
     const f = e.target.closest('[data-nwf]'); if (f) { filter = f.dataset.nwf; shown = 40; open = false; render(); return; }
     if (e.target.id === 'nw-more') { shown += 40; render(); return; }
     const ev = e.target.closest('[data-nwev]'); if (ev && VL.topteams) VL.topteams.show(ev.dataset.nwev);
