@@ -331,7 +331,7 @@
     const rec = { ts: (store().get('reviews', R.id) || {}).ts || Date.now(), url: R.url, title, fmt: d.tier, me: R.me, result: d.winner ? (d.winner === d.players[R.me] ? 'W' : 'L') : null, turns: d.turns.length - 1, key: R.key, notes: R.notes, takeaway: R.takeaway };
     if (!R.url) rec.log = R.log.slice(0, 120000); // pasted logs have no link to load from again
     store().put('reviews', R.id, rec); R.dirty = false;
-    if (!quiet) VL.toast('Review saved');
+    if (!quiet) { VL.toast('Review saved'); VL.sound && VL.sound.play('save'); }
   }
   function toLog() {
     save(true); const d = R.data; const opp = R.me === 'p1' ? 'p2' : 'p1'; const last = d.turns[d.turns.length - 1].snap;
@@ -362,7 +362,7 @@
     const k = b.dataset.rp;
     if (k === 'prev') go(R.turn - 1);
     if (k === 'next') go(R.turn + 1);
-    if (k === 'key') { grabInputs(); R.key = R.key === R.turn ? null : R.turn; R.dirty = true; render(); }
+    if (k === 'key') { grabInputs(); R.key = R.key === R.turn ? null : R.turn; R.dirty = true; if (R.key) VL.sound && VL.sound.play('done'); render(); }
     if (k === 'save') { save(); render(); }
     if (k === 'log') toLog();
     if (k === 'close') { if (R.dirty && (R.key || Object.keys(R.notes).length || R.takeaway)) save(true); R = null; render(); }

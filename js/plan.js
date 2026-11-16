@@ -65,7 +65,7 @@
     const num = (id) => { const v = parseInt($(id).value, 10); return Number.isFinite(v) ? v : null; };
     const date = /^\d{4}-\d{2}-\d{2}$/.test($('tn-date').value.trim()) ? $('tn-date').value.trim() : today();
     store.put('events', tnEditing || VL.newId('e'), { date, name: $('tn-name').value.trim(), kind: $('tn-kind').value, players: num('tn-players'), w: num('tn-w'), l: num('tn-l'), place: num('tn-place'), cp: num('tn-cp') || 0, team: $('tn-team').value || null, day2: $('tn-day2').checked, cut: $('tn-cut').checked, notes: $('tn-notes').value.trim() });
-    clearTn(); VL.toast('Event saved');
+    clearTn(); VL.toast('Event saved'); VL.sound && VL.sound.play('save');
   });
   $('tn-list').addEventListener('click', e => {
     const ed = e.target.dataset.tnedit, dl = e.target.dataset.tndel;
@@ -110,7 +110,7 @@
         <div class="row" style="justify-content:flex-end"><button class="linkbtn" data-opdel="${esc(o.id)}">Delete</button></div></div>`;
     }).join('') : '<div class="empty">No opponents yet. Type an opponent\'s name when you log a game, or add one above.</div>';
   }
-  $('op-add').onclick = () => { const n = $('op-new').value.trim(); if (!n) return; ensureOpponent(n); $('op-new').value = ''; VL.toast('Added ' + n); };
+  $('op-add').onclick = () => { const n = $('op-new').value.trim(); if (!n) return; ensureOpponent(n); $('op-new').value = ''; VL.toast('Added ' + n); VL.sound && VL.sound.play('save'); };
   $('op-q').addEventListener('input', renderOpponents);
   $('op-list').addEventListener('change', e => { const id = e.target.dataset.opnotes; if (!id) return; const o = store.get('opponents', id); if (o) store.put('opponents', id, { name: o.name, notes: e.target.value.trim() }); });
   $('op-list').addEventListener('click', e => { const id = e.target.dataset.opdel; if (id) VL.armDelete(e.target, () => store.del('opponents', id)); });

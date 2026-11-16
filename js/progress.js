@@ -46,6 +46,7 @@
   function apply(results, info) {
     if (!results || !results.length) return null;
     const cur = JSON.parse(JSON.stringify(current()));
+    const ovBefore = overallOf(asPairs(cur));
     const before = {};
     for (const res of results) {
       const a = cur[res.a] || { r: START, n: 0 };
@@ -67,6 +68,12 @@
     store.put('ratings', 'current', { areas: cur });
     store.put('ratinghist', VL.newId('h'), { t: Date.now(), src: info.src, label: info.label || '', points: info.points || 0, areas: asPairs(cur) });
     const changes = Object.keys(before).map(k => ({ a: k, from: before[k], to: Math.round(cur[k].r), n: cur[k].n }));
+    // a new title: celebrate once the result screen's own sound has finished
+    const ovAfter = overallOf(asPairs(cur));
+    if (ovBefore !== null && ovAfter !== null && ovAfter > ovBefore) {
+      const idx = (r) => RANKS.findIndex(([min]) => r >= min);
+      if (idx(ovAfter) < idx(ovBefore)) setTimeout(() => { VL.sound && VL.sound.play('best'); VL.toast && VL.toast(`New title: ${rankOf(ovAfter)}! Your overall rating is ${Math.round(ovAfter)}.`); }, 1300);
+    }
     return changes;
   }
   function changesHtml(changes) {

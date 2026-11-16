@@ -227,11 +227,11 @@
     if (k === 'random') randomOpp();
     if (k === 'paste') { const mons = fromPaste($('sh-paste').value); if (mons.length < 2) { $('sh-msg').textContent = 'Paste at least two Pokémon in Showdown format.'; return; } if (begin({ mons, label: 'a pasted team' })) render(); }
     if (k === 'close') { if (P && (P.plan || P.sm.some(Boolean))) save(); P = null; render(); }
-    if (k === 'save') { save(); const m = $('sh-msg'); if (m) m.textContent = 'Saved.'; VL.toast('Plan saved'); }
+    if (k === 'save') { save(); const m = $('sh-msg'); if (m) m.textContent = 'Saved.'; VL.toast('Plan saved'); VL.sound && VL.sound.play('save'); }
     if (k === 'notebook') {
       save(); const pick = (v) => P.mine.filter((m, i) => P.sm[i] === v).map(m => m.n);
       store().put('matchups', VL.newId('m'), { ts: Date.now(), fmt: P.fmt, name: P.label.slice(0, 80), team: P.team, plan: P.plan, lead: pick(2).join(' + '), bring: [...pick(2), ...pick(1)].join(', '), calcs: '' });
-      VL.toast('Added to your Notebook');
+      VL.toast('Added to your Notebook'); VL.sound && VL.sound.play('save');
     }
   });
 

@@ -364,6 +364,7 @@
       const dist = x < c.lo ? c.lo - x : x > c.hi ? x - c.hi : 0;
       const pts = Math.max(0, Math.round(100 - dist * 4)); G.lastPts = pts;
       G.n++; G.score += pts; if (dist <= 5) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`${esc(c.A.name)} ${esc(c.mv.n)} into ${esc(c.Dd.name)}: actual ${c.lo}–${c.hi}%, you guessed ${x}%.`); }
+      VL.sound && VL.sound.play(dist <= 5 ? (G.streak && G.streak % 5 === 0 ? 'streak' : 'right') : pts >= 60 ? 'tap' : 'wrong'); // close, near, or off
       renderDamage(x);
     };
   }

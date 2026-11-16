@@ -189,6 +189,7 @@
     const reveals = B.opp.filter(o => o.item || o.ability || (o.moves || []).length).map(o => `${o.n}: ${[o.item && 'item ' + o.item, o.ability && 'ability ' + o.ability, (o.moves || []).length && 'moves ' + o.moves.join(', ')].filter(Boolean).join('; ')}`).join('\n');
     const note = [($('cp-notes').value || '').trim(), reveals ? 'Revealed:\n' + reveals : '', `Lasted ${B.turn} turns.`].filter(Boolean).join('\n\n');
     VL.prefillLog && VL.prefillLog({ result, fmt: B.fmt, opp: B.opp.map(o => o.n), opplead: B.opp.filter(o => o.lead).map(o => o.n), oppName: B.oppName, team: B.team, note });
+    VL.sound && VL.sound.play(result === 'W' ? 'finish' : 'tap');
     B = null; save(); render();
   }
   $('cp-won').onclick = () => finish('W');

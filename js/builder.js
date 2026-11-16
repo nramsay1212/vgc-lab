@@ -789,7 +789,7 @@
     return sc;
   }
   function teammateScores() { return matesOf(T.sets.filter(s => s && s.species).map(s => s.species), metaE()); }
-  function pickMon() { pickMonFor({ fmtId: fmt().id, names: T.sets.filter(Boolean).map(s => s.species).filter(Boolean), onPick: setMon }); }
+  function pickMon() { pickMonFor({ fmtId: fmt().id, names: T.sets.filter(Boolean).map(s => s.species).filter(Boolean), onPick: (n) => { setMon(n); VL.sound && VL.sound.play('tap'); } }); }
   // the Pokémon picker, shared with the Battle companion: o = { fmtId, names (already picked), onPick(name) }
   function pickMonFor(o) {
     const f = D().format(o.fmtId); const have = new Set(o.names || []);
@@ -863,7 +863,7 @@
         $('bm-list').innerHTML = `<button type="button" class="bd-li" data-item=""><span class="iicon blank"></span><span class="nm"><b>No item</b></span></button>` + (p.length ? `<div class="section-label">Popular on ${esc(rec.n)}</div>${p.map(line).join('')}<div class="section-label">All items</div>` : '') + rest.map(line).join('');
       };
       body.addEventListener('input', (ev) => { if (ev.target.id === 'bm-q') { q = ev.target.value.trim(); draw(); } });
-      body.addEventListener('click', (ev) => { const b = ev.target.closest('[data-item]'); if (b) { s.item = b.dataset.item; closeModal(); renderSlots(); renderEditor(); analysisSoon(); save(); } });
+      body.addEventListener('click', (ev) => { const b = ev.target.closest('[data-item]'); if (b) { VL.sound && VL.sound.play('tap'); s.item = b.dataset.item; closeModal(); renderSlots(); renderEditor(); analysisSoon(); save(); } });
       draw(); setTimeout(() => $('bm-q').focus(), 30);
     });
   }
@@ -888,7 +888,7 @@
         const c = ev.target.closest('[data-cat]'); if (c) { cat = cat === c.dataset.cat ? '' : c.dataset.cat; body.querySelectorAll('[data-cat]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === cat))); draw(); }
         const so = ev.target.closest('[data-sort]'); if (so) { sort = so.dataset.sort; body.querySelectorAll('[data-sort]').forEach(b => b.setAttribute('aria-pressed', String(b === so))); draw(); }
         const t = ev.target.closest('[data-ty]'); if (t) { type = type === t.dataset.ty ? '' : t.dataset.ty; body.querySelectorAll('[data-ty]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ty === type))); draw(); }
-        const mv = ev.target.closest('[data-mv]'); if (mv) { const n = mv.dataset.mv; const other = s.moves.indexOf(n); if (other >= 0 && other !== k) s.moves[other] = s.moves[k]; s.moves[k] = n; closeModal(); renderEditor(); analysisSoon(); save(); }
+        const mv = ev.target.closest('[data-mv]'); if (mv) { VL.sound && VL.sound.play('tap'); const n = mv.dataset.mv; const other = s.moves.indexOf(n); if (other >= 0 && other !== k) s.moves[other] = s.moves[k]; s.moves[k] = n; closeModal(); renderEditor(); analysisSoon(); save(); }
       });
       draw(); setTimeout(() => $('bm-q').focus(), 30);
     });
@@ -905,7 +905,7 @@
         save(true);
         while (sets.length < 6) sets.push(null);
         T = { id: null, name: 'Imported team', fmt: T.fmt, sets, why: '', weak: '', src: 'Imported' }; sel = 0;
-        closeModal(); save(true); render(); VL.toast('Team imported');
+        closeModal(); save(true); render(); VL.toast('Team imported'); VL.sound && VL.sound.play('save');
       };
       setTimeout(() => $('bm-paste').focus(), 30);
     });

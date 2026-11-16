@@ -44,7 +44,7 @@
     box.innerHTML = `<div class="card-head"><h3>${esc(note[2])}</h3>${left > 1 ? `<span class="sub">${left - 1} more new thing${left > 2 ? 's' : ''} here</span>` : ''}</div><p>${note[3]}</p><div class="row" style="justify-content:flex-end"><button class="btn small" data-wn="${esc(note[0])}">Got it</button></div>`;
     const head = panel.querySelector('.page-head'); if (head) head.after(box); else panel.prepend(box);
   }
-  document.addEventListener('click', (e) => { const b = e.target.closest('[data-wn]'); if (!b) return; seen[b.dataset.wn] = Date.now(); save(); show(); });
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-wn]'); if (!b) return; VL.sound && VL.sound.play('tap'); seen[b.dataset.wn] = Date.now(); save(); show(); });
   window.addEventListener('hashchange', () => setTimeout(show, 30));
   // a brand-new user gets the tour instead, so everything that exists today counts as seen for them
   if (!localStorage.getItem('vgclab-toured2') && !Object.keys(seen).length) { NOTES.forEach(([id]) => { seen[id] = 1; }); save(); }

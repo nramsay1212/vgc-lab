@@ -499,7 +499,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
 
   // ---------- events ----------
   $('focus-edit').onclick = () => { $('focus-form').hidden = !$('focus-form').hidden; if (!$('focus-form').hidden) $('focus-input').focus(); };
-  $('focus-save').onclick = () => { putProfile({ focus: $('focus-input').value.trim() }); $('focus-form').hidden = true; VL.toast('Focus saved'); };
+  $('focus-save').onclick = () => { putProfile({ focus: $('focus-input').value.trim() }); $('focus-form').hidden = true; VL.toast('Focus saved'); VL.sound && VL.sound.play('save'); };
   $('focus-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('focus-save').click(); } });
   $('fmt-edit').onclick = () => { $('fmt-form').hidden = !$('fmt-form').hidden; };
   $('fmt-save').onclick = () => {
@@ -510,7 +510,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       if (!name) { VL.toast('Type the format name first'); return; }
       Object.assign(patch, { format: 'custom', customFormat: name });
     } else Object.assign(patch, { format: v });
-    putProfile(patch); $('fmt-form').hidden = true; fillDatalist(); VL.study.fill(v === 'custom' ? '' : v); VL.toast('Saved');
+    putProfile(patch); $('fmt-form').hidden = true; fillDatalist(); VL.study.fill(v === 'custom' ? '' : v); VL.toast('Saved'); VL.sound && VL.sound.play('save');
   };
   $('fmt-select').addEventListener('change', () => {
     let box = $('fmt-custom-wrap');
@@ -676,7 +676,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   };
   $('coach-save').onclick = () => {
     const text = $('coach-paste').value.trim(); if (!text) { VL.toast('Paste Claude\'s review first'); return; }
-    const id = VL.newId('r'); store.put('reports', id, { ts: Date.now(), games: games().length, text }); $('coach-paste').value = ''; VL.toast('Review saved');
+    const id = VL.newId('r'); store.put('reports', id, { ts: Date.now(), games: games().length, text }); $('coach-paste').value = ''; VL.sound && VL.sound.play('save'); VL.toast('Review saved');
     setTimeout(() => { $('coach-past').value = id; renderAll(); }, 50);
   };
   $('coach-past').onchange = () => { const r = store.get('reports', $('coach-past').value); if (r) $('coach-out').innerHTML = md(r.text); };
@@ -696,7 +696,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     e.preventDefault(); const name = $('nb-name').value.trim(); if (!name) return;
     const id = nbEditing || VL.newId('m'); const prev = store.get('matchups', id);
     store.put('matchups', id, { ts: prev?.ts || Date.now(), fmt: prev?.fmt || curFormatId(), name, team: $('nb-team').value || null, plan: $('nb-plan').value.trim(), lead: $('nb-lead').value.trim(), bring: $('nb-bring').value.trim(), calcs: $('nb-calcs').value.trim() });
-    clearNb(); VL.toast('Matchup saved');
+    clearNb(); VL.toast('Matchup saved'); VL.sound && VL.sound.play('save');
   });
   $('nb-list').addEventListener('click', e => {
     const ed = e.target.dataset.editnb, dl = e.target.dataset.delnb;
