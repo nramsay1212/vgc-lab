@@ -37,9 +37,10 @@
 
   // ---------- quick picks: your saved teams and the Pokémon beating you ----------
   const teamsList = () => VL.store.list('teams').filter(t => t && t.paste).sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  function pickTeam() {
+  function pickTeam(key) {
     const ts = teamsList(); if (!ts.length) return null;
-    if (S.qteam) { const t = ts.find(x => x.id === S.qteam); if (t) return t; }
+    const want = (S.qteams && S.qteams[key]) || S.qteam;
+    if (want) { const t = ts.find(x => x.id === want); if (t) return t; }
     // default: the team from your latest climb game, else the newest saved team
     const g = VL.store.list('games').filter(x => x.team && !(VL.isTestGame && VL.isTestGame(x))).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
     return (g && ts.find(x => x.id === g.team)) || ts[0];
@@ -56,18 +57,24 @@
       .sort((a, b) => (b.l / b.seen - a.l / a.seen) || b.l - a.l).slice(0, 6);
   }
   function quickHtml(key) {
-    const t = pickTeam(); const sets = teamSets(t); const tr = trouble();
+    const ts = teamsList(); const t = pickTeam(key); const sets = teamSets(t); const tr = trouble();
     const on = (n) => toId(S[key].mon).startsWith(toId(n)) || toId(n) === toId(S[key].mon);
     const chip = (attr, n, sub) => `<button type="button" class="chipbtn cl-qchip" ${attr} aria-pressed="${on(n)}">${VL.sprite ? VL.sprite(n, 'sm', false) : ''}<span>${esc(n)}${sub ? `<span class="mini">${esc(sub)}</span>` : ''}</span></button>`;
     const mine = sets.length ? sets.map((x, k) => chip(`data-qmine="${k}"`, x.species, '')).join('') : `<span class="sub">Save a team in the team builder to pick from it here.</span>`;
     const bad = tr.length ? tr.map(v => chip(`data-qbad="${esc(v.n)}"`, v.n, `lost ${v.l} of ${v.seen}`)).join('') : `<span class="sub">Log a few games and the Pokémon beating you show up here.</span>`;
-    return `<div class="cl-quick">
-      <div class="section-label">${key === 'atk' ? 'Attack with' : 'Take a hit with'} your team${t ? ` · <span class="mini">${esc(t.name || 'Saved team')}</span>` : ''}</div><div class="cl-qrow">${mine}</div>
-      <div class="section-label">Pokémon giving you trouble <span class="mini">· loads their most common set</span></div><div class="cl-qrow">${bad}</div>
-    </div>`;
+    const open = !S.qopen || S.qopen[key] !== false;
+    const teamSel = ts.length ? `<label class="cl-qteam">Team<select data-qteam>${ts.map(x => `<option value="${esc(x.id)}" ${t && t.id === x.id ? 'selected' : ''}>${esc(x.name || 'Saved team')}</option>`).join('')}</select></label>` : '';
+    return `<details class="cl-quick" data-qopen ${open ? 'open' : ''}>
+      <summary><span>Quick pick</span><span class="mini">${t ? esc(t.name || 'Saved team') : 'No saved teams'}${tr.length ? ` · ${tr.length} giving you trouble` : ''}</span></summary>
+      <div class="cl-qbody">
+        ${teamSel}
+        <div class="section-label">${key === 'atk' ? 'Attack with' : 'Take a hit with'} this team</div><div class="cl-qrow">${mine}</div>
+        <div class="section-label">Pokémon giving you trouble <span class="mini">· loads their most common set</span></div><div class="cl-qrow">${bad}</div>
+      </div>
+    </details>`;
   }
   function loadMine(key, k) {
-    const set = teamSets(pickTeam())[k]; if (!set) return;
+    const set = teamSets(pickTeam(key))[k]; if (!set) return;
     const champ = isChamp(); const s = { ...blank(), moves: ['', '', '', ''] };
     s.mon = set.species; const i = VL.D.find(s.mon); if (i >= 0) s.mon = VL.D.mon(i, fmt()).n;
     s.item = set.item || ''; s.ability = set.ability || (i >= 0 ? VL.D.mon(i, fmt()).a[0] || '' : ''); s.nature = set.nature || 'Hardy';
@@ -173,8 +180,6 @@
     $('cl-note').innerHTML = isChamp()
       ? 'Champions rules: Level 50, no individual values, and Stat Points instead of effort values. The engine\'s Champions support is newer than the rest, so treat results as very close rather than exact, and check surprising numbers in-game.'
       : `Generation ${fmt().gen} rules, Level 50, individual values set to 31.`;
-    const ts = teamsList(); const cur = pickTeam(); const tsel = $('cl-team');
-    if (tsel) { tsel.innerHTML = ts.length ? ts.map(t => `<option value="${esc(t.id)}" ${cur && cur.id === t.id ? 'selected' : ''}>${esc(t.name || 'Saved team')}</option>`).join('') : '<option value="">No saved teams yet</option>'; tsel.disabled = !ts.length; }
     $('cl-sides').innerHTML = sideHtml('atk', 'Attacker') + sideHtml('def', 'Defender');
     $('cl-field').innerHTML = fieldHtml();
     fillLists();
@@ -206,6 +211,7 @@
   $('cl-sides').addEventListener('change', e => {
     const card = e.target.closest('[data-side]'); if (!card) return; const key = card.dataset.side; const s = S[key];
     const t = e.target;
+    if (t.matches('[data-qteam]')) { S.qteams = { ...(S.qteams || {}), [key]: t.value }; save(); render(); return; }
     if (t.dataset.f) {
       const f = t.dataset.f;
       if (f === 'mega') s.mega = t.checked;
@@ -218,6 +224,10 @@
     if (t.dataset.boost) { s.boosts[t.dataset.boost] = +t.value; save(); compute(); return; }
     if (t.dataset.move !== undefined) { s.moves[+t.dataset.move] = t.value.trim(); save(); compute(); }
   });
+  $('cl-sides').addEventListener('toggle', e => {
+    const d = e.target; if (!d.matches || !d.matches('[data-qopen]')) return;
+    const key = d.closest('[data-side]').dataset.side; S.qopen = { ...(S.qopen || {}), [key]: d.open }; save();
+  }, true);
   $('cl-sides').addEventListener('click', e => {
     const q = e.target.closest('[data-qmine],[data-qbad]');
     if (q) { const key = q.closest('[data-side]').dataset.side; if (q.dataset.qmine !== undefined) loadMine(key, +q.dataset.qmine); else loadBad(key, q.dataset.qbad); if (VL.sound) VL.sound.play('tap'); return; }
@@ -230,7 +240,6 @@
     S.field[k] = e.target.type === 'checkbox' ? e.target.checked : (k === 'doubles' ? e.target.value === '1' : e.target.value);
     save(); compute();
   });
-  if ($('cl-team')) $('cl-team').addEventListener('change', () => { S.qteam = $('cl-team').value || ''; save(); render(); });
   $('cl-format').addEventListener('change', () => { S.fmt = $('cl-format').value; const f = fmt(); S.field.doubles = f.doubles; for (const k of ['atk', 'def']) S[k].sp = S[k].sp.map(v => Math.min(spMax(), v)); save(); render(); });
   $('cl-swap').onclick = () => { const a = S.atk; S.atk = { ...S.def, moves: S.def.moves || ['', '', '', ''] }; S.def = { ...a }; const e = VL.meta.forFormat(fmt().id); const m = VL.meta.get(e, S.atk.mon); if (m && !S.atk.moves.some(Boolean)) commonSet('atk'); save(); render(); };
 

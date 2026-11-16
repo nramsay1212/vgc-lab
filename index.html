@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=45">
+<link rel="stylesheet" href="css/app.css?v=46">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -430,9 +430,9 @@
     <header class="page-head">
       <h1>Damage calculator</h1>
       <p class="lede">See exactly how much an attack does. Uses the same engine as Pokémon Showdown&#39;s calculator, set to the rules of the format you pick.</p>
-      <details class="howto"><summary>How to use this page</summary><ol><li><b>Quick picks:</b> tap one of your team's Pokémon to load it with your exact set, or one of the Pokémon giving you trouble to load its most common set. Put yours as the Attacker to check your offense, or as the Defender to check what it survives. Change which team shows in <b>Your team for quick picks</b>.</li><li>Pick the attacker and defender. <b>Load common set</b> fills in the most-used build from the Meta page.</li><li>Set <span class="term" data-term="statpoints">Stat Points</span> (Champions) or effort values (older games), nature, item and ability for each side.</li><li>Add field effects like weather, terrain, screens or Helping Hand.</li><li>Results show the damage range and how many hits it takes. Use <b>Swap</b> to calc the other direction.</li></ol></details>
+      <details class="howto"><summary>How to use this page</summary><ol><li><b>Quick picks:</b> tap one of your team's Pokémon to load it with your exact set, or one of the Pokémon giving you trouble to load its most common set. Put yours as the Attacker to check your offense, or as the Defender to check what it survives. Tap <b>Quick pick</b> to open or close it, and change the team with its <b>Team</b> menu (each side can use a different saved team).</li><li>Pick the attacker and defender. <b>Load common set</b> fills in the most-used build from the Meta page.</li><li>Set <span class="term" data-term="statpoints">Stat Points</span> (Champions) or effort values (older games), nature, item and ability for each side.</li><li>Add field effects like weather, terrain, screens or Helping Hand.</li><li>Results show the damage range and how many hits it takes. Use <b>Swap</b> to calc the other direction.</li></ol></details>
     </header>
-    <div class="card"><div class="row"><label for="cl-format">Format<select id="cl-format"></select></label><label for="cl-team">Your team for quick picks<select id="cl-team"></select></label></div><p class="sub" id="cl-note"></p></div>
+    <div class="card"><div class="row"><label for="cl-format">Format<select id="cl-format"></select></label></div><p class="sub" id="cl-note"></p></div>
     <div class="grid2" id="cl-sides"></div>
     <div class="card"><div class="card-head"><h3>Field</h3></div><div id="cl-field" class="fieldgrid"></div></div>
     <div class="card accent"><div class="card-head"><h3>Results</h3><button class="btn ghost small" id="cl-swap">Swap sides</button></div><div id="cl-out"></div></div>
@@ -752,36 +752,36 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=45"></script>
-<script src="js/sound.js?v=45"></script>
-<script src="js/content.js?v=45"></script>
-<script src="js/search.js?v=45"></script>
-<script src="js/study.js?v=45"></script>
-<script src="js/sprites.js?v=45"></script>
-<script src="js/help.js?v=45"></script>
-<script src="js/meta.js?v=45"></script>
-<script src="js/calc.js?v=45"></script>
-<script src="js/companion.js?v=45"></script>
-<script src="js/teamcheck.js?v=45"></script>
-<script src="js/builder.js?v=45"></script>
-<script src="js/plan.js?v=45"></script>
-<script src="js/topteams.js?v=45"></script>
-<script src="js/news.js?v=45"></script>
-<script src="js/replay.js?v=45"></script>
-<script src="js/sheets.js?v=45"></script>
-<script src="js/teamcompare.js?v=45"></script>
-<script src="js/battleview.js?v=45"></script>
-<script src="js/videos.js?v=45"></script>
-<script src="js/trends.js?v=45"></script>
-<script src="js/progress.js?v=45"></script>
-<script src="js/arcade.js?v=45"></script>
-<script src="js/test.js?v=45"></script>
-<script src="js/compare.js?v=45"></script>
-<script src="js/app.js?v=45"></script>
-<script src="js/hubs.js?v=45"></script>
-<script src="js/whatsnew.js?v=45"></script>
-<script src="js/firebase-config.js?v=45"></script>
-<script src="js/account.js?v=45"></script>
+<script src="js/store.js?v=46"></script>
+<script src="js/sound.js?v=46"></script>
+<script src="js/content.js?v=46"></script>
+<script src="js/search.js?v=46"></script>
+<script src="js/study.js?v=46"></script>
+<script src="js/sprites.js?v=46"></script>
+<script src="js/help.js?v=46"></script>
+<script src="js/meta.js?v=46"></script>
+<script src="js/calc.js?v=46"></script>
+<script src="js/companion.js?v=46"></script>
+<script src="js/teamcheck.js?v=46"></script>
+<script src="js/builder.js?v=46"></script>
+<script src="js/plan.js?v=46"></script>
+<script src="js/topteams.js?v=46"></script>
+<script src="js/news.js?v=46"></script>
+<script src="js/replay.js?v=46"></script>
+<script src="js/sheets.js?v=46"></script>
+<script src="js/teamcompare.js?v=46"></script>
+<script src="js/battleview.js?v=46"></script>
+<script src="js/videos.js?v=46"></script>
+<script src="js/trends.js?v=46"></script>
+<script src="js/progress.js?v=46"></script>
+<script src="js/arcade.js?v=46"></script>
+<script src="js/test.js?v=46"></script>
+<script src="js/compare.js?v=46"></script>
+<script src="js/app.js?v=46"></script>
+<script src="js/hubs.js?v=46"></script>
+<script src="js/whatsnew.js?v=46"></script>
+<script src="js/firebase-config.js?v=46"></script>
+<script src="js/account.js?v=46"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
