@@ -157,6 +157,7 @@
       return `<li class="${on ? 'done' : ''}"><input type="checkbox" id="ck-${s.id}" data-ck="${s.id}" ${on ? 'checked' : ''}>
         <label for="ck-${s.id}" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="t">${esc(s.t)}<span class="meta">${esc(s.m)}</span></span><span class="d">${desc[s.id] || s.d}</span></label></li>`;
     }).join('');
+    requestAnimationFrame(() => VL.fitToday && VL.fitToday()); setTimeout(() => VL.fitToday && VL.fitToday(), 400);
   }
 
   // ---------- log ----------
@@ -529,6 +530,20 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       box.hidden = false; $('fmt-custom').value = profile().customFormat || ''; $('fmt-custom').focus();
     } else if (box) box.hidden = true;
   });
+  // big screens: Today fits on one screen. The session card ends at the bottom of the window and its list scrolls inside.
+  function fitToday() {
+    const c = document.querySelector('.td-sess'); if (!c) return;
+    c.style.maxHeight = ''; c.classList.remove('fitted');
+    if (!window.matchMedia('(min-width:2400px)').matches || !c.offsetParent) return;
+    const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    const top = c.getBoundingClientRect().top + window.scrollY;
+    const room = Math.floor(window.innerHeight / z - top - 24);
+    if (c.scrollHeight > room && room > 320) { c.style.maxHeight = room + 'px'; c.classList.add('fitted'); }
+  }
+  VL.fitToday = fitToday;
+  window.addEventListener('hashchange', () => setTimeout(fitToday, 60));
+  let ftT = null; window.addEventListener('resize', () => { clearTimeout(ftT); ftT = setTimeout(fitToday, 150); });
+  $('checklist').addEventListener('change', () => requestAnimationFrame(fitToday));
   $('checklist').addEventListener('click', e => {
     const a = e.target.closest('[data-warmcalc]'); if (!a) return;
     e.preventDefault(); if (VL.calc && VL.calc.openTrouble) VL.calc.openTrouble(a.dataset.warmcalc, a.dataset.warmteam || '');

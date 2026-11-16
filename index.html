@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=51">
+<link rel="stylesheet" href="css/app.css?v=54">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
@@ -73,10 +73,11 @@
       <div class="tile"><div class="k">Formats played</div><div class="v" id="cd-formats">0</div></div>
       <div class="tile"><div class="k">Overall rating</div><div class="v" id="cd-drills">–</div></div>
     </div>
+    <div class="td-board">
+    <div class="td-main">
     <div id="td-trends"></div>
-    <div class="td-lower">
-    <div class="grid2">
-      <div class="card accent">
+    <div class="grid2 td-side">
+      <div class="card accent td-focus">
         <div class="card-head"><h3>Focus this week</h3><button class="linkbtn" id="focus-edit">Edit</button></div>
         <p id="focus-text" style="margin:0;font-size:17px;font-weight:500"></p>
         <div id="focus-form" hidden class="row">
@@ -86,7 +87,7 @@
           <button class="btn small" id="focus-save">Save focus</button>
         </div>
       </div>
-      <div class="card">
+      <div class="card td-format">
         <div class="card-head"><h3>Current format</h3><button class="linkbtn" id="fmt-edit">Edit</button></div>
         <div id="fmt-view"></div>
         <div id="fmt-form" hidden class="row">
@@ -97,18 +98,16 @@
         </div>
       </div>
     </div>
+    </div>
 
-    <div class="card">
+    <div class="card td-sess">
       <div class="card-head">
         <h3>Today's session <span class="sub" id="today-date" style="font-family:var(--font-body)"></span></h3>
         <span class="sub" id="today-games"></span>
       </div>
       <ul class="checklist" id="checklist"></ul>
       <p class="sub">The streak counts days where you finish at least 3 of the first 6 items.</p>
-    </div>
-    </div>
-
-    <details class="why">
+      <details class="why">
       <summary>Why the session is built this way</summary>
       <ol>
         <li><p><b>Ladder volume on its own plateaus.</b> At a high level you already know the game. What's left to gain is in the few turns per game you get wrong, and you only find those by logging them and looking at them later.</p></li>
@@ -120,6 +119,9 @@
         <li><p><b>Best of 3 every week.</b> Ladder is best of 1, but big events are best of 3. Games 2 and 3 are about adapting to what you saw, and you can't practice that on ladder.</p></li>
       </ol>
     </details>
+    </div>
+    </div>
+
   </section>
 
   <!-- LOG -->
@@ -730,36 +732,36 @@
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=51"></script>
-<script src="js/sound.js?v=51"></script>
-<script src="js/content.js?v=51"></script>
-<script src="js/search.js?v=51"></script>
-<script src="js/study.js?v=51"></script>
-<script src="js/sprites.js?v=51"></script>
-<script src="js/help.js?v=51"></script>
-<script src="js/meta.js?v=51"></script>
-<script src="js/calc.js?v=51"></script>
-<script src="js/companion.js?v=51"></script>
-<script src="js/teamcheck.js?v=51"></script>
-<script src="js/builder.js?v=51"></script>
-<script src="js/plan.js?v=51"></script>
-<script src="js/topteams.js?v=51"></script>
-<script src="js/news.js?v=51"></script>
-<script src="js/replay.js?v=51"></script>
-<script src="js/sheets.js?v=51"></script>
-<script src="js/teamcompare.js?v=51"></script>
-<script src="js/battleview.js?v=51"></script>
-<script src="js/videos.js?v=51"></script>
-<script src="js/trends.js?v=51"></script>
-<script src="js/progress.js?v=51"></script>
-<script src="js/arcade.js?v=51"></script>
-<script src="js/test.js?v=51"></script>
-<script src="js/compare.js?v=51"></script>
-<script src="js/app.js?v=51"></script>
-<script src="js/hubs.js?v=51"></script>
-<script src="js/whatsnew.js?v=51"></script>
-<script src="js/firebase-config.js?v=51"></script>
-<script src="js/account.js?v=51"></script>
+<script src="js/store.js?v=54"></script>
+<script src="js/sound.js?v=54"></script>
+<script src="js/content.js?v=54"></script>
+<script src="js/search.js?v=54"></script>
+<script src="js/study.js?v=54"></script>
+<script src="js/sprites.js?v=54"></script>
+<script src="js/help.js?v=54"></script>
+<script src="js/meta.js?v=54"></script>
+<script src="js/calc.js?v=54"></script>
+<script src="js/companion.js?v=54"></script>
+<script src="js/teamcheck.js?v=54"></script>
+<script src="js/builder.js?v=54"></script>
+<script src="js/plan.js?v=54"></script>
+<script src="js/topteams.js?v=54"></script>
+<script src="js/news.js?v=54"></script>
+<script src="js/replay.js?v=54"></script>
+<script src="js/sheets.js?v=54"></script>
+<script src="js/teamcompare.js?v=54"></script>
+<script src="js/battleview.js?v=54"></script>
+<script src="js/videos.js?v=54"></script>
+<script src="js/trends.js?v=54"></script>
+<script src="js/progress.js?v=54"></script>
+<script src="js/arcade.js?v=54"></script>
+<script src="js/test.js?v=54"></script>
+<script src="js/compare.js?v=54"></script>
+<script src="js/app.js?v=54"></script>
+<script src="js/hubs.js?v=54"></script>
+<script src="js/whatsnew.js?v=54"></script>
+<script src="js/firebase-config.js?v=54"></script>
+<script src="js/account.js?v=54"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
