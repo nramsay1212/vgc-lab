@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>toxicroak. — VGC Lab (PC mockup)</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FBF8F1; --paper:#F6F2E8; --ink:#141414; --ink-2:#3A3A3A; --muted:#5E5B55;
+  --line:#1A1A1A; --hair:#D9D3C4;
+  --cyan:#3ED3DA; --cyan-deep:#0E8F96; --cyan-soft:#DDF6F7;
+  --violet:#D23BDE; --violet-deep:#9B1FA6; --violet-soft:#F3E6FA;
+  --r:18px; --shadow:5px 5px 0 var(--ink);
+  --serif:'Instrument Serif',Georgia,serif; --pixel:'Silkscreen',ui-monospace,monospace; --mono:'Space Mono',ui-monospace,monospace; --sans:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 48px}
+
+/* labels: the pixel "data" text, kept readable on PC */
+.lbl{font-family:var(--pixel);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+.lbl.v{color:var(--violet-deep)} .lbl.c{color:var(--cyan-deep)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 26px;border-radius:999px;border:2px solid var(--ink);background:var(--cyan);font-family:var(--pixel);font-size:13px;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;box-shadow:var(--shadow);transition:transform .08s,box-shadow .08s}
+.btn:hover{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+.btn.dark{background:var(--ink);color:#fff;box-shadow:4px 4px 0 var(--cyan)}
+.btn.dark:hover{box-shadow:2px 2px 0 var(--cyan)}
+.pill{white-space:nowrap;display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:999px;border:1.5px solid var(--ink);font-family:var(--pixel);font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--cream)}
+.pill.v{border-color:var(--violet);color:var(--violet-deep);background:var(--violet-soft)}
+.pill.c{border-color:var(--cyan-deep);color:var(--cyan-deep);background:var(--cyan-soft)}
+.pill.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.pill:hover{background:var(--ink);color:#fff}
+
+/* numbered image slots */
+.orb{position:relative;display:grid;place-items:center;border-radius:50%;border:2px dashed var(--violet);background:radial-gradient(circle at 35% 30%,#fff,var(--violet-soft) 70%);color:var(--violet-deep);font-family:'Press Start 2P',monospace;flex:none}
+.orb::after{content:attr(data-what);position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--pixel);font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.orb.c{border-color:var(--cyan-deep);background:radial-gradient(circle at 35% 30%,#fff,var(--cyan-soft) 70%);color:var(--cyan-deep)}
+.orb.quiet::after{display:none}
+
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:20;background:rgba(251,248,241,.92);backdrop-filter:blur(8px);border-bottom:1.5px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:28px;height:84px}
+.word{font-family:var(--serif);font-size:34px;letter-spacing:-.02em;text-decoration:none;line-height:1}
+.badge{display:inline-grid;place-items:center;height:34px;padding:0 12px;border:1.5px solid var(--cyan-deep);border-radius:999px;background:var(--cyan-soft);font-family:var(--pixel);font-size:10px;letter-spacing:.14em;line-height:1.05;text-align:center;color:var(--cyan-deep)}
+.topnav{display:flex;gap:6px;margin-left:24px}
+.topnav a{display:flex;align-items:baseline;gap:8px;padding:10px 14px;border-radius:10px;text-decoration:none;font-family:var(--pixel);font-size:14px;letter-spacing:.2em}
+.topnav a small{font-family:var(--sans);font-size:11px;letter-spacing:0;color:var(--muted)}
+.topnav a:hover,.topnav a[aria-current="page"]{background:var(--cyan-soft)}
+.topnav a[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--cyan)}
+.top .btn{margin-left:auto;height:46px}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px;align-items:center;padding:64px 0 40px}
+.eyebrow{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;padding-left:14px;border-left:5px solid var(--violet)}
+.jp{font-family:var(--sans);font-weight:600;color:var(--cyan-deep);font-size:15px;text-align:right;line-height:1.3}
+.pixword{margin:26px 0 8px;font-family:'Press Start 2P',monospace;font-size:54px;line-height:1;letter-spacing:.04em;color:var(--cyan);-webkit-text-stroke:2px var(--ink);text-shadow:5px 5px 0 var(--violet)}
+h1{font-family:var(--serif);font-weight:400;font-size:84px;line-height:.98;letter-spacing:-.025em;margin:22px 0 22px}
+h1 em{color:var(--violet);font-style:italic}
+.lede{max-width:52ch;color:var(--ink-2);font-size:17px;margin:0 0 30px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:28px;align-items:center}
+.tint{font-family:var(--pixel);font-size:12px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid var(--ink);padding-bottom:4px}
+
+.stage{position:relative;border:2px solid var(--ink);border-radius:28px;background:#fff;box-shadow:8px 8px 0 var(--ink);min-height:520px;display:grid;grid-template-columns:1fr 110px;overflow:hidden}
+.stage-art{position:relative;display:grid;place-items:center;padding:40px}
+.stage-art .orb{width:300px;height:300px;font-size:44px}
+.spark{position:absolute;width:40px;height:40px}
+.spark.a{top:44px;left:60%}.spark.b{top:150px;left:40px;width:26px;height:26px}.spark.c{bottom:70px;right:30px;width:30px;height:30px}
+.rail{border-left:2px solid var(--ink);background:var(--paper);display:flex;flex-direction:column;align-items:center;gap:40px;padding:22px 0 30px}
+.rail .orb{width:64px;height:64px;font-size:14px}
+.rail .orb::after{bottom:-22px;font-size:9px}
+
+/* dither landscape */
+.field{position:relative;margin:8px 0 72px;border:2px solid var(--ink);border-radius:var(--r);overflow:hidden;background:#fff;box-shadow:var(--shadow);height:240px}
+.field canvas{display:block;width:100%;height:100%}
+.field .chips{position:absolute;left:18px;bottom:16px;display:flex;gap:10px}
+.field .torii{position:absolute;left:9%;top:92px;width:46px;height:40px}
+
+/* ---------- terminal + coach ---------- */
+.row2{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:32px;margin-bottom:96px}
+.card{border:2px solid var(--ink);border-radius:var(--r);background:var(--paper);box-shadow:var(--shadow);padding:26px}
+.term-head{display:flex;justify-content:space-between;padding-bottom:16px;border-bottom:1.5px solid var(--hair);margin-bottom:14px}
+.blink{animation:blink 1.6s steps(2,end) infinite}
+@keyframes blink{50%{opacity:.35}}
+.term a{display:flex;align-items:center;gap:16px;height:58px;padding:0 20px;margin-bottom:8px;border-radius:12px;border:2px solid transparent;text-decoration:none;font-family:var(--pixel);font-size:17px;letter-spacing:.26em}
+.term a::before{content:">";color:var(--cyan-deep);font-size:15px}
+.term a small{margin-left:auto;font-family:var(--sans);font-size:13px;letter-spacing:.04em;color:var(--muted)}
+.term a:hover,.term a.on{background:var(--cyan);border-color:var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.term a:hover::before,.term a.on::before{color:var(--ink)}
+.term a:hover small,.term a.on small{color:var(--ink)}
+.coach{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 1fr;gap:18px 34px;background:#fff}
+.coach .head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+.coach .orb{width:180px;height:180px;font-size:24px;align-self:start;margin-top:6px}
+.coach h2{font-family:var(--serif);font-weight:400;font-size:46px;line-height:1;margin:0 0 14px;letter-spacing:-.02em}
+.coach blockquote{margin:0;font-size:16px;color:var(--ink-2);max-width:56ch}
+.coach blockquote b{color:var(--ink)}
+
+/* ---------- simulator ---------- */
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:22px;border-bottom:1.5px solid var(--line);margin-bottom:30px}
+.sec-head h2{font-family:var(--serif);font-weight:400;font-size:58px;line-height:1;margin:10px 0 0;letter-spacing:-.02em}
+.sec-head .acts{display:flex;gap:10px}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:32px;margin-bottom:96px}
+.box{border:2px solid var(--ink);border-radius:var(--r);background:var(--paper);padding:20px 22px 22px;background-image:radial-gradient(rgba(20,20,20,.07) 1px,transparent 1.2px);background-size:7px 7px}
+.box+.box{margin-top:22px}
+.box-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.mon{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;align-items:center;background:#fff;border:2px solid var(--ink);border-radius:14px;padding:16px 18px 18px;box-shadow:4px 4px 0 var(--violet)}
+.mon.mine{box-shadow:4px 4px 0 var(--cyan)}
+.mon+.mon{margin-top:16px}
+.mon .name{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-size:34px;line-height:1.05}
+.mon .meta{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.mon .orb{grid-row:1/4;grid-column:2;width:70px;height:70px;font-size:14px}
+.mon .orb::after{display:none}
+.bar{height:10px;border-radius:999px;background:#EEE9DD;border:1.5px solid var(--ink);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--violet)}
+.mon.mine .bar i{background:var(--cyan)}
+.tag{font-family:var(--pixel);font-size:10px;letter-spacing:.1em;padding:3px 8px;border-radius:6px;border:1.5px solid var(--violet);color:var(--violet-deep);background:var(--violet-soft);text-transform:uppercase}
+.mon.mine .tag{border-color:var(--cyan-deep);color:var(--cyan-deep);background:var(--cyan-soft)}
+.order{margin-top:22px;border:2px solid var(--ink);border-radius:var(--r);background:#fff;padding:18px 22px}
+.order ol{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.order li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;font-size:15px}
+.order li b{font-family:'Press Start 2P',monospace;font-size:12px}
+.order li .mono{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.order li.mine b{color:var(--cyan-deep)} .order li.opp b{color:var(--violet-deep)}
+.order .note{margin-top:12px;font-size:13px;color:var(--muted)}
+
+.moves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.move{text-align:left;min-height:88px;padding:14px 16px;border:2px solid var(--ink);border-radius:12px;background:var(--cream);font-family:var(--mono);font-size:15px;font-weight:700;line-height:1.3;transition:transform .08s,box-shadow .08s}
+.move small{display:block;margin-top:6px;font-family:var(--pixel);font-weight:400;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.move:hover{box-shadow:3px 3px 0 var(--ink);transform:translate(-1px,-1px)}
+.move[aria-pressed="true"]{background:var(--violet);color:#fff;box-shadow:4px 4px 0 var(--ink)}
+.move[aria-pressed="true"] small{color:#FCE7FF}
+.partner .move[aria-pressed="true"]{background:var(--cyan);color:var(--ink)}
+.partner .move[aria-pressed="true"] small{color:var(--ink)}
+button.pill[aria-pressed="true"]{background:var(--violet);color:#fff;border-color:var(--ink)}
+.ready{margin-top:22px;border:2px solid var(--ink);border-radius:var(--r);background:var(--violet-soft);padding:20px 22px;display:flex;flex-direction:column;gap:16px}
+.ready p{margin:0;font-size:16px}
+.ready .btn{justify-content:center;width:100%}
+.verdict{border-radius:12px;padding:14px 16px;background:#fff;border:2px solid var(--ink);font-size:15px}
+.verdict.good{box-shadow:4px 4px 0 var(--cyan)} .verdict.ok{box-shadow:4px 4px 0 #E8C24A} .verdict.bad{box-shadow:4px 4px 0 var(--violet)}
+.verdict b{font-family:var(--pixel);letter-spacing:.12em;font-weight:700;text-transform:uppercase;font-size:13px;display:block;margin-bottom:4px}
+
+/* ---------- quiz ---------- */
+.quiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:32px;margin-bottom:96px;align-items:start}
+.quiz .q{font-family:var(--serif);font-size:38px;line-height:1.1;margin:12px 0 0}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.opt{min-height:70px;text-align:left;padding:14px 18px;border:2px solid var(--ink);border-radius:12px;background:#fff;font-size:16px;font-weight:500}
+.opt:hover{background:var(--cyan-soft)}
+.opt.right{background:var(--cyan);box-shadow:4px 4px 0 var(--ink)}
+.opt.wrong{background:var(--violet-soft);border-color:var(--violet);color:var(--violet-deep)}
+.quiz-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;min-height:34px}
+.why{font-size:15px;color:var(--ink-2)}
+
+/* ---------- slot key + footer ---------- */
+.key{margin-bottom:80px}
+.keygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.keygrid div{display:flex;align-items:center;gap:14px;padding:12px 16px;border:1.5px solid var(--hair);border-radius:12px;background:#fff;font-size:14.5px}
+.keygrid .orb{width:42px;height:42px;font-size:11px}
+footer{border-top:1.5px solid var(--line);padding:34px 0 46px}
+footer .wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.sw{display:flex;gap:10px;margin-left:auto}
+.sw span{display:flex;align-items:center;gap:8px;font-family:var(--pixel);font-size:11px;letter-spacing:.1em}
+.sw i{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--ink)}
+
+/* smaller screens still work */
+@media (max-width:1100px){
+  .hero,.row2,.sim,.quiz{grid-template-columns:1fr}
+  .topnav{display:none}
+  h1{font-size:64px}.pixword{font-size:40px}
+  .keygrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:620px){
+  .wrap{padding:0 18px}
+  h1{font-size:46px}.pixword{font-size:28px}
+  .stage{grid-template-columns:1fr 84px;min-height:420px}.stage-art .orb{width:200px;height:200px}
+  .coach{grid-template-columns:1fr}.coach .orb{width:130px;height:130px}
+  .moves,.opts,.keygrid{grid-template-columns:1fr}
+  .top .btn{display:none}
+  .field .chips{flex-wrap:wrap;right:18px}
+  .rail .orb{width:52px;height:52px}
+  .sec-head{flex-direction:column;align-items:flex-start}
+  .sec-head h2{font-size:42px}
+}
+@media (prefers-reduced-motion:reduce){.blink{animation:none}.btn,.move{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="word" href="#">toxicroak.</a>
+    <span class="badge">VGC<br>LAB</span>
+    <nav class="topnav" aria-label="Main">
+      <a href="#sim" aria-current="page">BATTLE <small>模擬戦</small></a>
+      <a href="#quiz">STUDY <small>素早さ</small></a>
+      <a href="#terminal">LOG <small>戦績録</small></a>
+      <a href="#key">MORE <small>特訓</small></a>
+    </nav>
+    <a class="btn dark" href="#sim">Start simulation ↗</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div>
+      <div class="eyebrow">
+        <span class="lbl">Regulation M // Doubles<br>combat simulator</span>
+        <span class="jp">トキシクロー<br>ク研究所</span>
+      </div>
+      <div class="pixword" aria-hidden="true">TOXICROAK</div>
+      <h1 id="hero-title">Read the Lead. <em>Outspeed</em> the Meta.</h1>
+      <p class="lede">Train competitive 2v2 doubles positioning, speed-tier calcs and Terastallization mind-games inside an editorial Japanese pixel laboratory.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#sim">Launch 2v2 drill ↗</a>
+        <a class="tint" href="#field">Halftone tint: cyan + violet →</a>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-art">
+        <svg class="spark a" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 0C21 13 27 19 40 20 27 21 21 27 20 40 19 27 13 21 0 20 13 19 19 13 20 0Z" fill="#D23BDE"/></svg>
+        <svg class="spark b" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 0C21 13 27 19 40 20 27 21 21 27 20 40 19 27 13 21 0 20 13 19 19 13 20 0Z" fill="#3ED3DA"/></svg>
+        <svg class="spark c" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 0C21 13 27 19 40 20 27 21 21 27 20 40 19 27 13 21 0 20 13 19 19 13 20 0Z" fill="#D23BDE"/></svg>
+        <div class="orb" data-what="Main illustration" role="img" aria-label="Image slot 1: main illustration">1</div>
+      </div>
+      <div class="rail">
+        <span class="lbl">Team</span>
+        <div class="orb" data-what="Team 1" role="img" aria-label="Image slot 2: team member 1">2</div>
+        <div class="orb c" data-what="Team 2" role="img" aria-label="Image slot 3: team member 2">3</div>
+        <div class="orb" data-what="Team 3" role="img" aria-label="Image slot 4: team member 3">4</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="field" id="field" aria-label="Halftone mountain scene">
+    <canvas id="dither" aria-hidden="true"></canvas>
+    <svg class="torii" viewBox="0 0 46 40" aria-hidden="true"><path d="M2 6h42v5H2zM6 15h34v4H6zM10 11h5v29h-5zM31 11h5v29h-5z" fill="#141414"/></svg>
+    <div class="chips"><span class="pill">Mt. Silver // stipple</span><span class="pill v">Move cursor to shift dither</span></div>
+  </section>
+
+  <section class="row2" id="terminal">
+    <div class="card term">
+      <div class="term-head"><span class="lbl">Lab_terminal</span><span class="lbl v blink">Online</span></div>
+      <a href="#sim" class="on">BATTLE <small>模擬戦</small></a>
+      <a href="#quiz">STUDY <small>素早さ</small></a>
+      <a href="#terminal">LOG <small>戦績録</small></a>
+      <a href="#key">MORE <small>特訓</small></a>
+    </div>
+    <article class="card coach">
+      <div class="head"><span class="lbl">Coach_note // 04</span><span class="pill v">Pro tip</span></div>
+      <div class="orb c" data-what="Coach art" role="img" aria-label="Image slot 5: coach note illustration">5</div>
+      <div>
+        <h2>Fake Out &amp; Tera Mind-Games</h2>
+        <blockquote>“Gholdengo is Ghost-type and <b>immune to Fake Out</b>, while Incineroar often Teras Ghost. <b>Sucker Punch + Rain Weather Ball</b> punishes both.”</blockquote>
+      </div>
+    </article>
+  </section>
+
+  <section id="sim" aria-labelledby="sim-title">
+    <div class="sec-head">
+      <div><span class="lbl v">Simulator // Turn 01 lead solver</span><h2 id="sim-title">2v2 Doubles Lead Trainer</h2></div>
+      <div class="acts"><span class="pill c" id="sc-count">Scenario 1/3</span><button class="pill dark" id="sc-next" type="button">New lead ↻</button></div>
+    </div>
+    <div class="sim">
+      <div>
+        <div class="box">
+          <div class="box-head"><span class="lbl">Opponent lead</span><span class="lbl v" id="sc-field">Field: rain (Drizzle)</span></div>
+          <div id="opp"></div>
+        </div>
+        <div class="box">
+          <div class="box-head"><span class="lbl">Your lead duo</span><span class="lbl c">Select commands →</span></div>
+          <div id="mine"></div>
+        </div>
+        <div class="order">
+          <span class="lbl">Turn order preview</span>
+          <ol id="order"></ol>
+          <p class="note" id="order-note"></p>
+        </div>
+      </div>
+      <div>
+        <div class="box">
+          <div class="box-head"><span class="lbl" id="a-name">Toxicroak action</span><button class="pill" type="button" id="tera" aria-pressed="false">Tera: off</button></div>
+          <div class="moves" id="moves-a"></div>
+        </div>
+        <div class="box partner">
+          <div class="box-head"><span class="lbl" id="b-name">Partner action</span><span class="lbl c">Doubles synergy</span></div>
+          <div class="moves" id="moves-b"></div>
+        </div>
+        <div class="ready">
+          <p><span class="lbl v">[Ready]</span> Pick one move for each Pokémon and execute Turn 1 to test your VGC read.</p>
+          <div id="verdict" hidden></div>
+          <button class="btn dark" type="button" id="exec">Execute turn →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quiz" aria-labelledby="quiz-title">
+    <div class="sec-head">
+      <div><span class="lbl c">Dojo drills // mechanics &amp; damage rolls</span><h2 id="quiz-title">VGC Situational Quiz</h2></div>
+      <div class="acts"><span class="pill v" id="qz-score">Score 0/0</span></div>
+    </div>
+    <div class="quiz">
+      <div class="card" style="background:#fff">
+        <span class="lbl" id="qz-n">Question 1 of 3</span>
+        <p class="q" id="qz-q"></p>
+      </div>
+      <div>
+        <div class="opts" id="qz-opts"></div>
+        <div class="quiz-foot"><p class="why" id="qz-why"></p><button class="pill dark" type="button" id="qz-next" hidden>Next question →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="key" id="key" aria-labelledby="key-title">
+    <div class="sec-head"><div><span class="lbl">Image slots</span><h2 id="key-title">What goes where</h2></div></div>
+    <div class="keygrid">
+      <div><span class="orb quiet">1</span>Main illustration (hero, large)</div>
+      <div><span class="orb quiet">2</span>Team rail, top</div>
+      <div><span class="orb c quiet">3</span>Team rail, middle</div>
+      <div><span class="orb quiet">4</span>Team rail, bottom</div>
+      <div><span class="orb c quiet">5</span>Coach note illustration</div>
+      <div><span class="orb quiet">6</span>Opponent lead, left</div>
+      <div><span class="orb quiet">7</span>Opponent lead, right</div>
+      <div><span class="orb c quiet">8</span>Your lead, left</div>
+      <div><span class="orb c quiet">9</span>Your lead, right</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="word" style="font-size:28px">toxicroak.</span>
+    <span class="lbl">— VGC Lab // competitive doubles training</span>
+    <div class="sw"><span><i style="background:#3ED3DA"></i>Cyan #3ED3DA</span><span><i style="background:#D23BDE"></i>Violet #D23BDE</span><span><i style="background:#FBF8F1"></i>Cream #FBF8F1</span></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---------- dither landscape: dots follow the cursor ----------
+  const cv = $('dither'), ctx = cv.getContext('2d');
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16);
+  let shift = 0, target = 0;
+  function ridge(x, w, layer) {
+    const t = x / w;
+    if (layer === 0) return 0.42 + 0.16 * Math.sin(t * 7 + 1.2) + 0.08 * Math.sin(t * 17);
+    return 0.55 - 0.32 * Math.exp(-Math.pow((t - 0.42) * 4.2, 2)) + 0.06 * Math.sin(t * 11 + 2);
+  }
+  function draw() {
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+    const s = 7, W = r.width, H = r.height;
+    for (let gy = 0, y = 3; y < H; gy++, y += s) for (let gx = 0, x = 3; x < W; gx++, x += s) {
+      const th = BAYER[(gy % 4) * 4 + ((gx + Math.round(shift)) % 4 + 4) % 4];
+      for (const layer of [1, 0]) {
+        const top = ridge(x + shift * 6 * (layer + 1), W, layer) * H;
+        if (y < top) continue;
+        const depth = Math.min(1, (y - top) / (H * 0.5));
+        const edge = y - top < s * 1.5;
+        const v = edge ? 0.95 : 0.75 - depth * 0.6;
+        if (v > th) { ctx.fillStyle = layer === 1 ? (edge ? '#D23BDE' : 'rgba(210,59,222,.55)') : (edge ? '#0E8F96' : 'rgba(62,211,218,.7)'); ctx.fillRect(x - 1.5, y - 1.5, 3, 3); break; }
+      }
+    }
+  }
+  function tick() { shift += (target - shift) * 0.12; draw(); if (Math.abs(target - shift) > 0.05) requestAnimationFrame(tick); }
+  $('field').addEventListener('pointermove', (e) => { const r = cv.getBoundingClientRect(); target = ((e.clientX - r.left) / r.width - 0.5) * 16; requestAnimationFrame(tick); });
+  window.addEventListener('resize', draw); draw();
+
+  // ---------- lead trainer ----------
+  // Example data for the mockup; slots 6–9 are the sprite places.
+  const SC = [
+    {
+      field: 'Field: rain (Drizzle)',
+      opp: [{ n: 'Gholdengo', tera: 'Tera Steel', item: 'Choice Specs', spe: 149 }, { n: 'Incineroar', tera: 'Tera Ghost', item: 'Safety Goggles', spe: 92 }],
+      mine: [{ n: 'Toxicroak', tera: 'Tera Dark', item: 'Focus Sash', spe: 150 }, { n: 'Pelipper', tera: 'Tera Grass', item: 'Damp Rock', spe: 117 }],
+      a: [['Sucker Punch → Ghold', 'High', 1], ['Fake Out → Incin', 'Priority', 3], ['Close Combat → Incin', '120 BP', 0], ['Protect', 'Guard', 4]],
+      b: [['Weather Ball → Incin', 'Rain 2×', 0], ['Tailwind', '2× SPE', 0], ['Hurricane → Incin', '110 BP', 0], ['Wide Guard', 'Spread', 3]],
+      best: [0, 0], ok: { '1,0': 'Fake Out on Incineroar is fine, but Gholdengo fires a free Specs Make It Rain. Sucker Punch handles that threat.', '2,0': 'Close Combat into Incineroar works if it doesn\'t Tera Ghost; it often does here.', '0,2': 'Close! Hurricane is neutral on Incineroar; rain Weather Ball is super effective.' },
+      why: 'Sucker Punch beats Gholdengo before its Specs attack, and Water-type Weather Ball in rain hits Incineroar super effectively, even if it Teras Ghost.'
+    },
+    {
+      field: 'Field: rain (Drizzle)',
+      opp: [{ n: 'Kingambit', tera: 'Tera Dark', item: 'Black Glasses', spe: 70 }, { n: 'Amoonguss', tera: 'Tera Water', item: 'Rocky Helmet', spe: 50 }],
+      mine: [{ n: 'Toxicroak', tera: 'Tera Dark', item: 'Focus Sash', spe: 150 }, { n: 'Pelipper', tera: 'Tera Grass', item: 'Damp Rock', spe: 117 }],
+      a: [['Close Combat → Gambit', '4× weak', 0], ['Fake Out → Gambit', 'Priority', 3], ['Sucker Punch → Gambit', 'High', 1], ['Protect', 'Guard', 4]],
+      b: [['Weather Ball → Goose', 'Rain 2×', 0], ['Tailwind', '2× SPE', 0], ['Hurricane → Goose', 'SE · 100% in rain', 0], ['Wide Guard', 'Spread', 3]],
+      best: [0, 2], ok: { '1,2': 'Fake Out into Kingambit triggers Defiant: +2 Attack for them. Hit it with Close Combat instead.', '0,0': 'Weather Ball is resisted by Amoonguss. Hurricane is super effective and can\'t miss in rain.' },
+      why: 'Kingambit is Dark/Steel, so Close Combat is 4× effective, and you outspeed it. Hurricane is super effective on Amoonguss and never misses in rain.'
+    },
+    {
+      field: 'Field: rain (Drizzle)',
+      opp: [{ n: 'Whimsicott', tera: 'Tera Fire', item: 'Focus Sash', spe: 168 }, { n: 'Garchomp', tera: 'Tera Steel', item: 'Life Orb', spe: 154 }],
+      mine: [{ n: 'Toxicroak', tera: 'Tera Dark', item: 'Focus Sash', spe: 150 }, { n: 'Pelipper', tera: 'Tera Grass', item: 'Damp Rock', spe: 117 }],
+      a: [['Fake Out → Whimsi', 'Priority', 3], ['Sucker Punch → Chomp', 'High', 1], ['Close Combat → Chomp', '120 BP', 0], ['Protect', 'Guard', 4]],
+      b: [['Weather Ball → Chomp', 'Rain 2×', 0], ['Tailwind', '2× SPE', 0], ['Hurricane → Whimsi', '110 BP', 0], ['Wide Guard', 'Spread', 3]],
+      best: [0, 1], ok: { '0,0': 'Good Fake Out. But both their Pokémon still outspeed you next turn; your own Tailwind fixes that.', '3,1': 'Protect is safe, but Whimsicott gets its Tailwind up for free. Fake Out stops it.' },
+      why: 'Fake Out stops Whimsicott from setting its Prankster Tailwind this turn, and your own Tailwind wins the speed war for the next turns.'
+    }
+  ];
+  let si = 0, pickA = null, pickB = null, tera = false;
+  const monHtml = (m, slot, mine) => `<div class="mon${mine ? ' mine' : ''}"><div class="name">${esc(m.n)} <span class="tag">${esc(m.tera)}</span></div><div class="orb${mine ? ' c' : ''}" role="img" aria-label="Image slot ${slot}: ${esc(m.n)}">${slot}</div><div class="meta">${esc(m.item)} · ${m.spe} Spe</div><div class="bar"><i style="width:${Math.round(m.spe / 180 * 100)}%"></i></div></div>`;
+  function moves(list, sel, which) {
+    return list.map(([t, s], i) => `<button type="button" class="move" data-${which}="${i}" aria-pressed="${sel === i}">${esc(t)}<small>${esc(s)}</small></button>`).join('');
+  }
+  function order() {
+    const sc = SC[si];
+    const all = [...sc.opp.map((m) => ({ ...m, side: 'opp', pri: 0 })), ...sc.mine.map((m, i) => ({ ...m, side: 'mine', pri: i === 0 ? (pickA !== null ? sc.a[pickA][2] : 0) : (pickB !== null ? sc.b[pickB][2] : 0) }))];
+    all.sort((x, y) => (y.pri - x.pri) || (y.spe - x.spe));
+    $('order').innerHTML = all.map((m, i) => `<li class="${m.side}"><b>${i + 1}</b><span>${esc(m.n)}${m.pri ? ` <span class="tag">Priority +${m.pri}</span>` : ''}</span><span class="mono">${m.spe} Spe</span></li>`).join('');
+    $('order-note').textContent = 'Priority moves you pick go first. The opponents are assumed to use regular attacks.';
+  }
+  function render() {
+    const sc = SC[si];
+    $('sc-count').textContent = `Scenario ${si + 1}/${SC.length}`; $('sc-field').textContent = sc.field;
+    $('opp').innerHTML = sc.opp.map((m, i) => monHtml(m, 6 + i, false)).join('');
+    $('mine').innerHTML = sc.mine.map((m, i) => monHtml(m, 8 + i, true)).join('');
+    $('a-name').textContent = `${sc.mine[0].n} action`; $('b-name').textContent = `${sc.mine[1].n} action`;
+    $('moves-a').innerHTML = moves(sc.a, pickA, 'a'); $('moves-b').innerHTML = moves(sc.b, pickB, 'b');
+    $('tera').setAttribute('aria-pressed', String(tera)); $('tera').textContent = tera ? 'Tera: on' : 'Tera: off';
+    order();
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-a]'), b = e.target.closest('[data-b]');
+    if (a) { pickA = +a.dataset.a; $('verdict').hidden = true; render(); }
+    if (b) { pickB = +b.dataset.b; $('verdict').hidden = true; render(); }
+  });
+  $('tera').onclick = () => { tera = !tera; render(); };
+  $('sc-next').onclick = () => { si = (si + 1) % SC.length; pickA = pickB = null; tera = false; $('verdict').hidden = true; render(); };
+  $('exec').onclick = () => {
+    const v = $('verdict'), sc = SC[si]; v.hidden = false;
+    if (pickA === null || pickB === null) { v.className = 'verdict ok'; v.innerHTML = '<b>Pick both</b>Choose one move for each of your Pokémon first.'; return; }
+    const key = `${pickA},${pickB}`;
+    if (pickA === sc.best[0] && pickB === sc.best[1]) { v.className = 'verdict good'; v.innerHTML = `<b>Strong read</b>${esc(sc.why)}${tera ? ' Saving Tera was optional here, but it still works.' : ''}`; }
+    else if (sc.ok[key]) { v.className = 'verdict ok'; v.innerHTML = `<b>Almost</b>${esc(sc.ok[key])}`; }
+    else { v.className = 'verdict bad'; v.innerHTML = `<b>Risky</b>Best here: ${esc(sc.a[sc.best[0]][0])} + ${esc(sc.b[sc.best[1]][0])}. ${esc(sc.why)}`; }
+  };
+  render();
+
+  // ---------- quiz ----------
+  const QZ = [
+    { q: 'Rain is up. Pelipper uses Weather Ball. What type is it?', o: ['Normal', 'Water', 'Flying', 'Ice'], a: 1, why: 'In rain, Weather Ball becomes a Water-type move and its power doubles.' },
+    { q: 'Which of these leads is immune to Fake Out?', o: ['Incineroar', 'Kingambit', 'Gholdengo', 'Garchomp'], a: 2, why: 'Gholdengo is part Ghost, and Ghost types can\'t be hit by Normal-type moves like Fake Out.' },
+    { q: 'How many turns does Tailwind last, counting the turn it\'s used?', o: ['3', '4', '5', '8'], a: 1, why: 'Tailwind lasts 4 turns including the turn it\'s set, so you get 3 full turns of double speed after it.' }
+  ];
+  let qi = 0, right = 0, done = 0, answered = false;
+  function quiz() {
+    const q = QZ[qi]; answered = false;
+    $('qz-n').textContent = `Question ${qi + 1} of ${QZ.length}`; $('qz-q').textContent = q.q;
+    $('qz-opts').innerHTML = q.o.map((t, i) => `<button type="button" class="opt" data-q="${i}">${esc(t)}</button>`).join('');
+    $('qz-why').textContent = ''; $('qz-next').hidden = true;
+    $('qz-score').textContent = `Score ${right}/${done}`;
+  }
+  $('qz-opts').onclick = (e) => {
+    const b = e.target.closest('[data-q]'); if (!b || answered) return; answered = true;
+    const q = QZ[qi], pick = +b.dataset.q; done++; if (pick === q.a) right++;
+    [...$('qz-opts').children].forEach((el, i) => { if (i === q.a) el.classList.add('right'); else if (i === pick) el.classList.add('wrong'); });
+    $('qz-why').textContent = (pick === q.a ? 'Right. ' : 'Not quite. ') + q.why; $('qz-next').hidden = false;
+    $('qz-score').textContent = `Score ${right}/${done}`;
+  };
+  $('qz-next').onclick = () => { qi = (qi + 1) % QZ.length; quiz(); };
+  quiz();
+})();
+</script>
+</body>
+</html>
