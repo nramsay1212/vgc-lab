@@ -14,14 +14,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=62">
+<link rel="stylesheet" href="css/app.css?v=63">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
 <body>
 <div class="app">
 <aside class="side" aria-label="Main">
-  <a class="brand" href="#today"><img src="icons/logo.png" alt="" width="40" height="40"><span>Toxicroak VGC Lab</span></a>
+  <a class="brand" href="#today"><img class="logo-l" src="icons/logo.png" alt="" height="40"><img class="logo-d" src="icons/logo-dark.png" alt="" height="40"><span>Toxicroak VGC Lab</span></a>
   <label class="stylepick" for="style-side"><span>I play</span><select id="style-side" data-stylepick><option value="doubles">Doubles (VGC)</option><option value="singles">Singles (Battle Stadium)</option></select></label>
   <nav class="nav" aria-label="Sections">
     <div class="navgroup">Train</div>
@@ -57,7 +57,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
   </div>
 </aside>
 <main class="main" id="main">
-<div class="mtop"><a class="brand" href="#today"><img src="icons/logo.png" alt="" width="30" height="30"><span>Toxicroak VGC Lab</span></a><select id="style-top" data-stylepick aria-label="I play"><option value="doubles">Doubles (VGC)</option><option value="singles">Singles (Battle Stadium)</option></select></div>
+<div class="mtop"><a class="brand" href="#today"><img class="logo-l" src="icons/logo.png" alt="" height="30"><img class="logo-d" src="icons/logo-dark.png" alt="" height="30"><span>Toxicroak VGC Lab</span></a><select id="style-top" data-stylepick aria-label="I play"><option value="doubles">Doubles (VGC)</option><option value="singles">Singles (Battle Stadium)</option></select></div>
 <div class="wrap">
   <div class="banner" id="banner" hidden></div>
 
@@ -714,7 +714,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 </div>
 <div class="modal-back authback" id="auth" hidden>
   <div class="modal authbox" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-    <div class="kv" style="gap:10px"><img src="icons/logo.png" alt="" width="48" height="48"><div><h2 id="auth-title">Toxicroak VGC Lab</h2><div class="sub">Sign in to your training data</div></div></div>
+    <div class="kv" style="gap:10px"><img class="logo-l" src="icons/logo.png" alt="" height="48"><img class="logo-d" src="icons/logo-dark.png" alt="" height="48"><div><h2 id="auth-title">Toxicroak VGC Lab</h2><div class="sub">Sign in to your training data</div></div></div>
     <div class="seg" role="group" aria-label="Sign in or create an account" style="align-self:stretch;display:grid;grid-template-columns:1fr 1fr">
       <button type="button" data-authmode="in" aria-pressed="true" role="radio" aria-checked="true">Sign in</button>
       <button type="button" data-authmode="up" aria-pressed="false" role="radio" aria-checked="false">Create account</button>
@@ -742,36 +742,36 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=62"></script>
-<script src="js/sound.js?v=62"></script>
-<script src="js/content.js?v=62"></script>
-<script src="js/search.js?v=62"></script>
-<script src="js/study.js?v=62"></script>
-<script src="js/sprites.js?v=62"></script>
-<script src="js/help.js?v=62"></script>
-<script src="js/meta.js?v=62"></script>
-<script src="js/calc.js?v=62"></script>
-<script src="js/companion.js?v=62"></script>
-<script src="js/teamcheck.js?v=62"></script>
-<script src="js/builder.js?v=62"></script>
-<script src="js/plan.js?v=62"></script>
-<script src="js/topteams.js?v=62"></script>
-<script src="js/news.js?v=62"></script>
-<script src="js/replay.js?v=62"></script>
-<script src="js/sheets.js?v=62"></script>
-<script src="js/teamcompare.js?v=62"></script>
-<script src="js/battleview.js?v=62"></script>
-<script src="js/videos.js?v=62"></script>
-<script src="js/trends.js?v=62"></script>
-<script src="js/progress.js?v=62"></script>
-<script src="js/arcade.js?v=62"></script>
-<script src="js/test.js?v=62"></script>
-<script src="js/compare.js?v=62"></script>
-<script src="js/app.js?v=62"></script>
-<script src="js/hubs.js?v=62"></script>
-<script src="js/whatsnew.js?v=62"></script>
-<script src="js/firebase-config.js?v=62"></script>
-<script src="js/account.js?v=62"></script>
+<script src="js/store.js?v=63"></script>
+<script src="js/sound.js?v=63"></script>
+<script src="js/content.js?v=63"></script>
+<script src="js/search.js?v=63"></script>
+<script src="js/study.js?v=63"></script>
+<script src="js/sprites.js?v=63"></script>
+<script src="js/help.js?v=63"></script>
+<script src="js/meta.js?v=63"></script>
+<script src="js/calc.js?v=63"></script>
+<script src="js/companion.js?v=63"></script>
+<script src="js/teamcheck.js?v=63"></script>
+<script src="js/builder.js?v=63"></script>
+<script src="js/plan.js?v=63"></script>
+<script src="js/topteams.js?v=63"></script>
+<script src="js/news.js?v=63"></script>
+<script src="js/replay.js?v=63"></script>
+<script src="js/sheets.js?v=63"></script>
+<script src="js/teamcompare.js?v=63"></script>
+<script src="js/battleview.js?v=63"></script>
+<script src="js/videos.js?v=63"></script>
+<script src="js/trends.js?v=63"></script>
+<script src="js/progress.js?v=63"></script>
+<script src="js/arcade.js?v=63"></script>
+<script src="js/test.js?v=63"></script>
+<script src="js/compare.js?v=63"></script>
+<script src="js/app.js?v=63"></script>
+<script src="js/hubs.js?v=63"></script>
+<script src="js/whatsnew.js?v=63"></script>
+<script src="js/firebase-config.js?v=63"></script>
+<script src="js/account.js?v=63"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });
