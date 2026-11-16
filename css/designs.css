@@ -1,0 +1,174 @@
+/* Five designs in shiny Toxicroak's colors: teal body, hot-pink throat and claws, black.
+   Picked in Account, backup & theme → Design. Each one sets the colors (the same variables the
+   whole app uses) and then restyles a handful of building blocks: page titles, cards, buttons,
+   the menu and the background. "Original" (no data-design) is the indigo look from before. */
+
+/* Fonts for the designs, kept in the app so they work offline. Browsers only download one once a design uses it. */
+@font-face{font-family:'VT323';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/vt323-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Shippori Mincho';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/shippori-mincho-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Shippori Mincho';font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/shippori-mincho-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Shippori Mincho';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/shippori-mincho-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Zen Kaku Gothic New';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/zen-kaku-gothic-new-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Zen Kaku Gothic New';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/zen-kaku-gothic-new-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Zen Kaku Gothic New';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/zen-kaku-gothic-new-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/chakra-petch-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/chakra-petch-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/chakra-petch-latin-700-normal.woff2) format('woff2')}
+
+/* ============ 1. Modern: today's layout, recolored. Follows Dark / Light / Match device. ============ */
+:root[data-design="modern"], :root[data-design="modern"][data-theme="dark"]{
+  --bg:#07090A; --bg-2:#0B0F10; --panel:#101516; --raised:#161D1E; --hover:rgba(255,255,255,.045);
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --ink:#F2F6F6; --ink-2:#C6D0D0; --muted:#879394; --faint:#5C6667;
+  --accent:#23B8B4; --accent-2:#45D3CF; --accent-soft:rgba(35,184,180,.14); --accent-ink:#04201F;
+  --hot:#FF4FA3; --hot-soft:rgba(255,79,163,.14);
+  --glow:radial-gradient(900px 340px at 30% -140px, rgba(35,184,180,.16), transparent 70%), radial-gradient(700px 300px at 85% -160px, rgba(255,79,163,.10), transparent 70%);
+  color-scheme:dark;
+}
+:root[data-design="modern"][data-theme="light"]{
+  --bg:#F6F9F9; --bg-2:#EEF3F3; --panel:#FFFFFF; --raised:#FFFFFF; --hover:rgba(0,0,0,.04);
+  --line:rgba(0,0,0,.08); --line-2:rgba(0,0,0,.15);
+  --ink:#121718; --ink-2:#364042; --muted:#667274; --faint:#98A2A3;
+  --accent:#0E8E8B; --accent-2:#0A7472; --accent-soft:rgba(14,142,139,.11); --accent-ink:#FFFFFF;
+  --hot:#D6237A; --hot-soft:rgba(214,35,122,.10);
+  --glow:radial-gradient(900px 340px at 30% -160px, rgba(14,142,139,.10), transparent 70%), radial-gradient(700px 300px at 85% -170px, rgba(214,35,122,.07), transparent 70%);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: light){
+  :root[data-design="modern"][data-theme="system"]{
+    --bg:#F6F9F9; --bg-2:#EEF3F3; --panel:#FFFFFF; --raised:#FFFFFF; --hover:rgba(0,0,0,.04);
+    --line:rgba(0,0,0,.08); --line-2:rgba(0,0,0,.15);
+    --ink:#121718; --ink-2:#364042; --muted:#667274; --faint:#98A2A3;
+    --accent:#0E8E8B; --accent-2:#0A7472; --accent-soft:rgba(14,142,139,.11); --accent-ink:#FFFFFF;
+    --hot:#D6237A; --hot-soft:rgba(214,35,122,.10);
+    --glow:radial-gradient(900px 340px at 30% -160px, rgba(14,142,139,.10), transparent 70%), radial-gradient(700px 300px at 85% -170px, rgba(214,35,122,.07), transparent 70%);
+    color-scheme:light;
+  }
+}
+[data-design="modern"] .page-head h1{background:linear-gradient(90deg,var(--ink) 60%,var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+[data-design="modern"] .nav a[aria-current="page"]{box-shadow:inset 2px 0 0 var(--hot)}
+
+/* ============ 2. Minimal: white, quiet, hairlines, one teal accent. Always light. ============ */
+:root[data-design="minimal"]{
+  --bg:#FFFFFF; --bg-2:#FAFAFA; --panel:#FFFFFF; --raised:#FFFFFF; --hover:rgba(0,0,0,.035);
+  --line:rgba(0,0,0,.09); --line-2:rgba(0,0,0,.18);
+  --ink:#111111; --ink-2:#3B3B3B; --muted:#757575; --faint:#A3A3A3;
+  --accent:#0B8A87; --accent-2:#08706E; --accent-soft:rgba(11,138,135,.08); --accent-ink:#FFFFFF;
+  --hot:#D41F78; --hot-soft:rgba(212,31,120,.08);
+  --win:#1F7A4D; --win-soft:rgba(31,122,77,.08); --loss:#C0392B; --loss-soft:rgba(192,57,43,.07); --warn:#8C6A0E; --warn-soft:rgba(140,106,14,.08);
+  --glow:none; --shadow:0 1px 2px rgba(0,0,0,.06);
+  --r:4px; --r-sm:3px;
+  color-scheme:light;
+}
+[data-design="minimal"] body{letter-spacing:.005em}
+[data-design="minimal"] .side{background:#FFFFFF}
+[data-design="minimal"] .wrap{padding-top:48px}
+[data-design="minimal"] .page-head h1{font-size:32px;font-weight:500;letter-spacing:-.03em}
+[data-design="minimal"] .page-head .lede{color:var(--muted)}
+[data-design="minimal"] .card,[data-design="minimal"] .tile{box-shadow:none;padding:22px}
+[data-design="minimal"] .btn{font-weight:500;letter-spacing:.01em}
+[data-design="minimal"] .nav a[aria-current="page"],[data-design="minimal"] .hubtabs a[aria-current="page"]{background:none;color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+[data-design="minimal"] .hubtabs a[aria-current="page"]{border-radius:0}
+[data-design="minimal"] .nav a[aria-current="page"]{box-shadow:inset 2px 0 0 var(--ink);border-radius:0}
+
+/* ============ 3. Japanese: washi paper, sumi ink, Mincho headings, a pink seal. Always light. ============ */
+:root[data-design="japanese"]{
+  --bg:#F5F0E4; --bg-2:#EFE8D8; --panel:#FBF8F0; --raised:#FFFDF7; --hover:rgba(40,30,20,.05);
+  --line:rgba(40,32,24,.14); --line-2:rgba(40,32,24,.26);
+  --ink:#1D1A16; --ink-2:#3E3830; --muted:#7A7062; --faint:#A69C8C;
+  --accent:#1F6F6D; --accent-2:#195C5A; --accent-soft:rgba(31,111,109,.10); --accent-ink:#FBF8F0;
+  --hot:#C8326F; --hot-soft:rgba(200,50,111,.10);
+  --win:#3D7A4A; --win-soft:rgba(61,122,74,.10); --loss:#B23A2E; --loss-soft:rgba(178,58,46,.09); --warn:#8F6B12; --warn-soft:rgba(143,107,18,.10);
+  --glow:none; --shadow:0 1px 0 rgba(40,32,24,.08);
+  --r:2px; --r-sm:2px;
+  --font:'Zen Kaku Gothic New','Inter',ui-sans-serif,system-ui,sans-serif;
+  color-scheme:light;
+}
+/* the faint fibers of washi paper */
+[data-design="japanese"] .main{background:radial-gradient(rgba(60,45,30,.035) 1px,transparent 1.2px) 0 0/5px 5px,radial-gradient(rgba(60,45,30,.025) 1px,transparent 1.2px) 2px 3px/7px 7px,var(--bg)}
+[data-design="japanese"] h1,[data-design="japanese"] h2,[data-design="japanese"] h3{font-family:'Shippori Mincho','Yu Mincho','Hiragino Mincho ProN',serif;font-weight:600;letter-spacing:.02em}
+[data-design="japanese"] .page-head h1{font-size:30px;padding-left:16px;border-left:4px solid var(--hot)}
+[data-design="japanese"] .brand span{font-family:'Shippori Mincho',serif;letter-spacing:.06em}
+[data-design="japanese"] .card{border-top:2px solid var(--ink)}
+[data-design="japanese"] .section-label{letter-spacing:.18em;text-transform:uppercase;font-size:11px}
+[data-design="japanese"] .btn{background:var(--ink);color:var(--panel);letter-spacing:.06em}
+[data-design="japanese"] .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+[data-design="japanese"] .nav a[aria-current="page"]{background:none;color:var(--ink);box-shadow:inset 3px 0 0 var(--hot);border-radius:0}
+[data-design="japanese"] .hubtabs a[aria-current="page"]{background:none;color:var(--ink);box-shadow:inset 0 -2px 0 var(--hot);border-radius:0}
+/* the brand's little square seal */
+[data-design="japanese"] .brand img{border-radius:2px;box-shadow:0 0 0 2px var(--hot)}
+
+/* ============ 4. Neon: dark, a faint grid, glowing teal and pink. Always dark. ============ */
+:root[data-design="neon"]{
+  --bg:#05060B; --bg-2:#080A12; --panel:rgba(12,15,26,.88); --raised:#121729; --hover:rgba(33,243,232,.06);
+  --line:rgba(33,243,232,.16); --line-2:rgba(33,243,232,.32);
+  --ink:#EAFDFC; --ink-2:#B9D9DD; --muted:#7896A0; --faint:#4F6670;
+  --accent:#21F3E8; --accent-2:#5CFFF6; --accent-soft:rgba(33,243,232,.12); --accent-ink:#021413;
+  --hot:#FF2BD6; --hot-soft:rgba(255,43,214,.14);
+  --win:#39F59A; --win-soft:rgba(57,245,154,.12); --loss:#FF4D6D; --loss-soft:rgba(255,77,109,.12); --warn:#FFD23F; --warn-soft:rgba(255,210,63,.12);
+  --glow:radial-gradient(900px 360px at 20% -120px, rgba(33,243,232,.16), transparent 70%), radial-gradient(800px 340px at 90% -140px, rgba(255,43,214,.14), transparent 70%);
+  --shadow:0 0 0 1px rgba(33,243,232,.18), 0 12px 40px rgba(0,0,0,.6);
+  --r:8px; --r-sm:6px;
+  color-scheme:dark;
+}
+[data-design="neon"] .main{background:var(--glow) no-repeat,linear-gradient(rgba(33,243,232,.045) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(33,243,232,.045) 1px,transparent 1px) 0 0/44px 44px,var(--bg)}
+[data-design="neon"] h1,[data-design="neon"] h2,[data-design="neon"] h3,[data-design="neon"] .brand span{font-family:'Chakra Petch','Inter',sans-serif;letter-spacing:.03em}
+[data-design="neon"] .page-head h1{font-size:30px;text-transform:uppercase;color:var(--accent-2);text-shadow:0 0 6px rgba(33,243,232,.6),0 0 22px rgba(33,243,232,.35)}
+[data-design="neon"] .card{backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(33,243,232,.10),0 0 24px rgba(33,243,232,.04)}
+[data-design="neon"] .btn{box-shadow:0 0 12px rgba(33,243,232,.45);font-weight:600;letter-spacing:.03em}
+[data-design="neon"] .btn:hover{box-shadow:0 0 18px rgba(255,43,214,.55);background:var(--hot);color:#1A0016;filter:none}
+[data-design="neon"] .btn.ghost{background:transparent;color:var(--accent-2);border-color:var(--line-2);box-shadow:none}
+[data-design="neon"] .btn.ghost:hover{color:var(--hot);border-color:var(--hot);box-shadow:0 0 12px rgba(255,43,214,.35);background:transparent}
+[data-design="neon"] .nav a[aria-current="page"],[data-design="neon"] .hubtabs a[aria-current="page"]{background:var(--hot-soft);color:#FFE6FA;text-shadow:0 0 8px rgba(255,43,214,.7);box-shadow:inset 2px 0 0 var(--hot)}
+[data-design="neon"] .side{background:rgba(6,8,14,.9)}
+[data-design="neon"] .pill{text-shadow:0 0 6px currentColor}
+[data-design="neon"] input:focus,[data-design="neon"] select:focus,[data-design="neon"] textarea:focus{box-shadow:0 0 0 1px var(--accent),0 0 14px rgba(33,243,232,.35)}
+
+/* ============ 5. Retro handheld: cream paper, cyan and magenta print, LCD lettering. Always light. ============ */
+:root[data-design="retro"]{
+  --bg:#FBF8EC; --bg-2:#F4F0DE; --panel:#FFFDF4; --raised:#FFFFFF; --hover:rgba(17,17,17,.05);
+  --line:rgba(17,17,17,.22); --line-2:#111111;
+  --ink:#111111; --ink-2:#2B2B2B; --muted:#5E5B50; --faint:#8E8A7B;
+  --accent:#0FAFBA; --accent-2:#08838C; --accent-soft:rgba(25,198,209,.16); --accent-ink:#111111;
+  --hot:#E2339E; --hot-soft:rgba(226,51,158,.14);
+  --win:#1C8A4E; --win-soft:rgba(28,138,78,.12); --loss:#D0294B; --loss-soft:rgba(208,41,75,.11); --warn:#9A7106; --warn-soft:rgba(154,113,6,.12);
+  --glow:none; --shadow:5px 5px 0 #111111;
+  --r:0px; --r-sm:0px;
+  --mono:'VT323','JetBrains Mono',ui-monospace,monospace;
+  color-scheme:light;
+}
+/* a faint magenta halftone, like a risograph print */
+[data-design="retro"] .main{background:radial-gradient(rgba(226,51,158,.10) 1.1px,transparent 1.4px) 0 0/9px 9px,var(--bg)}
+[data-design="retro"] h1,[data-design="retro"] h2,[data-design="retro"] h3,[data-design="retro"] .brand span{font-family:'VT323',ui-monospace,monospace;font-weight:400;letter-spacing:.04em;text-transform:uppercase}
+[data-design="retro"] h2{font-size:24px} [data-design="retro"] h3{font-size:21px}
+[data-design="retro"] .page-head h1{font-size:46px;line-height:1;color:var(--ink);text-shadow:3px 3px 0 #19C6D1,-1px -1px 0 #E2339E}
+[data-design="retro"] .brand span{font-size:20px}
+[data-design="retro"] .card,[data-design="retro"] .tile{border:2px solid #111;box-shadow:5px 5px 0 #19C6D1}
+[data-design="retro"] .card:nth-of-type(even){box-shadow:5px 5px 0 #E2339E}
+[data-design="retro"] .btn{border:2px solid #111;box-shadow:3px 3px 0 #E2339E;background:#19C6D1;color:#111;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+[data-design="retro"] .btn:hover{filter:none;transform:translate(1px,1px);box-shadow:2px 2px 0 #E2339E}
+[data-design="retro"] .btn.ghost{background:var(--panel);box-shadow:3px 3px 0 #111}
+[data-design="retro"] .side{background:var(--bg);border-right:2px solid #111}
+[data-design="retro"] .nav a{font-family:'VT323',ui-monospace,monospace;font-size:21px;text-transform:uppercase;letter-spacing:.06em}
+[data-design="retro"] .nav a::before{content:"> ";font-family:'VT323',monospace;opacity:0;margin-right:-4px}
+[data-design="retro"] .nav a[aria-current="page"]::before,[data-design="retro"] .nav a:hover::before{opacity:1}
+[data-design="retro"] .nav a[aria-current="page"]{background:none;color:var(--ink);text-decoration:underline;text-decoration-color:#E2339E;text-decoration-thickness:3px;text-underline-offset:4px}
+[data-design="retro"] .hubtabs a[aria-current="page"]{background:#19C6D1;color:#111;border:2px solid #111;border-radius:0}
+[data-design="retro"] .pill{border-radius:0;font-size:15px}
+[data-design="retro"] .num,[data-design="retro"] .mono{font-size:1.15em}
+[data-design="retro"] input,[data-design="retro"] select,[data-design="retro"] textarea{border:2px solid #111 !important}
+[data-design="retro"] .seg,[data-design="retro"] .chipbtn{border:2px solid #111}
+
+/* ---- touch-ups after looking at each design ---- */
+[data-design="retro"] .tile .v{font-size:40px;line-height:1}
+[data-design="retro"] .bottombar{background:var(--bg);border-top:2px solid #111}
+[data-design="retro"] .bottombar a[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 #E2339E}
+@media (max-width:700px){ [data-design="retro"] .brand span{font-size:17px;white-space:nowrap} }
+/* Minimal: no boxes, just thin rules and space, like a well-set page */
+[data-design="minimal"] .card{border:0;border-top:1px solid var(--line);border-radius:0;padding:22px 0 26px;background:transparent}
+[data-design="minimal"] .tile{border:0;border-left:1px solid var(--line);border-radius:0;padding:6px 18px;background:transparent}
+[data-design="minimal"] .tile .v{font-family:var(--font);font-weight:300;font-size:34px}
+[data-design="minimal"] .modal .card,[data-design="minimal"] .sheet .card{padding:18px}
+[data-design="neon"] .tile .v{color:var(--accent-2);text-shadow:0 0 10px rgba(33,243,232,.5)}
+[data-design="neon"] .card-head h3,[data-design="neon"] .card h3{font-family:'Chakra Petch','Inter',sans-serif}
+@media (max-width:700px){ [data-design="japanese"] .brand span{font-size:13px;white-space:nowrap;letter-spacing:.02em} }
