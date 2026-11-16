@@ -1043,3 +1043,8 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .tc-links{margin-top:6px}
 
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* news: fit on one screen, then "Show all" */
+.nw-list.clipped{overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 90px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 90px),transparent)}
+.nw-all{display:block;width:100%;margin-top:6px;padding:11px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--hover);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.nw-all:hover{border-color:var(--accent);color:var(--accent)}
+.nw-all[hidden]{display:none}

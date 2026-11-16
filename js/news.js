@@ -16,7 +16,7 @@
   const SEEN = 'vgclab-news-seen';
 
   let NEWS = null, TEAMS = null, STATUS = null, loaded = null;
-  let filter = 'all', shown = 40;
+  let filter = 'all', shown = 40, open = false; // open: the whole feed, not just what fits on the screen
   function load() {
     return loaded || (loaded = Promise.all([VL.files.news(), VL.topteams ? VL.topteams.load() : VL.files.teams(), VL.files.status(), VL.meta.ready]).then(([n, t, st]) => {
       NEWS = n || { changes: [], headlines: [], app: [], calendar: [] }; TEAMS = t || { events: [] }; STATUS = st || null; return NEWS;
@@ -104,13 +104,28 @@
       <div class="nw-layout">
         <div class="card"><div class="kv" style="flex-wrap:wrap;gap:6px">${FILTERS.map(([k, l]) => `<button class="chipbtn" data-nwf="${k}" aria-pressed="${filter === k}">${l}${k !== 'all' && counts[k] ? ` <span class="mini">${counts[k]}</span>` : ''}</button>`).join('')}</div>
           <div class="nw-list">${html || `<div class="empty">${filter === 'game' ? 'No game or data changes recorded yet. When a new regulation, Pokémon, item or balance change reaches the data, it shows up here on its own.' : 'Nothing here yet.'}</div>`}</div>
-          ${list.length > shown ? '<div class="row" style="justify-content:center"><button class="btn ghost" id="nw-more">Show older</button></div>' : ''}</div>
+          <button type="button" class="nw-all" id="nw-all" hidden>Show all ${Math.min(list.length, shown)} items</button>
+          ${list.length > shown ? `<div class="row" id="nw-older" style="justify-content:center"${open ? '' : ' hidden'}><button class="btn ghost" id="nw-more">Show older</button></div>` : ''}</div>
         <div class="nw-side">${calendarHtml(6)}${moversHtml()}</div>
       </div>`;
+    requestAnimationFrame(fit);
     if (location.hash === '#news') { try { localStorage.setItem(SEEN, JSON.stringify({ day: dayKey(), at: new Date().toISOString() })); } catch (e) { /* ignore */ } dot(); }
   }
+  // fit the feed on one screen: cut it off at the bottom with a fade and a "Show all" bar
+  function fit() {
+    const ls = document.querySelector('#nw-root .nw-list'), bar = $('nw-all'); if (!ls || !bar) return;
+    ls.style.maxHeight = ''; ls.classList.remove('clipped'); bar.hidden = true;
+    if (open || !ls.offsetParent) return;
+    // on very wide screens the page is zoomed, so the window's height is measured in zoomed units
+    const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    const bottomBar = document.querySelector('.bottombar'); const below = bottomBar && getComputedStyle(bottomBar).display !== 'none' ? bottomBar.getBoundingClientRect().height : 0;
+    const room = Math.max(220, window.innerHeight / z - (ls.getBoundingClientRect().top + window.scrollY) - below - 70);
+    if (ls.scrollHeight > room + 40) { ls.style.maxHeight = room + 'px'; ls.classList.add('clipped'); bar.hidden = false; }
+  }
+  let fitT = null; window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fit, 150); });
   document.addEventListener('click', (e) => {
-    const f = e.target.closest('[data-nwf]'); if (f) { filter = f.dataset.nwf; shown = 40; render(); return; }
+    if (e.target.closest('#nw-all')) { open = true; fit(); const o = $('nw-older'); if (o) o.hidden = false; VL.sound && VL.sound.play('tap'); return; }
+    const f = e.target.closest('[data-nwf]'); if (f) { filter = f.dataset.nwf; shown = 40; open = false; render(); return; }
     if (e.target.id === 'nw-more') { shown += 40; render(); return; }
     const ev = e.target.closest('[data-nwev]'); if (ev && VL.topteams) VL.topteams.show(ev.dataset.nwev);
   });
