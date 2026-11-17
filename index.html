@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=73">
-<link rel="stylesheet" href="css/pixel.css?v=73">
+<link rel="stylesheet" href="css/app.css?v=74">
+<link rel="stylesheet" href="css/pixel.css?v=74">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench';var pal=localStorage.getItem('vgclab-palette')||'shiny';if(pal==='pixel'){pal='shiny';localStorage.setItem('vgclab-palette',pal);localStorage.setItem('vgclab-look','minimal')}document.documentElement.dataset.palette=pal;document.documentElement.dataset.look=localStorage.getItem('vgclab-look')||'standard'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
@@ -335,11 +335,12 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
   <section class="panel" id="p-games">
     <header class="page-head">
       <div class="kv" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><h1>Games</h1><button type="button" class="btn ghost small" data-sound-toggle aria-pressed="true">🔊 Sound on</button></div>
-      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Fast, scored games for the knowledge that has to be instant in a real battle: speed, turn order, damage and type matchups. Every game ends by reviewing what you missed, with the real numbers.</p><ol><li>Pick the format and which Pokémon to play with. <b>Top 50 in the meta</b> drills exactly what you'll face.</li><li>Start on the easier level of a game, then move up when you're scoring well.</li><li>Read the review at the end of every game. That's where most of the learning happens.</li><li>One game counts as your daily study drill on the Today page.</li></ol></div></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Fast, scored games for the knowledge that has to be instant in a real battle: speed, turn order, damage and type matchups. Every game ends by reviewing what you missed, with the real numbers.</p><ol><li>Pick the format and which Pokémon to play with. <b>Top 50 in the meta</b> drills exactly what you'll face.</li><li>Start on the easier level of a game, then move up when you're scoring well.</li><li>Read the review at the end of every game. That's where most of the learning happens.</li><li>One game counts as your daily study drill on the Today page.</li><li><b>My team:</b> pick one of your saved teams and every round has your Pokémon in it on your own set: your Speed (Mega form and Choice Scarf counted), your moves, item and ability. Damage Guess switches between your attacks into the meta and the meta hitting you. The other Pokémon come from <b>Other Pokémon</b>.</li></ol></div></details>
     </header>
     <div class="card"><div class="row">
       <label for="ar-format">Format<select id="ar-format"></select></label>
-      <label for="ar-pool">Pokémon to play with<select id="ar-pool"><option value="meta">Top 50 in the meta</option><option value="fe">Fully evolved, legal in this format</option><option value="logs">Pokémon from my game logs</option><option value="all">Every Pokémon, any game</option></select></label>
+      <label for="ar-team">My team<select id="ar-team"><option value="">No team (random Pokémon)</option></select></label>
+      <label for="ar-pool">Other Pokémon<select id="ar-pool"><option value="meta">Top 50 in the meta</option><option value="fe">Fully evolved, legal in this format</option><option value="logs">Pokémon from my game logs</option><option value="all">Every Pokémon, any game</option></select></label>
     </div></div>
     <div class="drills" id="ar-list"></div>
     <div class="card" id="ar-play" hidden></div>
@@ -757,36 +758,36 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=73"></script>
-<script src="js/sound.js?v=73"></script>
-<script src="js/content.js?v=73"></script>
-<script src="js/search.js?v=73"></script>
-<script src="js/study.js?v=73"></script>
-<script src="js/sprites.js?v=73"></script>
-<script src="js/help.js?v=73"></script>
-<script src="js/meta.js?v=73"></script>
-<script src="js/calc.js?v=73"></script>
-<script src="js/companion.js?v=73"></script>
-<script src="js/teamcheck.js?v=73"></script>
-<script src="js/builder.js?v=73"></script>
-<script src="js/plan.js?v=73"></script>
-<script src="js/topteams.js?v=73"></script>
-<script src="js/news.js?v=73"></script>
-<script src="js/replay.js?v=73"></script>
-<script src="js/sheets.js?v=73"></script>
-<script src="js/teamcompare.js?v=73"></script>
-<script src="js/battleview.js?v=73"></script>
-<script src="js/videos.js?v=73"></script>
-<script src="js/trends.js?v=73"></script>
-<script src="js/progress.js?v=73"></script>
-<script src="js/arcade.js?v=73"></script>
-<script src="js/test.js?v=73"></script>
-<script src="js/compare.js?v=73"></script>
-<script src="js/app.js?v=73"></script>
-<script src="js/hubs.js?v=73"></script>
-<script src="js/whatsnew.js?v=73"></script>
-<script src="js/firebase-config.js?v=73"></script>
-<script src="js/account.js?v=73"></script>
+<script src="js/store.js?v=74"></script>
+<script src="js/sound.js?v=74"></script>
+<script src="js/content.js?v=74"></script>
+<script src="js/search.js?v=74"></script>
+<script src="js/study.js?v=74"></script>
+<script src="js/sprites.js?v=74"></script>
+<script src="js/help.js?v=74"></script>
+<script src="js/meta.js?v=74"></script>
+<script src="js/calc.js?v=74"></script>
+<script src="js/companion.js?v=74"></script>
+<script src="js/teamcheck.js?v=74"></script>
+<script src="js/builder.js?v=74"></script>
+<script src="js/plan.js?v=74"></script>
+<script src="js/topteams.js?v=74"></script>
+<script src="js/news.js?v=74"></script>
+<script src="js/replay.js?v=74"></script>
+<script src="js/sheets.js?v=74"></script>
+<script src="js/teamcompare.js?v=74"></script>
+<script src="js/battleview.js?v=74"></script>
+<script src="js/videos.js?v=74"></script>
+<script src="js/trends.js?v=74"></script>
+<script src="js/progress.js?v=74"></script>
+<script src="js/arcade.js?v=74"></script>
+<script src="js/test.js?v=74"></script>
+<script src="js/compare.js?v=74"></script>
+<script src="js/app.js?v=74"></script>
+<script src="js/hubs.js?v=74"></script>
+<script src="js/whatsnew.js?v=74"></script>
+<script src="js/firebase-config.js?v=74"></script>
+<script src="js/account.js?v=74"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

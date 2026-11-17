@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['games-team-1', 'games', 'New: play the games with your team', 'Pick <b>My team</b> at the top and every round of every game has your Pokémon in it, on your own set: your real Speed, your moves, item and ability. Damage Guess switches between your attacks and the meta hitting you.'],
     ['look-pixel-2', 'settings', 'New style: Minimalist', 'A pixel style based on the Shiny Toxicroak Minimalist mock-up: square cards with pixel shadows, pixel lettering for titles and labels, and striped pixel usage bars. Pick it under <b>Style</b> on this page; it uses whichever <b>Colors</b> you pick (Shiny or Original) and works in Dark and Light.'],
     ['styles-split-1', 'today', 'Doubles and singles are now separate', 'Your games, teams, notebook, reviews, plans, focus, season goal and daily checklist belong to the style you\'re playing. Switch to singles and you start fresh there; switch back and your doubles stuff is all still here. Your ratings on Progress are shared by both.'],
     ['calc-quick-1', 'calc', 'New: quick picks in the damage calculator', 'Tap a Pokémon from your saved team to load your exact set, or one of the Pokémon giving you trouble to load its most common set. Put yours as the Attacker for offense, or as the Defender to see what it survives.'],

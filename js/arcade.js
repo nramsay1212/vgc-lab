@@ -85,6 +85,40 @@
     return { v: D().speed(p.s[5], k, f), label: SPREADS[k] };
   }
 
+  // ---------- your team (Games → My team) ----------
+  // With a team picked, every round has your Pokémon in it, on your own set: your Speed, your item and
+  // ability, your moves. The other Pokémon still come from "Pokémon to play with".
+  const TEAMKEY = 'vgclab-arteam';
+  const teamsList = () => VL.store.list('teams').filter(t => t && t.paste).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  function curTeam() { const v = $('ar-team') && $('ar-team').value; return v ? VL.store.get('teams', v) : null; }
+  function teamMons(f) {
+    const t = curTeam(); if (!t || !VL.builder || !VL.builder.parsePaste) return [];
+    const champ = f.mod && f.mod.startsWith('champions');
+    return VL.builder.parsePaste(t.paste).filter(x => x && x.species).map(set => {
+      const i = D().find(set.species); if (i < 0) return null;
+      let p = D().mon(i, f); if (!p) return null;
+      const mk = set.item ? D().megaOf(D().dex.species[i], set.item) : null;
+      const mega = mk !== null ? D().mon(mk, f) : null;
+      let ev = (set.evs || []).map(v => +v || 0); while (ev.length < 6) ev.push(0);
+      // a regular-game paste (EVs up to 252) in Champions: about 8 EVs to a Stat Point; and the other way round
+      if (champ && ev.some(v => v > 32)) ev = ev.map(v => Math.min(32, Math.floor((v + 4) / 8)));
+      else if (!champ && ev.every(v => v <= 32) && ev.some(v => v > 0)) ev = ev.map(v => Math.min(252, v * 8));
+      const nat = set.nature || 'Hardy';
+      const moves = (set.moves || []).filter(Boolean).map(n => D().move(n, f)).filter(Boolean);
+      return { p, mega, set, ev, nat, item: set.item || '', ability: set.ability || (p.a && p.a[0]) || '', moves, champ, mine: true };
+    }).filter(Boolean);
+  }
+  // your real Speed on your set (Mega form if it holds its stone; Choice Scarf counted)
+  function mySpeed(m, f) {
+    const rec = m.mega || m.p; const n = NAT[m.nat] || [];
+    const raw = m.champ ? rec.s[5] + 20 + m.ev[5] : Math.floor((2 * rec.s[5] + 31 + Math.floor(m.ev[5] / 4)) * 50 / 100) + 5;
+    let v = Math.floor(raw * (n[0] === 'spe' ? 1.1 : n[1] === 'spe' ? 0.9 : 1));
+    const scarf = toId(m.item) === 'choicescarf'; if (scarf) v = Math.floor(v * 1.5);
+    const inv = `${m.nat}, ${m.ev[5]} Speed ${m.champ ? 'Stat Points' : 'effort values'}`;
+    return { v, label: `Your set: ${inv}${scarf ? ', Choice Scarf' : ''}${m.mega ? ' (as a Mega)' : ''}`, mine: true };
+  }
+  const myRec = (m) => m.mega || m.p;
+
   // ---------- shared play state ----------
   let G = null; let timer = null;
   const area = () => $('ar-play');
@@ -142,10 +176,16 @@
 
   // ---------- Speed Duel ----------
   function duelNext() {
-    const f = fmt(); const P = pool(); const gen = f.gen;
+    const f = fmt(); const P = pool(); const gen = f.gen; const T = teamMons(f);
     for (let t = 0; t < 60; t++) {
-      const A = D().mon(pick(P), f), B = D().mon(pick(P), f); if (!A || !B || A.i === B.i) continue;
-      const sa = speedSet(A, f, G.mode === 'base' ? 'base' : 'spread'), sb = speedSet(B, f, G.mode === 'base' ? 'base' : 'spread');
+      let A = D().mon(pick(P), f), B = D().mon(pick(P), f);
+      let sa = null, sb = null;
+      if (T.length) { // one of yours, on a random side
+        const m = pick(T); const mine = myRec(m); const ms = G.mode === 'base' ? { v: mine.s[5], label: `base ${mine.s[5]} (your ${mine.n})`, base: true, mine: true } : mySpeed(m, f);
+        if (Math.random() < 0.5) { A = mine; sa = ms; } else { B = mine; sb = ms; }
+      }
+      if (!A || !B || A.i === B.i) continue;
+      sa = sa || speedSet(A, f, G.mode === 'base' ? 'base' : 'spread'); sb = sb || speedSet(B, f, G.mode === 'base' ? 'base' : 'spread');
       let va = sa.v, vb = sb.v, cond = 'none', condText = '';
       if (G.mode === 'control') {
         cond = pick(['twA', 'twB', 'tr', 'tr', 'parA', 'parB', 'scarfA', 'scarfB', 'plusA', 'icyB']);
@@ -163,7 +203,7 @@
   function renderDuel(flash) {
     const c = G.cur;
     const card = (p, s, side) => `<button class="duelcard ${flash ? (c.ans === side ? 'right' : flash === side ? 'wrong' : '') : ''}" data-duel="${side}" ${flash ? 'disabled' : ''}>
-      ${VL.sprite(p, 'md', false)}<b>${esc(p.n)}</b><span class="kv">${p.t.map(ty).join(' ')}</span><span class="sub">${esc(s.base ? 'Base Speed' : s.label)}</span>
+      ${VL.sprite(p, 'md', false)}<b>${esc(p.n)}</b>${s.mine || (s.label || '').includes('yours') ? '<span class="pill w">yours</span>' : ''}<span class="kv">${p.t.map(ty).join(' ')}</span><span class="sub">${esc(s.base ? (s.label || '').includes('your') ? s.label : 'Base Speed' : s.label)}</span>
       ${flash ? `<span class="num big2">${side === 'A' ? c.va : c.vb}</span>` : ''}</button>`;
     area().innerHTML = `${header(`<span class="pill n">⏱ <span id="ar-time">${G.left ?? 60}</span>s</span><span class="pill m">${G.score} pts</span>${G.streak > 1 ? `<span class="pill w">streak ${G.streak}</span>` : ''}`)}
       <p class="q2">${c.tr ? 'Trick Room is up. ' : ''}Who moves first?${c.condText && !c.tr ? ` <span class="sub">${esc(c.condText)}.</span>` : ''}</p>
@@ -184,10 +224,14 @@
   function sortNext() {
     if (G.round >= 5) return finish();
     G.round++;
-    const f = fmt(); const P = pool();
+    const f = fmt(); const P = pool(); const T = teamMons(f);
     for (let t = 0; t < 80; t++) {
-      const ids = shuffle(P).slice(0, 5); const mons = ids.map(i => D().mon(i, f));
-      const sets = mons.map(p => speedSet(p, f, G.mode === 'base' ? 'base' : 'spread'));
+      const mineN = T.length ? Math.min(2, T.length) : 0; const mine = shuffle(T).slice(0, mineN);
+      const mineIds = new Set(mine.map(m => myRec(m).i));
+      const ids = shuffle(P).filter(i => !mineIds.has(i)).slice(0, 5 - mineN);
+      const mons = [...mine.map(myRec), ...ids.map(i => D().mon(i, f))];
+      const sets = [...mine.map(m => G.mode === 'base' ? { v: myRec(m).s[5], label: `base ${myRec(m).s[5]} (yours)`, base: true, mine: true } : mySpeed(m, f)), ...mons.slice(mineN).map(p => speedSet(p, f, G.mode === 'base' ? 'base' : 'spread'))];
+      if (mineN) { const ord = shuffle([0, 1, 2, 3, 4]); const m2 = ord.map(k => mons[k]), s2 = ord.map(k => sets[k]); mons.splice(0, 5, ...m2); sets.splice(0, 5, ...s2); }
       const vals = sets.map(s => s.v); if (new Set(vals).size < 5) continue;
       G.cur = { mons, sets, picked: [] }; return renderSort();
     }
@@ -198,7 +242,7 @@
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/5</span><span class="pill m">${G.score} pts</span>`)}
       <p class="q2">${G.mode === 'tr' ? 'Trick Room is up. Tap them in the order they move: <b>slowest first</b>.' : 'Tap them in order from <b>fastest</b> to <b>slowest</b>.'}</p>
       <div class="sortgrid">${c.mons.map((p, i) => { const pos = c.picked.indexOf(i); const ok = done && correct[pos] === i;
-        return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-sort="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}${VL.sprite(p, 'md', false)}<b>${esc(p.n)}</b><span class="sub">${esc(G.mode === 'base' ? 'Base Speed' : c.sets[i].label)}</span>${done ? `<span class="num big2">${c.sets[i].v}</span>` : ''}</button>`; }).join('')}</div>
+        return `<button class="duelcard ${done ? (ok ? 'right' : 'wrong') : pos >= 0 ? 'chosen' : ''}" data-sort="${i}" ${done || pos >= 0 ? 'disabled' : ''}>${pos >= 0 ? `<span class="order">${pos + 1}</span>` : ''}${VL.sprite(p, 'md', false)}<b>${esc(p.n)}</b>${c.sets[i].mine ? '<span class="pill w">yours</span>' : ''}<span class="sub">${esc(G.mode === 'base' ? 'Base Speed' : c.sets[i].label)}</span>${done ? `<span class="num big2">${c.sets[i].v}</span>` : ''}</button>`; }).join('')}</div>
       ${done ? `<div class="explain">Correct order: ${correct.map(i => `${esc(c.mons[i].n)} (${c.sets[i].v})`).join(' → ')}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="ar-next">${G.round >= 5 ? 'See results' : 'Next round'}</button></div>`
         : `<div class="row" style="justify-content:flex-end"><button class="btn ghost small" id="ar-undo" ${c.picked.length ? '' : 'disabled'}>Undo</button></div>`}`;
     bindQuit();
@@ -221,11 +265,22 @@
     if (G.round >= 8) return finish();
     G.round++;
     const f = fmt(); const P = pool(); const dex = D().dex;
+    const T = teamMons(f);
     for (let t = 0; t < 120; t++) {
-      const ids = shuffle(P).slice(0, 4); const mons = ids.map(i => D().mon(i, f));
+      const mine = T.length >= 2 ? shuffle(T).slice(0, 2) : [];
+      const ids = shuffle(P).filter(i => !mine.some(m => myRec(m).i === i)).slice(0, 4 - mine.length);
+      const mons = [...mine.map(myRec), ...ids.map(i => D().mon(i, f))];
       if (mons.some(p => (p.a || []).some(a => SKIP_ABIL.includes(toId(a))))) continue;
+      if (mine.some(m => SKIP_ABIL.includes(toId(m.ability)))) continue;
       const e = VL.meta.forFormat(f.id);
       const acts = mons.map((p, k) => {
+        if (k < mine.length) { // yours: one of your own moves, your Speed
+          const m = mine[k]; const own = m.moves.filter(x => x.n !== 'Grassy Glide'); if (!own.length) return { p, mv: null };
+          const prio = own.filter(x => x.p), atk = own.filter(x => !x.p && x.c !== 'S'), other = own.filter(x => !x.p && x.c === 'S');
+          const mv = prio.length && Math.random() < 0.45 ? pick(prio) : atk.length ? pick(atk) : pick(other.length ? other : own);
+          const sp = mySpeed(m, f);
+          return { p, mv, side: 'Your side', sp, prio: mv.p || 0, v: sp.v, mine: true };
+        }
         // moves this Pokémon actually uses (meta), so the scenarios are realistic
         const m = VL.meta.get(e, p.n);
         const known = m ? m.moves.map(x => D().move(x[0], f)).filter(x => x && x.n !== 'Grassy Glide') : [];
@@ -291,13 +346,23 @@
         let name = m.n; const stones = C.MEGA_STONES && item && C.MEGA_STONES[item]; if (stones && stones[name]) name = stones[name];
         return { poke: new C.Pokemon(g, name, { level: 50, nature: nat, evs, item, ability: m.abilities[0] && m.abilities[0][0] }), nat, ev, item, ability: m.abilities[0] && m.abilities[0][0], name };
       };
+      const T = teamMons(f);
+      // your Pokémon on your set, for the calculator
+      const buildMine = (m) => {
+        const k = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']; const evs = {}; k.forEach((x, i) => { evs[x] = m.ev[i]; });
+        let name = m.p.n; const stones = C.MEGA_STONES && m.item && C.MEGA_STONES[m.item]; if (stones && stones[name]) name = stones[name];
+        return { poke: new C.Pokemon(g, name, { level: 50, nature: m.nat, evs, item: m.item || undefined, ability: m.ability || undefined }), nat: m.nat, ev: m.ev, item: m.item, ability: m.ability, name, mine: true };
+      };
       for (let t = 0; t < 40; t++) {
-        const am = pick(top), dm = pick(top); if (am === dm) continue;
-        const moves = am.moves.map(x => D().move(x[0], f)).filter(x => x && x.c !== 'S' && x.bp >= 40);
+        let am = pick(top), dm = pick(top); let mineM = null, offense = false;
+        if (T.length) { mineM = pick(T); offense = (G.round % 2 === 0); if (offense) am = null; else dm = null; }
+        if (am && dm && am === dm) continue;
+        if (mineM && toId((offense ? dm : am).n) === toId(mineM.p.n)) continue;
+        const moves = offense ? mineM.moves.filter(x => x.c !== 'S' && x.bp >= 40) : am.moves.map(x => D().move(x[0], f)).filter(x => x && x.c !== 'S' && x.bp >= 40);
         if (!moves.length) continue;
         const mv = pick(moves);
         try {
-          const A = build(am), Dd = build(dm);
+          const A = offense ? buildMine(mineM) : build(am), Dd = (mineM && !offense) ? buildMine(mineM) : build(dm);
           const M = new C.Move(g, mv.n);
           const r = C.calculate(g, A.poke, Dd.poke, M, new C.Field({ gameType: f.doubles ? 'Doubles' : 'Singles' }));
           const [lo, hi] = r.range(); const hp = Dd.poke.maxHP(); if (!hi) continue;
@@ -342,9 +407,9 @@
     const v = done ? guess : (G.lastGuess ?? 50);
     area().innerHTML = `${header(`<span class="pill m">Round ${G.round}/8</span><span class="pill m">${G.score} pts</span>`)}
       <div class="vsrow">${VL.sprite(c.A.name, 'lg', false)}<span class="mini">attacks</span>${VL.sprite(c.Dd.name, 'lg', false)}</div><p class="q2"><b>${esc(c.A.name)}</b> uses <b>${esc(c.mv.n)}</b> on <b>${esc(c.Dd.name)}</b>. How much of its HP does it take?</p>
-      <div class="grid2"><div class="explain"><b>${esc(c.A.name)}</b><br><span class="sub">${setLine(c.A, c.champ)}</span></div><div class="explain"><b>${esc(c.Dd.name)}</b><br><span class="sub">${setLine(c.Dd, c.champ)}</span></div></div>
+      <div class="grid2"><div class="explain"><b>${esc(c.A.name)}</b>${c.A.mine ? ' <span class="pill w">yours</span>' : ''}<br><span class="sub">${setLine(c.A, c.champ)}</span></div><div class="explain"><b>${esc(c.Dd.name)}</b>${c.Dd.mine ? ' <span class="pill w">yours</span>' : ''}<br><span class="sub">${setLine(c.Dd, c.champ)}</span></div></div>
       ${c.why ? `<div class="explain"><b>${esc(c.mv.n)}</b> · ${esc(c.why.type)} · ${esc(c.why.cat)}, ${c.why.bp} power${c.why.pr ? ` · priority ${c.why.pr > 0 ? '+' : ''}${c.why.pr}` : ''}<br><span class="sub">${esc(c.A.name)}'s ${esc(c.why.as)} is ${c.why.aStat}${c.why.natNote ? ` (${esc(c.why.natNote.slice(2))})` : ''}. ${esc(c.Dd.name)} has ${c.why.hp} HP and ${esc(c.why.ds)} ${c.why.dStat}.</span></div>` : ''}
-      <p class="sub">Level 50, ${c.spread ? 'doubles, hitting both opponents (spread damage)' : 'no field effects'}, full HP, no stat changes. Both use their most common set.</p>
+      <p class="sub">Level 50, ${c.spread ? 'doubles, hitting both opponents (spread damage)' : 'no field effects'}, full HP, no stat changes. ${c.A.mine || c.Dd.mine ? 'Yours uses your team\'s set; the other uses its most common set.' : 'Both use their most common set.'}</p>
       <div class="dmgslider"><input type="range" min="0" max="150" step="1" value="${v}" id="ar-dmg" ${done ? 'disabled' : ''} aria-label="Your damage guess in percent"><div class="row" style="justify-content:space-between"><span class="mini">0%</span><b class="num" id="ar-dmgv">${v}%${v >= 100 ? ' (knocked out)' : ''}</b><span class="mini">150%</span></div>
         ${done ? `<div class="dmgtrack"><span class="band" style="left:${Math.min(100, c.lo / 1.5)}%;width:${Math.max(0.7, Math.min(100, c.hi / 1.5) - Math.min(100, c.lo / 1.5))}%"></span><span class="mark" style="left:${Math.min(100, guess / 1.5)}%"></span></div>` : ''}</div>
       ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.</div>${c.why ? `<div class="explain dmgwhy"><b>Why it does that much</b><ol>
@@ -371,15 +436,20 @@
 
   // ---------- Type Rush ----------
   function typesNext() {
-    const f = fmt(); const P = pool(); const chart = D().chart(f);
-    const p = D().mon(pick(P), f); const a = pick(chart.types);
+    const f = fmt(); const P = pool(); const chart = D().chart(f); const T = teamMons(f);
+    let p = D().mon(pick(P), f); let a = pick(chart.types);
+    if (T.length) { // half the time: something hits your Pokémon; half: your attacking types into the meta
+      const m = pick(T);
+      if (Math.random() < 0.5) p = { ...myRec(m), mineTag: true };
+      else { const types = [...new Set(m.moves.filter(x => x.c !== 'S').map(x => x.t))].filter(x => chart.types.includes(x)); if (types.length) a = pick(types); }
+    }
     G.cur = { p, a, m: D().eff(chart, a, p.t), chart };
     renderTypes();
   }
   function renderTypes(flash) {
     const c = G.cur;
     area().innerHTML = `${header(`<span class="pill n">⏱ <span id="ar-time">${G.left ?? 60}</span>s</span><span class="pill m">${G.score} pts</span>${G.streak > 1 ? `<span class="pill w">streak ${G.streak}</span>` : ''}`)}
-      <div class="vsrow">${VL.sprite(c.p, 'lg', false)}</div><p class="q2">${ty(c.a)} into <b>${esc(c.p.n)}</b> ${c.p.t.map(ty).join(' ')}</p>
+      <div class="vsrow">${VL.sprite(c.p, 'lg', false)}</div><p class="q2">${ty(c.a)} into <b>${esc(c.p.n)}</b>${c.p.mineTag ? ' <span class="pill w">yours</span>' : ''} ${c.p.t.map(ty).join(' ')}</p>
       <div class="opts six">${[0, 0.25, 0.5, 1, 2, 4].map((v, i) => `<button class="opt ${flash !== undefined ? (v === c.m ? 'right' : v === flash ? 'wrong' : '') : ''}" data-ty="${v}" ${flash !== undefined ? 'disabled' : ''}>${i + 1}. ${mult(v)}</button>`).join('')}</div>
       <p class="sub" style="text-align:center">Keys 1–6 answer. Type chart only, abilities not counted.</p>`;
     bindQuit();
@@ -413,10 +483,21 @@
     const fs = $('ar-format'); const cur = fs.value || (VL.curFormatId && VL.curFormatId());
     fs.innerHTML = D().formats().map(f => `<option value="${esc(f.id)}">${esc(f.name)} · ${esc(f.game)}</option>`).join(''); fs.value = D().format(cur).id;
     if (!$('ar-pool').dataset.init) { $('ar-pool').dataset.init = '1'; if (VL.meta.forFormat(fs.value)) $('ar-pool').value = 'meta'; }
+    fillTeams();
     $('ar-list').innerHTML = GAMES.map(g => `<div class="drill-card gamecard"><h4>${esc(g.name)}</h4><span class="sub">${esc(g.desc)}</span>
       <div class="kv" style="margin-top:4px">${g.modes.map(([m, l]) => { const r = VL.store.get('arcade', g.id + ':' + m); return `<button class="btn ${g.modes.length === 1 ? '' : 'ghost'} small" data-play="${g.id}" data-mode="${m}">${esc(l)}${r && r.best ? ` · best ${r.best}` : ''}</button>`; }).join('')}</div></div>`).join('');
   }
   $('ar-list').addEventListener('click', e => { const b = e.target.closest('[data-play]'); if (b) start(b.dataset.play, b.dataset.mode); });
+  function fillTeams() {
+    const sel = $('ar-team'); if (!sel) return; const ts = teamsList();
+    let want; try { want = localStorage.getItem(TEAMKEY); } catch (e) { want = null; }
+    if (want === null) { // first time: the team from your latest game, else none
+      const g = VL.store.list('games').filter(x => x.team).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0]; want = g ? g.team : '';
+    }
+    sel.innerHTML = `<option value="">No team (random Pokémon)</option>` + ts.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Saved team')}</option>`).join('');
+    sel.value = ts.some(t => t.id === want) ? want : '';
+  }
+  if ($('ar-team')) $('ar-team').addEventListener('change', () => { try { localStorage.setItem(TEAMKEY, $('ar-team').value); } catch (e) { /* ignore */ } if (G && !G.done) close(); });
   $('ar-format').addEventListener('change', () => { if (G && !G.done) close(); renderList(); });
   $('ar-pool').addEventListener('change', () => { if (G && !G.done) close(); });
 
