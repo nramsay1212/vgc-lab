@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=74">
-<link rel="stylesheet" href="css/pixel.css?v=74">
+<link rel="stylesheet" href="css/app.css?v=75">
+<link rel="stylesheet" href="css/pixel.css?v=75">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench';var pal=localStorage.getItem('vgclab-palette')||'shiny';if(pal==='pixel'){pal='shiny';localStorage.setItem('vgclab-palette',pal);localStorage.setItem('vgclab-look','minimal')}document.documentElement.dataset.palette=pal;document.documentElement.dataset.look=localStorage.getItem('vgclab-look')||'standard'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
@@ -200,9 +200,12 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
   <section class="panel" id="p-review">
     <header class="page-head">
       <h1>Review</h1>
-      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Find the patterns in your games: what's costing you, which Pokémon beat you, which leads work. Use it once a week to pick your next focus.</p><ol><li>Pick what to look at with <b>Show</b>: this format, everything, or the last 30 days.</li><li>The biggest bar in <b>What's costing you games</b> is usually your next weekly focus.</li><li>Add Pokémon from <b>Toughest Pokémon</b> to your Notebook and write a plan for them.</li><li>Every Sunday, use <b>Copy review prompt</b>, paste it into Claude, and save the answer here.</li></ol></div></details>
+      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Find the patterns in your games: what's costing you, which Pokémon beat you, which leads work. Use it once a week to pick your next focus.</p><ol><li><b>Team:</b> pick one of your teams to see only the games you logged with it (the one you played last says "current"), or All teams. The review prompt follows it too, and includes that team.</li><li>Pick what to look at with <b>Show</b>: this format, everything, or the last 30 days.</li><li>The biggest bar in <b>What's costing you games</b> is usually your next weekly focus.</li><li>Add Pokémon from <b>Toughest Pokémon</b> to your Notebook and write a plan for them.</li><li>Every Sunday, use <b>Copy review prompt</b>, paste it into Claude, and save the answer here.</li></ol></div></details>
     </header>
     <div class="row" style="justify-content:flex-end;align-items:center">
+      <label for="rv-team" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px">Team
+        <select id="rv-team" style="width:auto"><option value="all">All teams</option></select>
+      </label>
       <label for="rv-mode" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px">Games
         <select id="rv-mode" style="width:auto"><option value="climb">Climb</option><option value="test">Testing</option><option value="all">Both</option></select>
       </label>
@@ -758,36 +761,36 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=74"></script>
-<script src="js/sound.js?v=74"></script>
-<script src="js/content.js?v=74"></script>
-<script src="js/search.js?v=74"></script>
-<script src="js/study.js?v=74"></script>
-<script src="js/sprites.js?v=74"></script>
-<script src="js/help.js?v=74"></script>
-<script src="js/meta.js?v=74"></script>
-<script src="js/calc.js?v=74"></script>
-<script src="js/companion.js?v=74"></script>
-<script src="js/teamcheck.js?v=74"></script>
-<script src="js/builder.js?v=74"></script>
-<script src="js/plan.js?v=74"></script>
-<script src="js/topteams.js?v=74"></script>
-<script src="js/news.js?v=74"></script>
-<script src="js/replay.js?v=74"></script>
-<script src="js/sheets.js?v=74"></script>
-<script src="js/teamcompare.js?v=74"></script>
-<script src="js/battleview.js?v=74"></script>
-<script src="js/videos.js?v=74"></script>
-<script src="js/trends.js?v=74"></script>
-<script src="js/progress.js?v=74"></script>
-<script src="js/arcade.js?v=74"></script>
-<script src="js/test.js?v=74"></script>
-<script src="js/compare.js?v=74"></script>
-<script src="js/app.js?v=74"></script>
-<script src="js/hubs.js?v=74"></script>
-<script src="js/whatsnew.js?v=74"></script>
-<script src="js/firebase-config.js?v=74"></script>
-<script src="js/account.js?v=74"></script>
+<script src="js/store.js?v=75"></script>
+<script src="js/sound.js?v=75"></script>
+<script src="js/content.js?v=75"></script>
+<script src="js/search.js?v=75"></script>
+<script src="js/study.js?v=75"></script>
+<script src="js/sprites.js?v=75"></script>
+<script src="js/help.js?v=75"></script>
+<script src="js/meta.js?v=75"></script>
+<script src="js/calc.js?v=75"></script>
+<script src="js/companion.js?v=75"></script>
+<script src="js/teamcheck.js?v=75"></script>
+<script src="js/builder.js?v=75"></script>
+<script src="js/plan.js?v=75"></script>
+<script src="js/topteams.js?v=75"></script>
+<script src="js/news.js?v=75"></script>
+<script src="js/replay.js?v=75"></script>
+<script src="js/sheets.js?v=75"></script>
+<script src="js/teamcompare.js?v=75"></script>
+<script src="js/battleview.js?v=75"></script>
+<script src="js/videos.js?v=75"></script>
+<script src="js/trends.js?v=75"></script>
+<script src="js/progress.js?v=75"></script>
+<script src="js/arcade.js?v=75"></script>
+<script src="js/test.js?v=75"></script>
+<script src="js/compare.js?v=75"></script>
+<script src="js/app.js?v=75"></script>
+<script src="js/hubs.js?v=75"></script>
+<script src="js/whatsnew.js?v=75"></script>
+<script src="js/firebase-config.js?v=75"></script>
+<script src="js/account.js?v=75"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

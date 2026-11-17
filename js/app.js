@@ -206,9 +206,19 @@
     sel.innerHTML = `<option value="cur">Current format</option><option value="all">All games</option><option value="30">Last 30 days</option>` + fmts.filter(f => f !== curFormatId()).map(f => `<option value="f:${esc(f)}">${esc(fmtName(f))}</option>`).join('');
     sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'cur';
   }
+  // Review → Team: all teams, or just the games logged with one of them
+  function fillTeamPick() {
+    const sel = $('rv-team'); if (!sel) return; let cur = sel.value; if (!sel.dataset.init) { sel.dataset.init = '1'; try { cur = localStorage.getItem('vgclab-rvteam') || 'all'; } catch (e) { cur = 'all'; } }
+    const used = new Set(games().map(g => g.team).filter(Boolean));
+    const ts = teams().filter(t => used.has(t.id) || t.id === cur).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    const latest = games().find(g => g.team && ts.some(t => t.id === g.team));
+    sel.innerHTML = '<option value="all">All teams</option>' + ts.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Saved team')}${latest && latest.team === t.id ? ' (current)' : ''}</option>`).join('');
+    sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'all';
+  }
+  const teamOk = (x) => { const t = ($('rv-team') || {}).value || 'all'; return t === 'all' || x.team === t; };
   function scoped() {
     const s = $('rv-scope').value; const m = ($('rv-mode') || {}).value || 'climb';
-    const g = games().filter(x => m === 'all' || (m === 'test' ? isTest(x) : !isTest(x)));
+    const g = games().filter(x => (m === 'all' || (m === 'test' ? isTest(x) : !isTest(x))) && teamOk(x));
     if (s === 'cur') return g.filter(x => x.fmt === curFormatId());
     if (s === '30') { const cut = Date.now() - 30 * 864e5; return g.filter(x => (x.ts || 0) >= cut); }
     if (s.startsWith('f:')) return g.filter(x => x.fmt === s.slice(2));
@@ -240,7 +250,7 @@
       <text x="${pl}" y="${H - 6}">game 1</text><text x="${W - pr}" y="${H - 6}" text-anchor="end">game ${pts.length}</text></svg>`;
   }
   function renderReview() {
-    fillScope();
+    fillTeamPick(); fillScope();
     const list = scoped();
     const n = list.length, w = list.filter(x => x.result === 'W').length;
     const last20 = list.slice(0, 20), w20 = last20.filter(x => x.result === 'W').length;
@@ -305,8 +315,9 @@
   function coachPrompt() {
     const p = profile(); const fid = curFormatId();
     const m = ($('rv-mode') || {}).value || 'climb';
-    const pool = games().filter(x => m === 'all' || (m === 'test' ? isTest(x) : !isTest(x)));
+    const pool = games().filter(x => (m === 'all' || (m === 'test' ? isTest(x) : !isTest(x))) && teamOk(x));
     const list = pool.filter(g => g.fmt === fid).slice(0, 50);
+    const rvT = ($('rv-team') || {}).value || 'all'; const rvTeam = rvT !== 'all' ? (teams().find(t => t.id === rvT) || null) : null;
     const all = list.length ? list : pool.slice(0, 50);
     const tname = Object.fromEntries(teams().map(t => [t.id, t.name]));
     const rows = all.map(g => [g.day, g.result, isTest(g) ? `${g.type || ''} (test)` : g.type, g.rating ?? '', g.team ? tname[g.team] || '' : '', g.arch || '', (g.opp || []).join('/'), g.mylead || '', g.opplead || '', (g.tags || []).map(t => TAGMAP[t] || t).join('; '), g.turn ? 'T' + g.turn : '', (g.note || '').replace(/\s+/g, ' ').slice(0, 220)].join(' | ')).join('\n');
@@ -326,7 +337,7 @@ Context:
 - My knowledge ratings (from quick games and tests, 1000 is the start, 1400 is Expert): ${know || 'none yet'}
 - Recent drill accuracy: ${drills}
 
-${m === 'climb' ? 'These are my climb games (my real ladder run). Team-testing games are left out.' : m === 'test' ? 'These are only my team-testing games, where I try out teams. Judge the teams and my piloting, not my ladder progress.' : 'This includes both my climb games and my team-testing games (marked "test" in the type column).'}
+${rvTeam ? `Only games with my team "${rvTeam.name || 'Saved team'}" are included, so judge this team and how I play it.\n\nThe team:\n${rvTeam.paste || ''}\n\n` : ''}${m === 'climb' ? 'These are my climb games (my real ladder run). Team-testing games are left out.' : m === 'test' ? 'These are only my team-testing games, where I try out teams. Judge the teams and my piloting, not my ladder progress.' : 'This includes both my climb games and my team-testing games (marked "test" in the type column).'}
 Game log, newest first. Columns: date | result | type | rating after | my team | their style | their 6 | my lead | their lead | mistake tags | key turn | note
 ${rows || '(no games logged)'}
 
@@ -766,6 +777,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   $('rv-scope').onchange = renderAll;
   try { const rm = localStorage.getItem('vgclab-rvmode'); if (rm) $('rv-mode').value = rm; } catch (e) { /* private mode */ }
   $('rv-mode').onchange = () => { try { localStorage.setItem('vgclab-rvmode', $('rv-mode').value); } catch (e) { /* private mode */ } renderAll(); };
+  $('rv-team').onchange = () => { try { localStorage.setItem('vgclab-rvteam', $('rv-team').value); } catch (e) { /* private mode */ } renderAll(); };
   document.addEventListener('change', (e) => { if (e.target.id === 'recent-mode') renderLog(); });
   $('rv-mons').addEventListener('click', e => { const n = e.target.dataset.addnb; if (!n) return; location.hash = 'notebook'; clearNb(); $('nb-name').value = n; $('nb-plan').focus(); });
   $('coach-copy').onclick = async () => {
