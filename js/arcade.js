@@ -18,7 +18,7 @@
     { id: 'duel', name: 'Speed Duel', desc: 'Two Pokémon. Tap the one that moves first. 60 seconds, as many as you can.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['control', 'With speed control']] },
     { id: 'sort', name: 'Speed Sort', desc: 'Put 5 Pokémon in order from fastest to slowest. 5 rounds.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['tr', 'Under Trick Room']] },
     { id: 'order', name: 'Turn Order', desc: 'Four Pokémon pick their moves. Tap them in the order they\'ll act: priority first, then Speed. Close answers get partial points. 8 rounds.', modes: [['normal', 'Standard'], ['field', 'With Tailwind and Trick Room']] },
-    { id: 'damage', name: 'Damage Guess', desc: 'A real attack with common sets. Guess how much it does before the calculator tells you. 8 rounds.', modes: [['guess', 'Guess the %']] },
+    { id: 'damage', name: 'Damage Guess', desc: 'A real attack with common sets. Guess how much it does before the calculator tells you. If it knocks out, any guess of 100% or more counts. 8 rounds.', modes: [['guess', 'Guess the %']] },
     { id: 'types', name: 'Type Rush', desc: 'Attacking type into a real Pokémon\'s typing. 60 seconds, keep the streak going.', modes: [['rush', '60 seconds']] },
   ];
 
@@ -412,7 +412,7 @@
       <p class="sub">Level 50, ${c.spread ? 'doubles, hitting both opponents (spread damage)' : 'no field effects'}, full HP, no stat changes. ${c.A.mine || c.Dd.mine ? 'Yours uses your team\'s set; the other uses its most common set.' : 'Both use their most common set.'}</p>
       <div class="dmgslider"><input type="range" min="0" max="150" step="1" value="${v}" id="ar-dmg" ${done ? 'disabled' : ''} aria-label="Your damage guess in percent"><div class="row" style="justify-content:space-between"><span class="mini">0%</span><b class="num" id="ar-dmgv">${v}%${v >= 100 ? ' (knocked out)' : ''}</b><span class="mini">150%</span></div>
         ${done ? `<div class="dmgtrack"><span class="band" style="left:${Math.min(100, c.lo / 1.5)}%;width:${Math.max(0.7, Math.min(100, c.hi / 1.5) - Math.min(100, c.lo / 1.5))}%"></span><span class="mark" style="left:${Math.min(100, guess / 1.5)}%"></span></div>` : ''}</div>
-      ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.</div>${c.why ? `<div class="explain dmgwhy"><b>Why it does that much</b><ol>
+      ${done ? `<div class="explain"><b>Actual: ${c.lo}–${c.hi}%.</b> ${esc(c.ko ? c.ko[0].toUpperCase() + c.ko.slice(1) : '')}. You guessed ${guess}%, ${G.lastPts} points.${G.lastKoCall ? (c.lo >= 100 ? ' It always knocks out, so any guess of 100% or more counts.' : ' It can knock out, so your 100%+ guess counts as calling the knockout.') : ''}</div>${c.why ? `<div class="explain dmgwhy"><b>Why it does that much</b><ol>
         <li><b>Stats:</b> ${esc(c.mv.n)} is ${c.why.cat === 'Physical' ? 'physical' : 'special'}, so ${esc(c.A.name)}'s ${esc(c.why.as)} (${c.why.aStat}${esc(c.why.natNote)}) hits ${esc(c.Dd.name)}'s ${esc(c.why.ds)} (${c.why.dStat}).${c.why.cat === 'Physical' && c.A.ev[3] ? ` Its Special Attack investment doesn't count here.` : c.why.cat !== 'Physical' && c.A.ev[1] ? ` Its Attack investment doesn't count here.` : ''}</li>
         <li><b>Power:</b> ${c.why.bp}${c.why.bp <= 60 ? ', which is low' : c.why.bp >= 100 ? ', which is high' : ''}.</li>
         <li><b>Same-type bonus:</b> ${c.why.stab ? `yes, ${esc(c.A.name)} is ${esc(c.why.type)} type, so 1.5×` : `no, ${esc(c.A.name)} isn't ${esc(c.why.type)} type`}.</li>
@@ -426,7 +426,11 @@
     $('ar-dmg').oninput = (e) => { const x = +e.target.value; $('ar-dmgv').textContent = x + '%' + (x >= 100 ? ' (knocked out)' : ''); };
     $('ar-lock').onclick = () => {
       const x = +$('ar-dmg').value; G.lastGuess = x;
-      const dist = x < c.lo ? c.lo - x : x > c.hi ? x - c.hi : 0;
+      // a hit can't take more than 100%: once the attack can knock out, any guess of 100% or more counts as a knockout call
+      const cap = (n) => c.hi >= 100 ? Math.min(n, 100) : n;
+      const gx = cap(x), lo = cap(c.lo), hi = cap(c.hi);
+      const dist = gx < lo ? lo - gx : gx > hi ? gx - hi : 0;
+      G.lastKoCall = c.hi >= 100 && x >= 100;
       const pts = Math.max(0, Math.round(100 - dist * 4)); G.lastPts = pts;
       G.n++; G.score += pts; if (dist <= 5) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); } else { G.streak = 0; G.misses.push(`${esc(c.A.name)} ${esc(c.mv.n)} into ${esc(c.Dd.name)}: actual ${c.lo}–${c.hi}%, you guessed ${x}%.`); }
       VL.sound && VL.sound.play(dist <= 5 ? (G.streak && G.streak % 5 === 0 ? 'streak' : 'right') : pts >= 60 ? 'tap' : 'wrong'); // close, near, or off
