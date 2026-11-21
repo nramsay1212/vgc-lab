@@ -164,6 +164,14 @@ jobs:
           node -e "const [v,now,checked,p]=process.argv.slice(1);require('fs').writeFileSync('data/status.json',JSON.stringify({version:v,published:now,checked:checked||null,problems:[...new Set(p.split('|').filter(Boolean))]}))" "$v" "$now" "$checked" "$problems"
           cat data/status.json
 
+      # Automatic checks: a real browser opens every page and runs the main flows (tests/check.mjs).
+      # If anything is broken, this step fails and nothing is published: the site keeps its last good version.
+      - name: Check the app works
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+          node tests/check.mjs
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
