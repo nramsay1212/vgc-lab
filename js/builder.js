@@ -539,7 +539,7 @@
 
   // ---------- Vs the meta: how the whole team does against the most used Pokémon ----------
   // Your actual sets against each of the 30 most used Pokémon (their most common sets): for each one,
-  // which of yours answer it and which it beats. The score weights each by how often it's used.
+  // which of yours answer it and which it beats. (Its internal score isn't shown; see matchupHtml.)
   const MM = { speed: 'normal', cache: {}, wait: {}, n: 30, mega: '' };
   // only one Pokémon can Mega Evolve per battle: with more than one Mega Stone, you pick which, and the others count as their regular form
   const teamMegas = () => T.sets.filter(x => x && x.species && megaName(x, recOf(x.species))).map(x => x.species);
@@ -553,9 +553,9 @@
     if (!have.length) { box.innerHTML = '<p class="sub">Add Pokémon to see how your team does against the meta.</p>'; return; }
     const head = `<div class="kv bd-chips"><span class="mini">Speed</span>${[['normal', 'Normal'], ['mytw', 'Your Tailwind'], ['theirtw', 'Their Tailwind'], ['tr', 'Under Trick Room']].map(([k, l]) => `<button type="button" class="chipbtn" data-mmsp="${k}" aria-pressed="${MM.speed === k}">${l}</button>`).join('')}</div>`;
     const ms = teamMegas(); const pick = megaPick();
-    const cmp = ms.length > 1 ? ms.map(m => { const x = MM.cache[mmKey(MM.speed, m)]; return x ? `${esc(m)} ${x.score}` : null; }) : [];
+    const cmp = ms.length > 1 ? ms.map(m => { const x = MM.cache[mmKey(MM.speed, m)]; if (!x) return null; const n = (k) => x.out.filter(r => r.st === k).length; return `${esc(m)}: ${n('bad')} problem${n('bad') === 1 ? '' : 's'}, ${n('shaky')} shaky`; }) : [];
     const megaRow = ms.length > 1 ? `<div class="kv bd-chips"><span class="mini">Mega Evolves</span>${ms.map(m => `<button type="button" class="chipbtn" data-mmmega="${esc(m)}" aria-pressed="${m === pick}">${VL.sprite(recOf(m), 'xs')}${esc(m)}</button>`).join('')}</div>
-      <p class="sub">Only one Pokémon can Mega Evolve per battle, so the others are counted as their regular form.${cmp.every(Boolean) ? ` Score with each as your Mega: <b>${cmp.join(' · ')}</b>.` : ''}</p>` : '';
+      <p class="sub">Only one Pokémon can Mega Evolve per battle, so the others are counted as their regular form.${cmp.every(Boolean) ? ` With each as your Mega: <b>${cmp.join(' · ')}</b>.` : ''}</p>` : '';
     const r = MM.cache[mmKey(MM.speed)];
     if (r) {
       box.innerHTML = head + megaRow + matchupHtml(r);
@@ -616,8 +616,7 @@
     step();
   }
   function matchupHtml(res) {
-    const { out, score } = res;
-    const grade = score >= 85 ? ['Excellent', 'w'] : score >= 70 ? ['Solid', 'w'] : score >= 55 ? ['Okay', 'y'] : score >= 40 ? ['Shaky', 'y'] : ['Weak', 'l'];
+    const { out } = res;
     const count = (k) => out.filter(r => r.st === k).length;
     const verb = (v) => `${esc(v.me)} (${esc(v.ver[0])}: ${esc(v.offMv || 'no attack')} does ${v.offLo}–${v.off}%, takes up to ${v.def}%)`;
     const item = (r) => {
@@ -630,11 +629,13 @@
       return `<div class="mm-item ctr-vs ctr-${st[1]}"><div class="ctr-vh">${VL.sprite(r.rec, 'xs')}<b>${esc(r.n)}</b><span class="mini">${r.u.toFixed(1)}% of teams</span><span class="pill ${st[1]}">${st[0]}</span>${r.st === 'shaky' || r.st === 'bad' ? `<button type="button" class="linkbtn" data-ctr="${esc(r.n)}">Find a counter →</button><button type="button" class="linkbtn" data-tcnb="${esc(r.n)}">Make a plan →</button>` : ''}</div>${lines.join('')}</div>`;
     };
     const group = (keys, title, open) => { const rs = out.filter(r => keys.includes(r.st)); return rs.length ? `<details class="mm-group" ${open ? 'open' : ''}><summary><b>${title}</b> <span class="sub">${rs.length}</span></summary><div class="ctr-blocks">${rs.map(item).join('')}</div></details>` : ''; };
-    return `<div class="mm-score"><div class="mm-num ${grade[1]}">${score}<span>/100</span></div><div><b>${grade[0]}</b> against the meta${res.mega ? ` with ${esc(res.mega)} as your Mega` : ''}${res.mode !== 'normal' ? ` (${res.mode === 'tr' ? 'under Trick Room' : res.mode === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}.
-        <div class="sub">${count('well')} well covered · ${count('ok')} covered · ${count('shaky')} shaky · ${count('bad')} problems, out of the ${out.length} most used Pokémon. More common Pokémon count for more.${res.size < 6 ? ` You have ${res.size} of 6, so this goes up as you fill the team.` : ''}</div></div></div>
+    // no score or grade on purpose: one-on-one checks miss what makes many good teams work (partners,
+    // Intimidate, Fake Out, positioning), so a number would call strong teams bad. Just the matchups.
+    return `<div class="mm-score"><div><b>Against the ${out.length} most used Pokémon</b>${res.mega ? ` with ${esc(res.mega)} as your Mega` : ''}${res.mode !== 'normal' ? ` (${res.mode === 'tr' ? 'under Trick Room' : res.mode === 'mytw' ? 'with your Tailwind' : 'with their Tailwind'})` : ''}: ${count('well')} well covered · ${count('ok')} covered · ${count('shaky')} shaky · ${count('bad')} problems.
+        <div class="sub">A guide to what to plan for, not a verdict on the team. It checks one Pokémon against one, so partners, Intimidate, Fake Out and good positioning, which many strong teams rely on, don't show up here.${res.size < 6 ? ` You have ${res.size} of 6, so more get covered as you fill the team.` : ''}</div></div></div>
       <div class="ctr-key"><span><i class="dot w"></i>Covered: something on your team handles it safely</span><span><i class="dot y"></i>Shaky: only risky answers</span><span><i class="dot l"></i>Problem: nothing answers it</span></div>
       ${group(['bad'], 'Problems', true)}${group(['shaky'], 'Shaky', true)}${group(['ok', 'well'], 'Covered', false)}
-      <details class="ctr-how"><summary>How it's worked out</summary><p>Your six sets as you've built them, against each of the ${out.length} most used Pokémon with its most common set, at level 50. Each side uses its strongest attack among its moves; weather and terrain from abilities count; Intimidate, Fake Out and partners don't. Well covered = 2 or more of yours handle it safely, Covered = 1, Shaky = only risky answers (it can't take two hits, only wins by moving first, or only just wins the trade), Problem = none. The score is the share of the meta you cover, with each Pokémon weighted by how often it's used.</p></details>`;
+      <details class="ctr-how"><summary>How it's worked out</summary><p>Your six sets as you've built them, against each of the ${out.length} most used Pokémon with its most common set, at level 50. Each side uses its strongest attack among its moves; weather and terrain from abilities count; Intimidate, Fake Out and partners don't. Well covered = 2 or more of yours handle it safely, Covered = 1, Shaky = only risky answers (it can't take two hits, only wins by moving first, or only just wins the trade), Problem = none.</p></details>`;
   }
 
   // ---------- Stat Points helper ----------
