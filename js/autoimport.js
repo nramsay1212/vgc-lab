@@ -79,7 +79,11 @@
   async function importGame({ log, me, bid, url }) {
     await ready();
     if (!VL.parseReplay) return { msg: 'VGC Lab is still loading. Send the game again from the extension.' };
-    if (!me) { try { me = localStorage.getItem(SD) || ''; } catch (e) { me = ''; } }
+    if (!me) { // a replay link: work out which player you were from your names or your saved teams
+      const players = {}, preview = { p1: [], p2: [] };
+      for (const l of String(log).split('\n')) { const f = l.split('|'); if (f[1] === 'player' && f[3]) players[f[2]] = f[3]; else if (f[1] === 'poke' && preview[f[2]]) preview[f[2]].push(String(f[3] || '').split(',')[0].replace(/-\*$/, '')); }
+      const side = VL.mySide(players, preview, []); me = side ? players[side] : '';
+    }
     if (!me) return { msg: 'Couldn\'t tell which player you were. Type your Showdown username on the Log page under Import a replay, then send it again.' };
     try { if (!localStorage.getItem(SD)) localStorage.setItem(SD, me); } catch (e) { /* private mode */ }
     bid = bid || battleId(url);
@@ -168,6 +172,19 @@
   });
   document.addEventListener('keydown', (e) => { if (e.target && e.target.id === 'sd-new' && e.key === 'Enter') { e.preventDefault(); document.getElementById('sd-add').click(); } });
   if (VL.store) { VL.store.onChange(renderAccts); VL.store.ready.then(renderAccts); }
+
+  // Which side of a battle you were: any of your names (Settings → Showdown accounts, the name last typed in a
+  // replay box, plus any passed in), ignoring capitals and spaces; else the side whose team preview matches one
+  // of your saved teams. null when neither tells.
+  VL.mySide = function (players, preview, extra) {
+    const names = new Set([...(extra || []), (() => { try { return localStorage.getItem(SD) || ''; } catch (e) { return ''; } })(),
+      ...(VL.store ? Object.values(((VL.store.get('meta', 'sdaccounts') || {}).list) || {}).map(a => a.name) : [])].map(toId).filter(Boolean));
+    const byName = Object.keys(players || {}).find(k => names.has(toId(players[k])));
+    if (byName) return byName;
+    const st = VL.style ? VL.style() : 'doubles';
+    const hit = ['p1', 'p2'].filter(k => (preview && preview[k] || []).length && matchTeam(preview[k], st));
+    return hit.length === 1 ? hit[0] : null;
+  };
 
   VL.autoimport = { inflate, deflate, importGame, matchTeam, battleId };
 })();

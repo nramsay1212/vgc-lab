@@ -131,11 +131,17 @@
   const idOf = (url) => 'r-' + norm(url).replace(/^https:\/\/replay\.pokemonshowdown\.com\//, '').replace(/[^a-z0-9-]/gi, '').slice(0, 80);
   const baseName = (n) => String(n || '').replace(/-(Mega|Mega-[XYZ]|Primal)$/, '');
 
+  // which side you were: any of your names (Settings → Showdown accounts, which syncs; the account an imported
+  // game came from; the name typed here), ignoring capitals and spaces. No name match: the side whose team
+  // preview matches one of your saved teams. Only then Player 1.
+  function whoAmI(data, game) {
+    const g = game && store().get('games', game);
+    return (VL.mySide && VL.mySide(data.players, data.preview, [sdName(), g && g.sdUser])) || 'p1';
+  }
   function start(log, url, saved, game) {
     const data = parse(log);
     if (!data.ok) return false;
-    const mine = sdName().toLowerCase();
-    let me = saved && saved.me; if (!me) me = Object.keys(data.players).find(k => data.players[k].toLowerCase() === mine) || 'p1';
+    let me = saved && saved.me; if (!me) me = whoAmI(data, game);
     R = { id: saved ? saved.id : url ? idOf(url) : game ? 'r-g-' + game : VL.newId('r'), url: url || '', game: game || (saved && saved.game) || null, log, data, me, turn: saved && saved.key ? saved.key : 1, key: saved ? saved.key || null : null, notes: saved ? { ...(saved.notes || {}) } : {}, takeaway: saved ? saved.takeaway || '' : '', after: false, dirty: false };
     if (R.turn > data.turns.length - 1) R.turn = data.turns.length - 1;
     return true;
@@ -368,7 +374,12 @@
     if (!R) return;
     const trb = e.target.closest('[data-rptr]'); if (trb) { grabInputs(); R.trOrder = trb.dataset.rptr === '1'; render(); return; }
     const t = e.target.closest('[data-rpt]'); if (t) return go(+t.dataset.rpt);
-    const me = e.target.closest('[data-rpme]'); if (me) { grabInputs(); R.me = me.dataset.rpme; R.dirty = true; render(); return; }
+    const me = e.target.closest('[data-rpme]'); if (me) {
+      grabInputs(); R.me = me.dataset.rpme; R.dirty = true;
+      // remember the name you picked, so your next replay opens from your side
+      const n = R.data && R.data.players[R.me]; if (n) { try { localStorage.setItem(SD, n); } catch (x) { /* private mode */ } }
+      render(); return;
+    }
     const a = e.target.closest('[data-rpa]'); if (a) { grabInputs(); R.after = a.dataset.rpa === '1'; render(); return; }
     const b = e.target.closest('[data-rp]'); if (!b) return;
     const k = b.dataset.rp;

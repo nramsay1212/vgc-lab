@@ -760,6 +760,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     $('lf-msg').textContent = `Filled in for you${pendingFmt ? ` (format: ${fmtName(pendingFmt)})` : ''}. Add your tags and what you'd do differently, then save.`;
     setTimeout(() => { window.scrollTo(0, 0); }, 30);
   };
+  const toIdApp = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   function parseReplay(log, me) {
     const lines = String(log || '').split('\n');
     const players = {}, team = { p1: [], p2: [] }, leads = { p1: [], p2: [] }, seen = { p1: [], p2: [] };
@@ -779,15 +780,15 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
         if (turn === 0 && !leads[side].includes(name)) leads[side].push(name);
       }
     }
-    const meName = String(me || '').trim().toLowerCase();
-    let mine = Object.keys(players).find(k => players[k].toLowerCase() === meName);
-    if (!mine) return { error: Object.keys(players).length ? `Couldn't tell which player you were. The players were ${Object.values(players).join(' and ')}. Type your username exactly.` : 'That doesn\'t look like a Showdown battle log.' };
+    // your side: the name given, any of your Showdown accounts, or the side whose six matches a saved team
+    const mine = VL.mySide ? VL.mySide(players, team, [me]) : Object.keys(players).find(k => players[k].toLowerCase() === String(me || '').trim().toLowerCase());
+    if (!mine) return { error: Object.keys(players).length ? `Couldn't tell which player you were. The players were ${Object.values(players).join(' and ')}. Type your Showdown username in the box (or add it in Settings → Showdown accounts).` : 'That doesn\'t look like a Showdown battle log.' };
     const opp = mine === 'p1' ? 'p2' : 'p1';
-    return { result: winner ? (winner.toLowerCase() === meName ? 'W' : 'L') : null, opp: team[opp].length ? team[opp] : seen[opp], opplead: leads[opp], mylead: leads[mine], myback: seen[mine].filter(n => !leads[mine].includes(n)), mypreview: team[mine], oppName: players[opp], turns: turn, format };
+    return { result: winner ? (toIdApp(winner) === toIdApp(players[mine]) ? 'W' : 'L') : null, opp: team[opp].length ? team[opp] : seen[opp], opplead: leads[opp], mylead: leads[mine], myback: seen[mine].filter(n => !leads[mine].includes(n)), mypreview: team[mine], oppName: players[opp], turns: turn, format };
   }
   VL.parseReplay = parseReplay; VL.dayKey = dayKey;
   function importReplay(log, url) {
-    const me = $('rp-me').value.trim(); try { localStorage.setItem('vgclab-sdname', me); } catch (e) { /* ignore */ }
+    const me = $('rp-me').value.trim(); try { if (me) localStorage.setItem('vgclab-sdname', me); } catch (e) { /* ignore */ }
     const r = parseReplay(log, me);
     if (r.error) { $('rp-msg').textContent = r.error; return; }
     VL.prefillLog({ ...r, bring: /bss|singles/i.test(r.format || '') ? 3 : 4, note: `Imported from ${url || 'a pasted Showdown log'}. Lasted ${r.turns} turns.`, source: url || 'showdown-log' });
