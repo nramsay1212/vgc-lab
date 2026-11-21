@@ -66,7 +66,6 @@
     if (msg) setTimeout(() => VL.toast(msg === 'singles' ? 'Switched to singles' : 'Switched to doubles'), 300);
   });
   store.onChange(showStyle);
-  function fmtGame(id) { const f = D.dex && D.dex.formats.find(x => x.id === id); return f ? f.game : ''; }
   const games = () => store.list('games').sort((a, b) => (b.ts || 0) - (a.ts || 0));
   // Climb (your real ladder games, the default) or Testing (trying out teams). Old games count as Climb.
   const isTest = (g) => g && g.mode === 'test';

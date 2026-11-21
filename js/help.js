@@ -91,7 +91,7 @@
     ['Welcome to your training lab', `<p>Toxicroak VGC Lab turns playing into practice. Everything runs in one loop:</p>
       <ul><li><b>Play</b> your games with one focus in mind.</li><li><b>Log</b> each game in a minute.</li><li><b>Review</b> once a week to find what's costing you.</li><li><b>Study and play the training games</b> a little every day so the basics are automatic.</li><li><b>Plan</b> against the threats you keep losing to.</li></ul>
       <p class="sub">This tour takes about a minute. You can rerun it from the menu anytime.</p>`],
-    ['Doubles or singles?', `<p>Pick how you play. The app changes to match: formats, drills, team checks, skills and tips. You can switch anytime with the <b>I play</b> menu at the top.</p>
+    ['Doubles or singles?', `<p>Pick how you play. The app changes to match: formats, drills, team checks and tips. You can switch anytime with the <b>I play</b> menu at the top.</p>
       <div class="opts" style="grid-template-columns:1fr 1fr;margin-top:6px"><button type="button" class="opt" data-tourstyle="doubles"><b>Doubles</b><br><span class="sub">VGC: bring 4, lead 2. Official tournaments and Worlds.</span></button><button type="button" class="opt" data-tourstyle="singles"><b>Singles</b><br><span class="sub">Battle Stadium: bring 3, lead 1. Ranked ladder.</span></button></div>`],
     ['Your account', `<p>Create an account with just a <b>username and password</b> to keep your data safe and use it on both your phone and computer. No email needed.</p>
       <p>When you sign up you get a <b>recovery code</b>. Save it: it's the only way to reset a forgotten password. Find your account under <b>Account, backup & theme</b>.</p>`],

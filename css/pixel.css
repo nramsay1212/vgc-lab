@@ -44,10 +44,10 @@
 [data-look="minimal"] .seg,[data-look="minimal"] .seg button{border-radius:0}
 
 /* usage bars and meters: striped pixel blocks in a bordered track */
-[data-look="minimal"] .metarow .ub,[data-look="minimal"] .kvlist .bar2,[data-look="minimal"] .bar .track,[data-look="minimal"] .costbar,[data-look="minimal"] .drill-card .meter,[data-look="minimal"] .hpbar{
+[data-look="minimal"] .metarow .ub,[data-look="minimal"] .kvlist .bar2,[data-look="minimal"] .bar .track,[data-look="minimal"] .drill-card .meter,[data-look="minimal"] .hpbar{
   display:block;height:10px;border-radius:0;background:var(--raised);border:1px solid var(--line);margin-top:5px;overflow:hidden}
 [data-look="minimal"] .metarow .ub{width:100%;max-width:220px}
-[data-look="minimal"] .metarow .ub span,[data-look="minimal"] .kvlist .bar2 span,[data-look="minimal"] .bar .fill,[data-look="minimal"] .costbar span,[data-look="minimal"] .drill-card .meter span{
+[data-look="minimal"] .metarow .ub span,[data-look="minimal"] .kvlist .bar2 span,[data-look="minimal"] .bar .fill,[data-look="minimal"] .drill-card .meter span{
   border-radius:0;opacity:1;background:repeating-linear-gradient(90deg,var(--accent) 0 var(--px-seg,6px),transparent var(--px-seg,6px) var(--px-per,8px))}
 [data-look="minimal"] .bar .fill.acc,[data-look="minimal"] .kvlist .bar2 span{background:repeating-linear-gradient(90deg,var(--hot) 0 var(--px-seg,6px),transparent var(--px-seg,6px) var(--px-per,8px))}
 [data-look="minimal"] .metarow{border-radius:0;grid-template-columns:28px 28px 1fr 64px}

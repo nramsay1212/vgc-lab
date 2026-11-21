@@ -804,7 +804,6 @@
     }
     return sc;
   }
-  function teammateScores() { return matesOf(T.sets.filter(s => s && s.species).map(s => s.species), metaE()); }
   function pickMon() { pickMonFor({ fmtId: fmt().id, names: T.sets.filter(Boolean).map(s => s.species).filter(Boolean), onPick: (n) => { setMon(n); VL.sound && VL.sound.play('tap'); } }); }
   // the Pokémon picker, shared with the Battle companion: o = { fmtId, names (already picked), onPick(name) }
   function pickMonFor(o) {
