@@ -62,8 +62,8 @@ const CHANNELS = [
   { id: 'UC8k4zJooP9gnqMSZTY-QdVQ', name: 'Skraw! VGC', style: 'doubles' },
   { id: 'UCS3sXlgO_gj55JS3y8aqBSQ', name: 'Sierra Dawn', style: 'doubles' },
   { id: 'UCEMu_ArjgsOXYkd11HmKSMQ', name: 'Scooteezy', style: 'doubles' },
-  { id: 'UCWGyrGVrjnco38bjb6ZQYlg', name: 'James Baek', style: 'doubles' },
-  { id: 'UC4q0ikQppInkmpk34dpOjuA', name: 'Eric Rios', style: 'doubles' },
+  { handle: 'jameswbaekpkmn', name: 'James Baek', style: 'doubles' },
+  { handle: 'Riopaser', name: 'Eric Rios', style: 'doubles' },
   { id: 'UCSQ4ebwZTZUT92euLpXGj1A', name: 'Joseph Ugarte', style: 'doubles' },
   { id: 'UCANgEAFCOg1Vynpqg9dEDDA', name: 'Lee Provost', style: 'doubles' },
   { id: 'UCi5dCo0kzUggrtTtpnsq7DA', name: 'Baz Anderson', style: 'doubles' },
@@ -90,7 +90,7 @@ const tag = (xml, t) => { const m = xml.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?
 
 async function channelId(c, old) {
   if (c.id) return c.id;
-  const known = old && old.channels && old.channels.find(x => x.name === c.name && x.id);
+  const known = old && old.channels && old.channels.find(x => x.handle && x.handle.toLowerCase() === String(c.handle || c.user || '').toLowerCase() && x.id);
   if (known) return known.id;
   if (KEY && c.handle) { const j = await api(`channels?part=id&forHandle=%40${encodeURIComponent(c.handle)}`); const id = j && j.items && j.items[0] && j.items[0].id; if (id) return id; }
   const page = await get(c.user ? `https://www.youtube.com/user/${c.user}` : `https://www.youtube.com/@${c.handle}`);
@@ -114,7 +114,7 @@ function kind(title, hasPaste) {
   for (const c of CHANNELS) {
     const id = await channelId(c, old);
     if (!id) { console.log(`  ${c.name}: channel not found`); continue; }
-    channels.push({ id, name: c.name, style: c.style, url: `https://www.youtube.com/channel/${id}` });
+    channels.push({ id, name: c.name, style: c.style, url: `https://www.youtube.com/channel/${id}`, ...(c.handle ? { handle: c.handle } : {}) });
     const viaKey = KEY ? await viaApi(id) : null;
     if (viaKey) {
       let n = 0;
