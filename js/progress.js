@@ -33,6 +33,16 @@
   }
 
   function current() { return (store.get('ratings', 'current') || {}).areas || {}; }
+  // Only current formats count toward your ratings. Older formats are practice: you can still play,
+  // study and take tests in them, but they don't move your ratings (2009 speed tiers say nothing
+  // about how ready you are for today's ladder). A format the data doesn't know counts.
+  function counts(fid) { const all = VL.D && VL.D.dex ? VL.D.allFormats() : []; const f = all.find(x => x.id === fid); return !f || !!f.current; }
+  function practiceNote(fid) {
+    if (!fid || counts(fid)) return '';
+    const all = VL.D && VL.D.dex ? VL.D.allFormats() : []; const f = all.find(x => x.id === fid);
+    const now = all.filter(x => x.current && !!x.doubles === !!(f && f.doubles)).map(x => x.name).join(' or ');
+    return `${f ? f.name : 'This'} is an older format, so it's practice only: it doesn't change your ratings or your saved scores.${now ? ` Switch to ${now} for results that count.` : ''}`;
+  }
   // only the areas that still exist: ratings from removed games (like Nature Rush's natures) stay saved but don't count
   function overallOf(areas) {
     const live = new Set(AREAS.map(a => a.id));
@@ -45,6 +55,7 @@
    * info: { src: 'game' | 'test', label, points } */
   function apply(results, info) {
     if (!results || !results.length) return null;
+    if (info && info.fmt && !counts(info.fmt)) return { practice: info.fmt };
     const cur = JSON.parse(JSON.stringify(current()));
     const ovBefore = overallOf(asPairs(cur));
     const before = {};
@@ -77,6 +88,7 @@
     return changes;
   }
   function changesHtml(changes) {
+    if (changes && changes.practice) return `<p class="sub practice-note">${esc(practiceNote(changes.practice))}</p>`;
     if (!changes || !changes.length) return '';
     return `<div><div class="section-label">Rating change</div><div class="kv">${changes.map(c => {
       const d = c.to - c.from; const ar = AREAS.find(x => x.id === c.a);
@@ -171,7 +183,7 @@
     $('pg-weeks').innerHTML = `<div class="weekbars">${weeks.map((w, i) => `<div class="wb"><span class="num mini">${wp[i] || ''}</span><span class="bar3" style="height:${Math.round(100 * wp[i] / maxp)}%"></span><span class="mini">${new Date(w).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}</span></div>`).join('')}</div><p class="sub">Points per week, starting Mondays. This shows effort; ratings show skill.</p>`;
 
     // tests
-    $('pg-tests').innerHTML = tests.length ? `<table class="list"><thead><tr><th>Date</th><th>Test</th><th>Score</th><th>Grade</th><th>Time</th><th></th></tr></thead><tbody>${tests.slice(0, 30).map(t => `<tr><td class="mono">${new Date(t.ts).toLocaleDateString()}</td><td>${esc(t.label)}<br><span class="sub">${esc(t.fmtName || '')}</span></td><td class="num">${t.correct}/${t.n} (${t.pct}%)</td><td><span class="pill ${t.pct >= 80 ? 'w' : t.pct >= 60 ? 'n' : 'l'}">${grade(t.pct)}</span></td><td class="num">${Math.floor(t.secs / 60)}:${String(t.secs % 60).padStart(2, '0')}</td><td>${(t.misses || []).length ? `<button class="linkbtn" data-pgrev="${esc(t.id)}">Review misses</button>` : ''}</td></tr><tr hidden data-pgrevrow="${esc(t.id)}"><td colspan="6"><div class="misses">${(t.misses || []).map(m => `<div class="miss">${m.q}<br><span class="sub">You: ${m.yours} · Correct: <b>${m.right}</b></span>${m.ex ? `<br><span class="sub">${m.ex}</span>` : ''}</div>`).join('')}</div></td></tr>`).join('')}</tbody></table>`
+    $('pg-tests').innerHTML = tests.length ? `<table class="list"><thead><tr><th>Date</th><th>Test</th><th>Score</th><th>Grade</th><th>Time</th><th></th></tr></thead><tbody>${tests.slice(0, 30).map(t => `<tr><td class="mono">${new Date(t.ts).toLocaleDateString()}</td><td>${esc(t.label)}<br><span class="sub">${esc(t.fmtName || '')}</span>${t.practice || (t.fmt && (t.ts || 0) >= RULE_START && !counts(t.fmt)) ? ' <span class="pill m" title="Older format: didn\'t change your ratings">Practice</span>' : ''}</td><td class="num">${t.correct}/${t.n} (${t.pct}%)</td><td><span class="pill ${t.pct >= 80 ? 'w' : t.pct >= 60 ? 'n' : 'l'}">${grade(t.pct)}</span></td><td class="num">${Math.floor(t.secs / 60)}:${String(t.secs % 60).padStart(2, '0')}</td><td>${(t.misses || []).length ? `<button class="linkbtn" data-pgrev="${esc(t.id)}">Review misses</button>` : ''}</td></tr><tr hidden data-pgrevrow="${esc(t.id)}"><td colspan="6"><div class="misses">${(t.misses || []).map(m => `<div class="miss">${m.q}<br><span class="sub">You: ${m.yours} · Correct: <b>${m.right}</b></span>${m.ex ? `<br><span class="sub">${m.ex}</span>` : ''}</div>`).join('')}</div></td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">No tests yet. Your first one sets a baseline to measure improvement against.</div>';
 
     // game trends
@@ -194,5 +206,58 @@
   });
 
   const ratingOf = (a) => { const c = current()[a]; return c ? Math.round(c.r) : null; };
-  VL.progress = { AREAS, apply, ratingOf, changesHtml, render, rankOf, nextRank, grade, overallOf, current };
+
+  // ---------- take back what older-format tests did to your ratings ----------
+  // Before this rule, a test in an older format moved the same ratings as everything else. Each such test
+  // left a snapshot in the rating history; the difference from the snapshot before it is exactly what the
+  // test changed. That difference comes off your current ratings and every later snapshot, and the
+  // snapshot is removed, so this runs once per test (and again only if a synced device brings an old one).
+  const RULE_START = Date.UTC(2026, 10, 21, 17, 0); // when "only current formats count" began
+  function undoOlderFormats() {
+    if (!VL.D || !VL.D.dex) return;
+    // Only tests from before this rule, and only in formats that were never current while the app has
+    // existed (everything before Pokémon Champions). Tests taken in Reg M-C stay counted for good, even
+    // after a newer regulation takes over; from now on older-format tests never touch ratings at all.
+    const all = VL.D.allFormats();
+    const wasCurrent = (fid) => { const f = all.find(x => x.id === fid); return !f || String(f.mod || '').startsWith('champions'); };
+    const bad = store.list('tests').filter(t => t.fmt && (t.ts || 0) < RULE_START && !wasCurrent(t.fmt));
+    if (!bad.length) return;
+    const H = hist(); const cur = JSON.parse(JSON.stringify(current())); let changed = false;
+    for (const t of bad) {
+      const i = H.findIndex(h => h.src === 'test' && h.label === t.label && h.t >= (t.ts || 0) - 2000 && h.t <= (t.ts || 0) + 10000);
+      if (i < 0) continue;
+      const prev = i > 0 ? (H[i - 1].areas || {}) : {};
+      const delta = {};
+      for (const [k, v] of Object.entries(H[i].areas || {})) { const [pr, pn] = prev[k] || [START, 0]; if (v[0] !== pr || v[1] !== pn) delta[k] = [v[0] - pr, v[1] - pn]; }
+      for (const [k, [dr, dn]] of Object.entries(delta)) {
+        if (!cur[k]) continue;
+        cur[k].n = Math.max(0, (cur[k].n || 0) - dn); cur[k].r = Math.max(100, Math.round((cur[k].r - dr) * 10) / 10);
+        if (!cur[k].n) delete cur[k];
+      }
+      for (const later of H.slice(i + 1)) {
+        const areas = { ...(later.areas || {}) };
+        for (const [k, [dr, dn]] of Object.entries(delta)) { if (!areas[k]) continue; const n = Math.max(0, areas[k][1] - dn); if (n) areas[k] = [Math.max(100, Math.round((areas[k][0] - dr) * 10) / 10), n]; else delete areas[k]; }
+        const rec = { ...later, areas }; delete rec.id; delete rec.u; store.put('ratinghist', later.id, rec); later.areas = areas;
+      }
+      store.del('ratinghist', H[i].id); H.splice(i, 1); changed = true;
+    }
+    if (changed) store.put('ratings', 'current', { areas: cur });
+  }
+  let undoT = null; const undoSoon = () => { clearTimeout(undoT); undoT = setTimeout(() => { try { undoOlderFormats(); } catch (e) { console.error(e); } }, 400); };
+  store.onChange((fromSync) => { if (fromSync) undoSoon(); });
+  (function waitDex() { if (VL.D && VL.D.dex) store.ready.then(undoSoon); else setTimeout(waitDex, 300); })();
+
+  // a line under each format menu (Study, Games, Test) when an older format is picked
+  function syncNotes() {
+    for (const id of ['st-format', 'ar-format', 'te-format']) {
+      const sel = $(id); if (!sel) continue;
+      let n = $(id + '-note'); const lab = sel.closest('label');
+      if (!n && lab) { n = document.createElement('p'); n.id = id + '-note'; n.className = 'sub practice-note'; lab.insertAdjacentElement('afterend', n); }
+      if (n) { const t = practiceNote(sel.value); n.textContent = t; n.hidden = !t; }
+    }
+  }
+  document.addEventListener('change', (e) => { if (/^(st|ar|te)-format$/.test(e.target.id)) syncNotes(); });
+  window.addEventListener('hashchange', () => setTimeout(syncNotes, 120));
+  setTimeout(syncNotes, 1500);
+  VL.progress = { AREAS, apply, ratingOf, changesHtml, render, rankOf, nextRank, grade, overallOf, current, counts, practiceNote, undoOlderFormats, syncNotes };
 })();

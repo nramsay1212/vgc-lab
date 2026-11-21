@@ -77,9 +77,9 @@
     });
     let changes = null;
     if (n) {
-      VL.store.put('tests', VL.newId('t'), { ts: Date.now(), label: T.label, level: T.level, fmt: T.fmt.id, fmtName: T.fmt.name, n, correct, pct, secs, byKind, misses: misses.slice(0, 50) });
+      VL.store.put('tests', VL.newId('t'), { ts: Date.now(), label: T.label, level: T.level, fmt: T.fmt.id, fmtName: T.fmt.name, practice: !VL.progress.counts(T.fmt.id), n, correct, pct, secs, byKind, misses: misses.slice(0, 50) });
       // harder tests count for more: +175 difficulty per level above Standard
-      changes = VL.progress.apply(T.answers.map(a => ({ a: KIND_AREA[a.kind], d: (KIND_DIFF[a.kind] || 1150) + (T.level - 1) * 175, s: a.ok ? 1 : 0 })), { src: 'test', label: T.label, points: correct * 10 * T.level });
+      changes = VL.progress.apply(T.answers.map(a => ({ a: KIND_AREA[a.kind], d: (KIND_DIFF[a.kind] || 1150) + (T.level - 1) * 175, s: a.ok ? 1 : 0 })), { src: 'test', fmt: T.fmt.id, label: T.label, points: correct * 10 * T.level });
       VL.markDone && VL.markDone('drill');
     }
     const g = VL.progress.grade(pct);

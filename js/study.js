@@ -475,7 +475,8 @@
   function finishQuiz() {
     const z = S.quiz;
     if (z && z.results.length) VL.sound && VL.sound.play('finish');
-    if (z.results.length) {
+    const counts = !VL.progress || VL.progress.counts(fmtId()); // older formats are practice: their answers aren't saved
+    if (z.results.length && counts) {
       const st = drillStats(z.id);
       const miss = { ...(st.miss || {}) };
       for (const [k, d] of Object.entries(z.upd.miss)) { const v = Math.max(0, (miss[k] || 0) + d); if (v) miss[k] = v; else delete miss[k]; }
@@ -486,7 +487,7 @@
     }
     const right = z.results.reduce((a, b) => a + b, 0);
     $('quiz-wrap').innerHTML = `<div class="card-head"><h3>${esc(DRILLS.find(d => d.id === z.id).name)}: ${right} / ${z.results.length}</h3></div>
-      <p class="sub">Questions you missed will come back more often in future rounds.</p>
+      <p class="sub">${counts ? 'Questions you missed will come back more often in future rounds.' : esc(VL.progress.practiceNote(fmtId()))}</p>
       <div class="row"><button class="btn" id="qz-again">Another round</button><button class="btn ghost" id="qz-done">Back to drills</button></div>`;
     $('qz-again').onclick = () => startQuiz(z.id);
     $('qz-done').onclick = closeQuiz;

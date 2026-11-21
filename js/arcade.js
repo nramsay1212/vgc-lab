@@ -150,19 +150,20 @@
     const g = GAMES.find(x => x.id === G.id);
     const key = G.id + ':' + G.mode;
     const rec = VL.store.get('arcade', key) || { best: 0, plays: 0, hist: [] };
-    const isBest = G.score > (rec.best || 0);
+    const counts = !VL.progress || VL.progress.counts(fmt().id); // older formats are practice: no saved scores, no rating change
+    const isBest = counts && G.score > (rec.best || 0);
     if (G.n) VL.sound && VL.sound.play(isBest ? 'best' : 'finish');
-    if (G.n) VL.store.put('arcade', key, { best: Math.max(rec.best || 0, G.score), plays: (rec.plays || 0) + 1, hist: (rec.hist || []).concat([{ s: G.score, a: G.n ? Math.round(100 * G.right / G.n) : 0, t: Date.now() }]).slice(-30) });
+    if (G.n && counts) VL.store.put('arcade', key, { best: Math.max(rec.best || 0, G.score), plays: (rec.plays || 0) + 1, hist: (rec.hist || []).concat([{ s: G.score, a: G.n ? Math.round(100 * G.right / G.n) : 0, t: Date.now() }]).slice(-30) });
     if (G.n && VL.markDone) VL.markDone('drill');
     const perf = G.n ? perfOf() : null;
     const ar = AREA[G.id]; const before = VL.progress ? VL.progress.ratingOf(ar) : null;
-    const changes = perf !== null && VL.progress ? VL.progress.apply([{ a: ar, perf, n: G.n }], { src: 'game', label: `${g.name} · ${g.modes.find(m => m[0] === G.mode)[1]}`, points: G.score }) : null;
+    const changes = perf !== null && VL.progress ? VL.progress.apply([{ a: ar, perf, n: G.n }], { src: 'game', fmt: fmt().id, label: `${g.name} · ${g.modes.find(m => m[0] === G.mode)[1]}`, points: G.score }) : null;
     const [, ceil] = PERF[G.id][G.mode]; const up = harder();
     const perfHtml = perf === null ? (G.n ? '<p class="sub">Too short to rate. Play at least 15 seconds or 2 rounds.</p>' : '')
-      : `<p class="perf">You played like a <b>${perf}</b> (${esc(VL.progress ? VL.progress.rankOf(perf) : '')}) this game. ${before !== null && perf < before ? 'That\'s under your rating, so it went down.' : before !== null && perf > before ? 'That\'s above your rating, so it went up.' : ''}</p>`
+      : `<p class="perf">You played like a <b>${perf}</b> (${esc(VL.progress ? VL.progress.rankOf(perf) : '')}) this game. ${!counts ? '' : before !== null && perf < before ? 'That\'s under your rating, so it went down.' : before !== null && perf > before ? 'That\'s above your rating, so it went up.' : ''}</p>`
         + (before !== null && before >= ceil - 100 ? `<p class="sub">This mode tops out at <b>${ceil}</b>, so your rating can't climb much further here.${up ? ` Play <b>${esc(up[1])}</b> to keep climbing.` : ''}</p>` : '');
     const acc = G.n ? Math.round(100 * G.right / G.n) : 0;
-    area().innerHTML = `<div class="card-head"><h3>${esc(g.name)}: ${G.score} points</h3>${isBest && G.n ? '<span class="pill w">New best</span>' : `<span class="pill m">Best ${rec.best || 0}</span>`}</div>
+    area().innerHTML = `<div class="card-head"><h3>${esc(g.name)}: ${G.score} points</h3>${!counts ? '<span class="pill m">Practice</span>' : isBest && G.n ? '<span class="pill w">New best</span>' : `<span class="pill m">Best ${rec.best || 0}</span>`}</div>
       <div class="tiles"><div class="tile"><div class="k">Correct</div><div class="v">${G.right}/${G.n}</div></div><div class="tile"><div class="k">Accuracy</div><div class="v">${acc}%</div></div><div class="tile"><div class="k">Best streak</div><div class="v hot">${G.best}</div></div><div class="tile"><div class="k">Points</div><div class="v">${G.score}</div></div></div>
       ${perfHtml}
       ${VL.progress ? VL.progress.changesHtml(changes) : ''}
