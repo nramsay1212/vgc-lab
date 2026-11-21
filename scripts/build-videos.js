@@ -65,14 +65,13 @@ const CHANNELS = [
   { handle: 'jameswbaekpkmn', name: 'James Baek', style: 'doubles' },
   { handle: 'Riopaser', name: 'Eric Rios', style: 'doubles' },
   { handle: 'JoeUX9', name: 'Joseph Ugarte', style: 'doubles' },
-  { id: 'UCANgEAFCOg1Vynpqg9dEDDA', name: 'Lee Provost', style: 'doubles' },
   { id: 'UCi5dCo0kzUggrtTtpnsq7DA', name: 'Baz Anderson', style: 'doubles' },
   { handle: 'pokemon', name: 'Pokémon (official)', style: 'doubles', only: /\bVGC\b|Championships?|Worlds|Regional|International|Champions Battle/i },
   { id: 'UCbXuFrNGSKcmZY_5DwYz4Ew', name: 'PokeaimMD', style: 'singles' },
   { id: 'UC-tIwhZwjGMTCEBUVuAG5fA', name: 'blunder', style: 'singles' },
   { id: 'UCHOcFHxacqayCMgmTnY94Ng', name: 'ThatsaVGC Singles', style: 'singles' },
   { id: 'UCbr6TI0Mujw2iFAQE4R8yrQ', name: 'shofu', style: 'singles' },
-  { id: 'UC6ozXwKjqwtzcoq0P_qU56A', name: 'Jamvad', style: 'singles' },
+  { handle: 'JamvadAcademy', name: 'Jamvad', style: 'singles' },
 ];
 
 // streams, merch and other games that aren't about getting better at competitive battles
