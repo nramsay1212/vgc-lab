@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=77">
-<link rel="stylesheet" href="css/pixel.css?v=77">
+<link rel="stylesheet" href="css/app.css?v=78">
+<link rel="stylesheet" href="css/pixel.css?v=78">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench';var pal=localStorage.getItem('vgclab-palette')||'shiny';if(pal==='pixel'){pal='shiny';localStorage.setItem('vgclab-palette',pal);localStorage.setItem('vgclab-look','minimal')}document.documentElement.dataset.palette=pal;document.documentElement.dataset.look=localStorage.getItem('vgclab-look')||'standard'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
@@ -648,6 +648,12 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
         <label for="bk-import" class="btn ghost" style="flex:0 0 auto;flex-direction:row;color:var(--accent);font-size:15px;font-weight:600;cursor:pointer">Restore from file<input type="file" id="bk-import" accept="application/json,.json" hidden></label>
       </div>
     </div>
+    <div class="card" id="sd-card">
+      <div class="card-head"><h3>Showdown accounts</h3><span class="sub">For the Showdown extension: games from each account come in as climb or testing games.</span></div>
+      <div id="sd-accts"></div>
+      <div class="row" style="align-items:flex-end"><label for="sd-new" style="flex:1 1 220px">Add an account<input type="text" id="sd-new" placeholder="Showdown username" autocomplete="off" spellcheck="false"></label><button class="btn ghost small" id="sd-add" style="height:36px">Add</button></div>
+      <p class="sub">An account you haven't added is added by itself the first time one of its games comes in, as climb. Changing an account here only affects games that come in after the change; press Edit on an older game to move it.</p>
+    </div>
     <div class="card">
       <div class="card-head"><h3>Sounds</h3><span class="sub">Little sounds for right and wrong answers, games, streaks and saving. Kept on this device.</span></div>
       <div class="row" style="align-items:center"><label class="vd-check" for="snd-on"><input type="checkbox" id="snd-on" checked> Play sounds</label><label for="snd-vol" style="flex:1 1 220px">Volume<input type="range" id="snd-vol" min="5" max="100" value="60"></label></div>
@@ -762,37 +768,37 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=77"></script>
-<script src="js/sound.js?v=77"></script>
-<script src="js/content.js?v=77"></script>
-<script src="js/search.js?v=77"></script>
-<script src="js/study.js?v=77"></script>
-<script src="js/sprites.js?v=77"></script>
-<script src="js/help.js?v=77"></script>
-<script src="js/meta.js?v=77"></script>
-<script src="js/calc.js?v=77"></script>
-<script src="js/companion.js?v=77"></script>
-<script src="js/teamcheck.js?v=77"></script>
-<script src="js/builder.js?v=77"></script>
-<script src="js/plan.js?v=77"></script>
-<script src="js/topteams.js?v=77"></script>
-<script src="js/news.js?v=77"></script>
-<script src="js/replay.js?v=77"></script>
-<script src="js/sheets.js?v=77"></script>
-<script src="js/teamcompare.js?v=77"></script>
-<script src="js/battleview.js?v=77"></script>
-<script src="js/videos.js?v=77"></script>
-<script src="js/trends.js?v=77"></script>
-<script src="js/progress.js?v=77"></script>
-<script src="js/arcade.js?v=77"></script>
-<script src="js/test.js?v=77"></script>
-<script src="js/compare.js?v=77"></script>
-<script src="js/app.js?v=77"></script>
-<script src="js/autoimport.js?v=77"></script>
-<script src="js/hubs.js?v=77"></script>
-<script src="js/whatsnew.js?v=77"></script>
-<script src="js/firebase-config.js?v=77"></script>
-<script src="js/account.js?v=77"></script>
+<script src="js/store.js?v=78"></script>
+<script src="js/sound.js?v=78"></script>
+<script src="js/content.js?v=78"></script>
+<script src="js/search.js?v=78"></script>
+<script src="js/study.js?v=78"></script>
+<script src="js/sprites.js?v=78"></script>
+<script src="js/help.js?v=78"></script>
+<script src="js/meta.js?v=78"></script>
+<script src="js/calc.js?v=78"></script>
+<script src="js/companion.js?v=78"></script>
+<script src="js/teamcheck.js?v=78"></script>
+<script src="js/builder.js?v=78"></script>
+<script src="js/plan.js?v=78"></script>
+<script src="js/topteams.js?v=78"></script>
+<script src="js/news.js?v=78"></script>
+<script src="js/replay.js?v=78"></script>
+<script src="js/sheets.js?v=78"></script>
+<script src="js/teamcompare.js?v=78"></script>
+<script src="js/battleview.js?v=78"></script>
+<script src="js/videos.js?v=78"></script>
+<script src="js/trends.js?v=78"></script>
+<script src="js/progress.js?v=78"></script>
+<script src="js/arcade.js?v=78"></script>
+<script src="js/test.js?v=78"></script>
+<script src="js/compare.js?v=78"></script>
+<script src="js/app.js?v=78"></script>
+<script src="js/autoimport.js?v=78"></script>
+<script src="js/hubs.js?v=78"></script>
+<script src="js/whatsnew.js?v=78"></script>
+<script src="js/firebase-config.js?v=78"></script>
+<script src="js/account.js?v=78"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

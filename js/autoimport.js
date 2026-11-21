@@ -44,6 +44,21 @@
     return best ? best.t : null;
   }
 
+  // ---------- your Showdown accounts: each one's games are climb or testing ----------
+  const accts = () => ((VL.store.get('meta', 'sdaccounts') || {}).list) || {};
+  function setAcct(name, mode) {
+    const id = toId(name); if (!id) return;
+    const list = { ...accts() }; if (mode === null) delete list[id]; else list[id] = { name: (list[id] && list[id].name) || String(name).trim(), mode };
+    VL.store.put('meta', 'sdaccounts', { list });
+  }
+  function renderAccts() {
+    const box = document.getElementById('sd-accts'); if (!box) return;
+    const rows = Object.entries(accts()).sort((a, b) => (a[1].mode === b[1].mode ? a[1].name.localeCompare(b[1].name) : a[1].mode === 'climb' ? -1 : 1));
+    box.innerHTML = rows.length ? rows.map(([id, a]) => `<div class="row sd-acct" style="align-items:center;justify-content:space-between;padding:4px 0"><b>${esc(a.name)}</b><span class="row" style="gap:8px;align-items:center"><span class="seg" role="radiogroup" aria-label="Games from ${esc(a.name)}"><button type="button" data-sdacct="${id}" data-sdmode="climb" aria-pressed="${a.mode !== 'test'}">Climb</button><button type="button" data-sdacct="${id}" data-sdmode="test" aria-pressed="${a.mode === 'test'}">Testing</button></span><button type="button" class="linkbtn" data-sddel="${id}">Remove</button></span></div>`).join('')
+      : '<p class="sub">No accounts yet. Add your main account and your testing account, or just play: each account is added the first time one of its games comes in.</p>';
+  }
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
   // ---------- reading the game ----------
   function ratingAfter(log, me) {
     for (const l of String(log).split('\n').reverse()) {
@@ -75,20 +90,25 @@
     const fmt = formatOf(log, bid); const style = (VL.styleOfFmt && VL.styleOfFmt(fmt)) || 'doubles';
     const team = matchTeam(r.mypreview || [], style);
     const logz = url ? null : await deflate(slim(log)).catch(() => null);
+    // climb or testing goes by which of your Showdown accounts played it
+    let acct = accts()[toId(me)], newAcct = false;
+    if (!acct) { setAcct(me, 'climb'); acct = accts()[toId(me)]; newAcct = Object.keys(accts()).length > 1; }
+    const mode = acct && acct.mode === 'test' ? 'test' : 'climb';
     const id = VL.newId('g'); const now = Date.now();
     VL.store.put('games', id, {
-      ts: now, day: VL.dayKey(), fmt, fmtName: VL.fmtName ? VL.fmtName(fmt) : fmt, result: r.result, mode: 'climb', style,
+      ts: now, day: VL.dayKey(), fmt, fmtName: VL.fmtName ? VL.fmtName(fmt) : fmt, result: r.result, mode, style, sdUser: me,
       type: 'Ladder (best of 1)', rating: ratingAfter(log, me), team: team ? team.id : null, arch: null,
       opp: (r.opp || []).slice(0, 6), mylead: (r.mylead || []).join(', '), myback: (r.myback || []).join(', '), opplead: (r.opplead || []).join(', '), turn: null,
       tags: [], note: `Sent from Showdown by the extension. Lasted ${r.turns} turn${r.turns === 1 ? '' : 's'}.`, oppName: r.oppName || null,
       source: url || (bid ? 'showdown:' + bid : 'showdown-log'), battle: bid || null, logz, auto: true,
     });
     if (r.oppName && VL.plan && VL.plan.ensureOpponent) VL.plan.ensureOpponent(r.oppName);
-    if (VL.markDone && (!VL.style || VL.style() === style)) VL.markDone('log');
+    if (mode === 'climb' && VL.markDone && (!VL.style || VL.style() === style)) VL.markDone('log');
     // name what they brought (what came in), or their team preview if the replay shows nothing
     const theirs = (r.opp || []).length ? (r.opplead || []).concat((r.opp || []).filter(n => !(r.opplead || []).includes(n))) : [];
     const shown = theirs.slice(0, 2).join('/') + (theirs.length > 2 ? '/…' : '');
-    return { ok: true, id, msg: `Imported: ${r.result === 'W' ? 'Win' : 'Loss'}${shown ? ' vs ' + shown : ''}${team ? ' · ' + (team.name || 'your team') : ' · no saved team matched'}` };
+    const extra = newAcct ? ` · New account ${me}, logged as climb. If it's your testing account, switch it in Settings under Showdown accounts.` : mode === 'test' ? ' · testing game' : '';
+    return { ok: true, id, msg: `Imported: ${r.result === 'W' ? 'Win' : 'Loss'}${shown ? ' vs ' + shown : ''}${team ? ' · ' + (team.name || 'your team') : ' · no saved team matched'}${extra}` };
   }
 
   // ---------- telling you ----------
@@ -140,6 +160,14 @@
   }
   window.addEventListener('hashchange', (e) => { const old = (e.oldURL || '').split('#')[1]; handle(old !== undefined ? '#' + old : '#today'); });
   handle(null); // opened straight to an import
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sdacct]'); if (b) { setAcct(accts()[b.dataset.sdacct].name, b.dataset.sdmode); VL.sound && VL.sound.play('tap'); return; }
+    const d = e.target.closest('[data-sddel]'); if (d) { VL.armDelete ? VL.armDelete(d, () => setAcct(accts()[d.dataset.sddel].name, null)) : setAcct(accts()[d.dataset.sddel].name, null); return; }
+    if (e.target.id === 'sd-add') { const n = document.getElementById('sd-new'); const v = n.value.trim(); if (!v) return; if (!accts()[toId(v)]) setAcct(v, Object.keys(accts()).length ? 'test' : 'climb'); n.value = ''; VL.toast && VL.toast('Added ' + v); }
+  });
+  document.addEventListener('keydown', (e) => { if (e.target && e.target.id === 'sd-new' && e.key === 'Enter') { e.preventDefault(); document.getElementById('sd-add').click(); } });
+  if (VL.store) { VL.store.onChange(renderAccts); VL.store.ready.then(renderAccts); }
 
   VL.autoimport = { inflate, deflate, importGame, matchTeam, battleId };
 })();

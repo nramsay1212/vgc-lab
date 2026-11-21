@@ -190,7 +190,7 @@
     $('recent').innerHTML = `<table class="list"><thead><tr><th></th><th>Date</th><th>Their team</th><th>Leads (mine / theirs)</th><th>Tags</th><th>Note</th><th></th></tr></thead><tbody>${
       g.slice(0, 40).map(x => `<tr>
         <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span>${isTest(x) ? '<br><span class="pill m" title="Testing game: not part of your climb">Test</span>' : ''}</td>
-        <td class="mono" style="white-space:nowrap">${esc((x.day || '').slice(5))}${Number.isFinite(x.rating) ? `<br><span class="sub">${x.rating}</span>` : ''}<br><span class="sub">${esc(x.fmtName || fmtName(x.fmt))}</span></td>
+        <td class="mono" style="white-space:nowrap">${esc((x.day || '').slice(5))}${Number.isFinite(x.rating) ? `<br><span class="sub">${x.rating}</span>` : ''}${x.sdUser ? `<br><span class="sub" title="Showdown account">${esc(x.sdUser)}</span>` : ''}<br><span class="sub">${esc(x.fmtName || fmtName(x.fmt))}</span></td>
         <td>${(x.opp || []).length ? `<span class="sprrow" title="${esc((x.opp || []).join(', '))}">${(x.opp || []).map(n => VL.sprite(n, 'xs')).join('')}</span>` : '<span class="sub">–</span>'}${/^https:\/\/replay\.pokemonshowdown\.com\//.test(x.source || '') ? `<br><button class="linkbtn" data-review="${esc(x.source)}">Review replay</button>` : x.logz ? `<br><button class="linkbtn" data-reviewgame="${esc(x.id)}">Review game</button>` : ''}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
         <td>${esc(x.mylead || '–')} / ${esc(x.opplead || '–')}</td>
         <td>${(x.tags || []).map(t => `<span class="pill m">${esc(TAGMAP[t] || t)}</span>`).join(' ')}</td>
