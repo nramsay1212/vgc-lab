@@ -64,7 +64,7 @@ const CHANNELS = [
   { id: 'UCEMu_ArjgsOXYkd11HmKSMQ', name: 'Scooteezy', style: 'doubles' },
   { handle: 'jameswbaekpkmn', name: 'James Baek', style: 'doubles' },
   { handle: 'Riopaser', name: 'Eric Rios', style: 'doubles' },
-  { id: 'UCSQ4ebwZTZUT92euLpXGj1A', name: 'Joseph Ugarte', style: 'doubles' },
+  { handle: 'JoeUX9', name: 'Joseph Ugarte', style: 'doubles' },
   { id: 'UCANgEAFCOg1Vynpqg9dEDDA', name: 'Lee Provost', style: 'doubles' },
   { id: 'UCi5dCo0kzUggrtTtpnsq7DA', name: 'Baz Anderson', style: 'doubles' },
   { handle: 'pokemon', name: 'Pokémon (official)', style: 'doubles', only: /\bVGC\b|Championships?|Worlds|Regional|International|Champions Battle/i },
