@@ -191,7 +191,7 @@
       g.slice(0, 40).map(x => `<tr>
         <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span>${isTest(x) ? '<br><span class="pill m" title="Testing game: not part of your climb">Test</span>' : ''}</td>
         <td class="mono" style="white-space:nowrap">${esc((x.day || '').slice(5))}${Number.isFinite(x.rating) ? `<br><span class="sub">${x.rating}</span>` : ''}<br><span class="sub">${esc(x.fmtName || fmtName(x.fmt))}</span></td>
-        <td>${(x.opp || []).length ? `<span class="sprrow" title="${esc((x.opp || []).join(', '))}">${(x.opp || []).map(n => VL.sprite(n, 'xs')).join('')}</span>` : '<span class="sub">–</span>'}${/^https:\/\/replay\.pokemonshowdown\.com\//.test(x.source || '') ? `<br><button class="linkbtn" data-review="${esc(x.source)}">Review replay</button>` : ''}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
+        <td>${(x.opp || []).length ? `<span class="sprrow" title="${esc((x.opp || []).join(', '))}">${(x.opp || []).map(n => VL.sprite(n, 'xs')).join('')}</span>` : '<span class="sub">–</span>'}${/^https:\/\/replay\.pokemonshowdown\.com\//.test(x.source || '') ? `<br><button class="linkbtn" data-review="${esc(x.source)}">Review replay</button>` : x.logz ? `<br><button class="linkbtn" data-reviewgame="${esc(x.id)}">Review game</button>` : ''}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
         <td>${esc(x.mylead || '–')} / ${esc(x.opplead || '–')}</td>
         <td>${(x.tags || []).map(t => `<span class="pill m">${esc(TAGMAP[t] || t)}</span>`).join(' ')}</td>
         <td style="max-width:280px">${esc(x.note || '')}${x.turn ? ` <span class="sub">(T${x.turn})</span>` : ''}</td>
@@ -450,6 +450,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   // ---------- routing ----------
   const TABS = ['news', 'replay', 'topteams', 'sheets', 'videos', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'notebook', 'teams', 'teamcompare', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
+    if (location.hash.startsWith('#import=')) return; // a game handed over by the Showdown extension; js/autoimport.js handles it and puts the page back
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
     const was = document.querySelector('.panel.on');
     for (const t of TABS) $('p-' + t).classList.toggle('on', t === tab);
@@ -754,6 +755,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     const opp = mine === 'p1' ? 'p2' : 'p1';
     return { result: winner ? (winner.toLowerCase() === meName ? 'W' : 'L') : null, opp: team[opp].length ? team[opp] : seen[opp], opplead: leads[opp], mylead: leads[mine], myback: seen[mine].filter(n => !leads[mine].includes(n)), mypreview: team[mine], oppName: players[opp], turns: turn, format };
   }
+  VL.parseReplay = parseReplay; VL.dayKey = dayKey;
   function importReplay(log, url) {
     const me = $('rp-me').value.trim(); try { localStorage.setItem('vgclab-sdname', me); } catch (e) { /* ignore */ }
     const r = parseReplay(log, me);
@@ -772,7 +774,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   };
   $('rp-logo').onclick = () => importReplay($('rp-log').value, '');
 
-  $('recent').addEventListener('click', e => { if (e.target.dataset.editgame) { editGame(e.target.dataset.editgame); return; } if (e.target.dataset.review && VL.replay) { VL.replay.open(e.target.dataset.review); return; } const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
+  $('recent').addEventListener('click', e => { if (e.target.dataset.editgame) { editGame(e.target.dataset.editgame); return; } if (e.target.dataset.review && VL.replay) { VL.replay.open(e.target.dataset.review); return; } if (e.target.dataset.reviewgame && VL.replay) { VL.replay.openGame(e.target.dataset.reviewgame); return; } const id = e.target.dataset.delgame; if (id) armDelete(e.target, () => store.del('games', id)); });
 
   $('rv-scope').onchange = renderAll;
   try { const rm = localStorage.getItem('vgclab-rvmode'); if (rm) $('rv-mode').value = rm; } catch (e) { /* private mode */ }

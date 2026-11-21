@@ -131,12 +131,12 @@
   const idOf = (url) => 'r-' + norm(url).replace(/^https:\/\/replay\.pokemonshowdown\.com\//, '').replace(/[^a-z0-9-]/gi, '').slice(0, 80);
   const baseName = (n) => String(n || '').replace(/-(Mega|Mega-[XYZ]|Primal)$/, '');
 
-  function start(log, url, saved) {
+  function start(log, url, saved, game) {
     const data = parse(log);
     if (!data.ok) return false;
     const mine = sdName().toLowerCase();
     let me = saved && saved.me; if (!me) me = Object.keys(data.players).find(k => data.players[k].toLowerCase() === mine) || 'p1';
-    R = { id: saved ? saved.id : (url ? idOf(url) : VL.newId('r')), url: url || '', log, data, me, turn: saved && saved.key ? saved.key : 1, key: saved ? saved.key || null : null, notes: saved ? { ...(saved.notes || {}) } : {}, takeaway: saved ? saved.takeaway || '' : '', after: false, dirty: false };
+    R = { id: saved ? saved.id : url ? idOf(url) : game ? 'r-g-' + game : VL.newId('r'), url: url || '', game: game || (saved && saved.game) || null, log, data, me, turn: saved && saved.key ? saved.key : 1, key: saved ? saved.key || null : null, notes: saved ? { ...(saved.notes || {}) } : {}, takeaway: saved ? saved.takeaway || '' : '', after: false, dirty: false };
     if (R.turn > data.turns.length - 1) R.turn = data.turns.length - 1;
     return true;
   }
@@ -147,6 +147,15 @@
     if (!j || !j.log) return 'Couldn\'t load that replay. Check the link, or paste the battle log below instead.';
     const saved = store().get('reviews', idOf(url));
     return start(j.log, url, saved) ? '' : 'That replay doesn\'t have a battle in it.';
+  }
+
+  // a game the Showdown extension sent: its battle log is saved with the game, compressed
+  async function loadGame(gid, saved) {
+    const g = store().get('games', gid);
+    if (!g || !g.logz || !VL.autoimport) return 'That game has no saved battle log.';
+    let log = ''; try { log = await VL.autoimport.inflate(g.logz); } catch (e) { return 'Couldn\'t read the saved battle log.'; }
+    if (!saved) saved = store().get('reviews', 'r-g-' + gid);
+    return start(log, '', saved, gid) ? '' : 'That game doesn\'t have a battle in it.';
   }
 
   // ---------- their Pokémon and the speed order ----------
@@ -313,13 +322,14 @@
     const root = $('rr-root');
     const revs = store().list('reviews').sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
     const have = new Set(revs.map(r => r.url).filter(Boolean));
-    const games = store().list('games').filter(g => /^https:\/\/replay\.pokemonshowdown\.com\//.test(g.source || '') && !have.has(norm(g.source))).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 12);
+    const haveG = new Set(revs.map(r => r.game).filter(Boolean));
+    const games = store().list('games').filter(g => (/^https:\/\/replay\.pokemonshowdown\.com\//.test(g.source || '') && !have.has(norm(g.source))) || (g.logz && !haveG.has(g.id))).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 12);
     root.innerHTML = `
       <div class="card"><div class="row"><label for="rp-url2" style="flex:2 1 320px">Replay link<input type="text" id="rp-url2" placeholder="https://replay.pokemonshowdown.com/..."></label><label for="rp-me2">Your Showdown username<input type="text" id="rp-me2" value="${esc(sdName())}" placeholder="So the app knows which side was you"></label><button class="btn" id="rp-load" style="height:36px;align-self:flex-end">Load replay</button></div>
         <p class="sub" id="rp-msg2" role="status"></p>
         <details><summary class="sub" style="cursor:pointer">Link not working? Paste the battle log instead</summary><p class="sub">Open the replay, add <code class="k">.log</code> to the end of its address, copy everything, and paste it here.</p><textarea id="rp-log2" style="min-height:110px;font-family:var(--mono);font-size:12px"></textarea><div class="row" style="justify-content:flex-end"><button class="btn ghost small" id="rp-loadlog">Use this log</button></div></details></div>
       ${revs.length ? `<div class="card"><div class="card-head"><h3>Your reviews</h3><span class="sub">${revs.length} saved</span></div>${revs.map(r => `<div class="threat"><div class="h"><div><b>${esc(r.title || 'Replay')}</b> <span class="mini">${r.ts ? new Date(r.ts).toLocaleDateString() : ''}</span><div class="sub">${esc(r.fmt || '')}${r.result ? ` · ${r.result === 'W' ? 'Win' : 'Loss'}` : ''}${r.key ? ` · key turn ${r.key}` : ''}${Object.keys(r.notes || {}).length ? ` · ${Object.keys(r.notes).length} note${Object.keys(r.notes).length === 1 ? '' : 's'}` : ''}</div></div><div class="kv"><button class="btn small" data-rpopen="${esc(r.id)}">Open</button><button class="linkbtn" data-rpdel="${esc(r.id)}">Delete</button></div></div>${r.takeaway ? `<div class="sub" style="white-space:pre-wrap">${esc(r.takeaway)}</div>` : ''}</div>`).join('')}</div>` : ''}
-      ${games.length ? `<div class="card"><div class="card-head"><h3>Logged games with a replay</h3><span class="sub">Not reviewed yet</span></div>${games.map(g => `<div class="threat"><div class="h"><div><span class="pill ${g.result === 'W' ? 'w' : 'l'}">${g.result === 'W' ? 'Win' : 'Loss'}</span> <span class="mini">${esc(g.day || '')}</span> ${VL.spriteRow(g.opp || [], 'xs')}</div><button class="btn small" data-rpurl="${esc(g.source)}">Review</button></div></div>`).join('')}</div>` : ''}
+      ${games.length ? `<div class="card"><div class="card-head"><h3>Logged games you can review</h3><span class="sub">Not reviewed yet</span></div>${games.map(g => `<div class="threat"><div class="h"><div><span class="pill ${g.result === 'W' ? 'w' : 'l'}">${g.result === 'W' ? 'Win' : 'Loss'}</span> <span class="mini">${esc(g.day || '')}</span> ${VL.spriteRow(g.opp || [], 'xs')}</div>${g.logz ? `<button class="btn small" data-rpgame="${esc(g.id)}">Review</button>` : `<button class="btn small" data-rpurl="${esc(g.source)}">Review</button>`}</div></div>`).join('')}</div>` : ''}
       ${!revs.length && !games.length ? '<div class="empty">No reviews yet. Paste a replay link above to start your first one.</div>' : ''}`;
   }
 
@@ -329,7 +339,8 @@
     grabInputs(); const d = R.data;
     const title = `${d.players[R.me]} vs ${d.players[R.me === 'p1' ? 'p2' : 'p1']}`;
     const rec = { ts: (store().get('reviews', R.id) || {}).ts || Date.now(), url: R.url, title, fmt: d.tier, me: R.me, result: d.winner ? (d.winner === d.players[R.me] ? 'W' : 'L') : null, turns: d.turns.length - 1, key: R.key, notes: R.notes, takeaway: R.takeaway };
-    if (!R.url) rec.log = R.log.slice(0, 120000); // pasted logs have no link to load from again
+    if (R.game) rec.game = R.game; // a game the Showdown extension sent keeps its own log, so the review just points to it
+    else if (!R.url) rec.log = R.log.slice(0, 120000); // pasted logs have no link to load from again
     store().put('reviews', R.id, rec); R.dirty = false;
     if (!quiet) { VL.toast('Review saved'); VL.sound && VL.sound.play('save'); }
   }
@@ -350,8 +361,9 @@
       $('rp-msg2').textContent = 'Loading…'; const err = await loadUrl($('rp-url2').value); if (err) { $('rp-msg2').textContent = err; return; } render(); return;
     }
     if (e.target.id === 'rp-loadlog') { const me = $('rp-me2').value.trim(); try { localStorage.setItem(SD, me); } catch (x) { /* ignore */ } if (start($('rp-log2').value, '', null)) { R.dirty = true; render(); } else $('rp-msg2').textContent = 'That doesn\'t look like a Showdown battle log.'; return; }
-    const op = e.target.closest('[data-rpopen]'); if (op) { const r = store().get('reviews', op.dataset.rpopen); if (!r) return; if (r.log) { if (start(r.log, '', r)) render(); } else { op.textContent = 'Loading…'; const err = await loadUrl(r.url); if (err) { VL.toast(err); render(); } else render(); } return; }
+    const op = e.target.closest('[data-rpopen]'); if (op) { const r = store().get('reviews', op.dataset.rpopen); if (!r) return; if (r.log) { if (start(r.log, '', r)) render(); } else if (r.game) { const err = await loadGame(r.game, r); if (err) VL.toast(err); render(); } else { op.textContent = 'Loading…'; const err = await loadUrl(r.url); if (err) { VL.toast(err); render(); } else render(); } return; }
     const dl = e.target.closest('[data-rpdel]'); if (dl) { VL.armDelete(dl, () => { store().del('reviews', dl.dataset.rpdel); render(); }); return; }
+    const gb = e.target.closest('[data-rpgame]'); if (gb) { gb.textContent = 'Loading…'; const err = await loadGame(gb.dataset.rpgame); if (err) VL.toast(err); else R.dirty = true; render(); return; }
     const u = e.target.closest('[data-rpurl]'); if (u) { u.textContent = 'Loading…'; const err = await loadUrl(u.dataset.rpurl); if (err) VL.toast(err); else R.dirty = true; render(); return; }
     if (!R) return;
     const trb = e.target.closest('[data-rptr]'); if (trb) { grabInputs(); R.trOrder = trb.dataset.rptr === '1'; render(); return; }
@@ -374,5 +386,5 @@
     if (e.key === 'ArrowRight') { e.preventDefault(); go(R.turn + 1); }
   });
 
-  VL.replay = { render, parse, async open(url) { location.hash = 'replay'; const err = await loadUrl(url); if (err) VL.toast(err); else if (R) R.dirty = true; render(); } };
+  VL.replay = { render, parse, async openGame(gid) { location.hash = 'replay'; const err = await loadGame(gid); if (err) VL.toast(err); else if (R && !R.key && !Object.keys(R.notes).length) R.dirty = true; render(); }, async open(url) { location.hash = 'replay'; const err = await loadUrl(url); if (err) VL.toast(err); else if (R) R.dirty = true; render(); } };
 })();

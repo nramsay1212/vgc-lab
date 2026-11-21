@@ -1,0 +1,30 @@
+# VGC Lab: Showdown games (browser extension)
+
+Sends each rated ladder game you finish on Pokémon Showdown to Toxicroak VGC Lab.
+VGC Lab logs it as a climb game, tagged with the saved team that matches your six.
+
+## Install in Brave
+
+1. Download this folder (or unzip `vgc-lab-showdown.zip`) somewhere it can stay, for example `Documents/vgc-lab-showdown`. Brave loads it from there each time, so don't delete it.
+2. In Brave, go to `brave://extensions`.
+3. Turn on **Developer mode** (top right).
+4. Click **Load unpacked** and pick the folder that has `manifest.json` in it.
+5. Click the puzzle-piece icon in the toolbar and pin **VGC Lab: Showdown games** so its menu is one click away.
+6. Reload any open Showdown tab.
+
+## Use
+
+- Play a ladder game on play.pokemonshowdown.com. When it ends, the extension waits a few seconds for the rating change, then sends the game.
+- VGC Lab updates the tab you already have open, or opens one in the background. You stay on Showdown.
+- The extension's icon shows a green W or a red L for a few seconds when a game is sent.
+
+## Settings (click the icon)
+
+- **Send my games to VGC Lab**: on or off.
+- **Losses only**: wins are skipped. A skipped win stays in Recent games with a **Send** button.
+- **Format**: the format in the battle's address. Change it when the regulation changes.
+- **Send again**: sends a recent game again (VGC Lab skips it if it already has it).
+
+## Updating
+
+Replace the folder's files with the new ones, then click the circular arrow on the extension's card in `brave://extensions`, and reload Showdown.

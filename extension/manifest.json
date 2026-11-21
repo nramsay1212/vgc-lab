@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "VGC Lab: Showdown games",
+  "version": "1.0.0",
+  "description": "Sends your finished Showdown ladder games to Toxicroak VGC Lab automatically.",
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": { "default_title": "VGC Lab: Showdown games", "default_popup": "popup.html", "default_icon": { "16": "icons/16.png", "48": "icons/48.png" } },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["storage"],
+  "host_permissions": ["https://nramsay1212.github.io/*"],
+  "content_scripts": [
+    { "matches": ["https://play.pokemonshowdown.com/*"], "js": ["page-hook.js"], "run_at": "document_start", "world": "MAIN", "all_frames": false },
+    { "matches": ["https://play.pokemonshowdown.com/*"], "js": ["content.js"], "run_at": "document_start", "all_frames": false }
+  ]
+}

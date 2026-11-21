@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['sd-ext-1', 'log', 'New: Showdown games come in by themselves', 'With the VGC Lab Showdown extension installed in Brave, every rated ladder game you finish is logged as a climb game, tagged with the saved team that matches your six, with your rating. A note at the bottom says what came in. <b>Review game</b> in Recent games steps through it turn by turn. Press <b>Edit</b> to add tags and notes.'],
     ['damage-ko-1', 'games', 'Damage Guess: knockouts count', 'When an attack knocks out, any guess of 100% or more now scores full points. A hit can\'t take more than 100% of the target\'s HP, so calling the knockout is enough, even if the roll would have been 140%.'],
     ['games-team-1', 'games', 'New: play the games with your team', 'Pick <b>My team</b> at the top and every round of every game has your Pokémon in it, on your own set: your real Speed, your moves, item and ability. Damage Guess switches between your attacks and the meta hitting you.'],
     ['look-pixel-2', 'settings', 'New style: Minimalist', 'A pixel style based on the Shiny Toxicroak Minimalist mock-up: square cards with pixel shadows, pixel lettering for titles and labels, and striped pixel usage bars. Pick it under <b>Style</b> on this page; it uses whichever <b>Colors</b> you pick (Shiny or Original) and works in Dark and Light.'],
