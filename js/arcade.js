@@ -17,7 +17,7 @@
   const GAMES = [
     { id: 'duel', name: 'Speed Duel', desc: 'Two Pokémon. Tap the one that moves first. 60 seconds, as many as you can.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['control', 'With speed control']] },
     { id: 'sort', name: 'Speed Sort', desc: 'Put 5 Pokémon in order from fastest to slowest. 5 rounds.', modes: [['base', 'Base Speed'], ['spread', 'Real spreads'], ['tr', 'Under Trick Room']] },
-    { id: 'order', name: 'Turn Order', desc: 'Four Pokémon pick their moves. Tap them in the order they\'ll act: priority first, then Speed. Close answers get partial points. 8 rounds.', modes: [['normal', 'Standard'], ['field', 'With Tailwind and Trick Room']] },
+    { id: 'order', name: 'Turn Order', desc: 'Four Pokémon pick their moves. Tap them in the order they\'ll act: priority first, then Speed. Close answers get partial points. 8 rounds.', modes: [['normal', 'Standard'], ['field', 'With speed control']] },
     { id: 'damage', name: 'Damage Guess', desc: 'A real attack with common sets. Guess how much it does before the calculator tells you. If it knocks out, any guess of 100% or more counts. 8 rounds.', modes: [['guess', 'Guess the %']] },
     { id: 'types', name: 'Type Rush', desc: 'Attacking type into a real Pokémon\'s typing. 60 seconds, keep the streak going.', modes: [['rush', '60 seconds']] },
   ];
