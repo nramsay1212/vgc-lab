@@ -38,6 +38,9 @@
       out.push({ d: ev.date, k: 'results', t: `${ev.name}: ${win.who ? win.who + ' won' : 'results are in'}`, x: `${ev.players ? ev.players.toLocaleString() + ' players. ' : ''}Winning team:`, mons: win.mons, ev: ev.id });
     }
     for (const h of NEWS.headlines || []) out.push({ d: h.d, k: 'headline', t: h.t, x: h.s || '', u: h.u });
+    // the day a new regulation went live (when the daily update saw the switch), with a link to its report
+    const rr = VL.regReport && VL.D && VL.D.dex ? VL.regReport.build(VL.style ? VL.style() : 'doubles') : null;
+    if (rr && rr.logged) out.push({ d: rr.logged, k: 'meta', t: `New regulation: ${rr.cur.name}${rr.prev ? `, replacing ${rr.prev.name}` : ''}`, x: `${rr.inn.length} Pokémon added, ${rr.out.length} removed.`, rr: true });
     const order = { format: 0, balance: 1, pokemon: 2, item: 3, move: 4, ability: 5, meta: 6, results: 7, headline: 8, app: 9 };
     return out.filter(x => x.d && x.t).sort((a, b) => b.d.localeCompare(a.d) || order[a.k] - order[b.k]);
   }
@@ -89,11 +92,12 @@
     const body = it.u ? `<a href="${esc(it.u)}" target="_blank" rel="noopener noreferrer"><b>${esc(it.t)}</b> ↗</a>` : `<b>${esc(it.t)}</b>`;
     return `<div class="nw-item"><span class="pill ${cls}">${esc(label)}</span><div>${body}${isNew(it, s) ? ' <span class="pill w">new</span>' : ''}
       ${it.x ? `<div class="sub">${esc(it.x)}</div>` : ''}${it.mons ? `<div class="kv" style="margin-top:4px">${VL.spriteRow(it.mons.map(m => VL.topteams ? VL.topteams.shownName(m) : m.n), 'sm')}<button class="linkbtn" data-nwev="${esc(it.ev)}">See the top teams</button></div>` : ''}
-      ${it.go ? `<a class="sub" href="#${it.go[0]}">${esc(it.go[1])}</a>` : ''}</div></div>`;
+      ${it.go ? `<a class="sub" href="#${it.go[0]}">${esc(it.go[1])}</a>` : ''}${it.rr ? '<button type="button" class="linkbtn" data-nwrr>See what changed →</button>' : ''}</div></div>`;
   }
   function render() {
     const root = $('nw-root'); if (!root) return;
     if (!NEWS || !VL.D.dex) { load().then(() => { if (VL.D.dex) render(); }); return; }
+    if (VL.regReport && !render.rr) { render.rr = true; VL.regReport.ready().then(render); }
     const s = seen(); const all = items();
     const list = all.filter(it => filter === 'all' || GROUP[it.k] === filter);
     const counts = {}; for (const it of all) counts[GROUP[it.k]] = (counts[GROUP[it.k]] || 0) + 1;
@@ -103,6 +107,7 @@
       <p class="sub" id="nw-status">${statusHtml()}</p>
       <div class="nw-layout">
         <div class="card"><div class="kv" style="flex-wrap:wrap;gap:6px">${FILTERS.map(([k, l]) => `<button class="chipbtn" data-nwf="${k}" aria-pressed="${filter === k}">${l}${k !== 'all' && counts[k] ? ` <span class="mini">${counts[k]}</span>` : ''}</button>`).join('')}</div>
+          ${filter === 'meta' && VL.regReport ? VL.regReport.html(VL.regReport.build(VL.style ? VL.style() : 'doubles')) : ''}
           <div class="nw-list">${html || `<div class="empty">${filter === 'game' ? 'No game or data changes recorded yet. When a new regulation, Pokémon, item or balance change reaches the data, it shows up here on its own.' : 'Nothing here yet.'}</div>`}</div>
           <button type="button" class="nw-all" id="nw-all" hidden>Show all ${Math.min(list.length, shown)} items</button>
           ${list.length > shown ? `<div class="row" id="nw-older" style="justify-content:center"${open ? '' : ' hidden'}><button class="btn ghost" id="nw-more">Show older</button></div>` : ''}
@@ -119,7 +124,7 @@
     const side = document.querySelector('#nw-root .nw-side');
     ls.style.maxHeight = ''; ls.classList.remove('clipped'); bar.hidden = true; if (lay) lay.classList.remove('fitted'); if (side) side.style.height = '';
     fillSide(null);
-    if (open || !ls.offsetParent) return;
+    if (open || filter === 'meta' || !ls.offsetParent) return; // Meta leads with the regulation report, so it scrolls normally
     // on very wide screens the page is zoomed, so the window's height is measured in zoomed units
     const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
     const bottomBar = document.querySelector('.bottombar'); const below = bottomBar && getComputedStyle(bottomBar).display !== 'none' ? bottomBar.getBoundingClientRect().height : 0;
@@ -181,6 +186,7 @@
   document.addEventListener('toggle', (e) => { if (e.target.closest && e.target.closest('#p-news .page-head')) fit(); }, true);
   document.addEventListener('click', (e) => {
     if (e.target.closest('#nw-all')) { open = true; fit(); const o = $('nw-older'); if (o) o.hidden = false; const l = $('nw-less'); if (l) l.hidden = false; VL.sound && VL.sound.play('tap'); return; }
+    if (e.target.closest('[data-nwrr]')) { showMeta(); return; }
     if (e.target.closest('#nw-less')) { open = false; shown = 40; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); VL.sound && VL.sound.play('tap'); return; }
     const f = e.target.closest('[data-nwf]'); if (f) { filter = f.dataset.nwf; shown = 40; open = false; render(); return; }
     if (e.target.id === 'nw-more') { shown += 40; render(); return; }
@@ -212,7 +218,13 @@
     el.innerHTML = `${statusHtml()}<br>Usage stats: ${esc(d(metaD))}. Tournament teams: ${esc(d(TEAMS && TEAMS.generated))}. News: ${esc(d(NEWS.generated))}.`;
   }
 
+  function showMeta() {
+    filter = 'meta'; shown = 40; open = false;
+    const go = () => { render(); const c = $('rr-card'); if (c) setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); };
+    (VL.regReport ? VL.regReport.ready() : Promise.resolve()).then(() => (NEWS ? go() : load().then(go)));
+  }
   VL.news = {
+    showMeta,
     badge: dot, render, load, items: () => (NEWS ? items() : []), unread, calendarHtml, moversHtml, isReady: () => !!NEWS, niceDay, daysUntil, kinds: KINDS };
   load().then(() => { dot(); settingsLine(); if (location.hash === '#news') render(); VL.onNews && VL.onNews(); setTimeout(checkVersion, 4000); });
 })();

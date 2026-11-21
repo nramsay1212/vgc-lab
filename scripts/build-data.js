@@ -350,6 +350,35 @@ function saveChanges(entries) {
   console.log(`News: ${entries.length} change${entries.length === 1 ? '' : 's'} recorded`); for (const e of entries) console.log(`  ${e.t}`);
 }
 
+// The full detail of each day's changes, for the app's regulation report (News → Meta). The News
+// lines above are short summaries; this keeps every stat, move, ability and item change in full.
+function detailChanges(old, now) {
+  const d = new Date().toISOString().slice(0, 10);
+  const out = { d, current: [], stats: [], moves: [], abilities: [], items: [] };
+  const oldF = new Map((old.formats || []).map(f => [f.id, f]));
+  for (const f of now.formats) { const o = oldF.get(f.id); if (f.current && (!o || !o.current)) out.current.push({ id: f.id, name: f.name, doubles: !!f.doubles }); }
+  const oldSp = new Map((old.species || []).map(s => [s.id, s]));
+  for (const s of now.species) { const o = oldSp.get(s.id); if (!o) continue;
+    s.s.forEach((v, k) => { if (o.s[k] !== v) out.stats.push({ n: s.n, k, from: o.s[k], to: v }); });
+    if (o.t.join('/') !== s.t.join('/')) out.stats.push({ n: s.n, k: 'type', from: o.t.join('/'), to: s.t.join('/') });
+    if (o.a.slice().sort().join() !== s.a.slice().sort().join()) out.stats.push({ n: s.n, k: 'abilities', from: o.a.join(', '), to: s.a.join(', ') });
+  }
+  for (const [id, m] of Object.entries(now.moves)) { const o = old.moves && old.moves[id]; if (!o) continue;
+    for (const [f, label] of [['bp', 'power'], ['a', 'accuracy'], ['t', 'type'], ['p', 'priority'], ['c', 'category'], ['pp', 'PP']]) {
+      if ((o[f] ?? null) !== (m[f] ?? null) && !(f === 'a' && !('a' in o) && !('pp' in o))) out.moves.push({ n: m.n, id, k: label, from: o[f] ?? null, to: m[f] ?? null });
+    }
+  }
+  for (const kind of ['abilities', 'items']) for (const [id, v] of Object.entries(now[kind])) { const o = old[kind] && old[kind][id]; if (o && o.d !== v.d) out[kind].push({ n: v.n, id, from: o.d, to: v.d }); }
+  return out.current.length || out.stats.length || out.moves.length || out.abilities.length || out.items.length ? out : null;
+}
+function saveDetail(entry) {
+  if (!entry) return;
+  const file = path.join(path.dirname(OUT), 'changelog.json');
+  let log = []; try { log = JSON.parse(fs.readFileSync(file, 'utf8')).entries || []; } catch (e) { log = []; }
+  log = [entry, ...log.filter(e => e.d !== entry.d)].slice(0, 200);
+  fs.writeFileSync(file, JSON.stringify({ v: 1, entries: log }));
+}
+
 // Only rewrite the file when the Pokémon data itself changed, so the weekly
 // job doesn't make a commit just because the timestamp moved.
 const comparable = (o) => JSON.stringify({ ...o, generated: null, source: { ...o.source, commit: null } });
@@ -358,6 +387,7 @@ if (fs.existsSync(OUT)) {
     const old = JSON.parse(fs.readFileSync(OUT, 'utf8'));
     if (comparable(old) === comparable(out)) { console.log('No data changes since ' + old.generated); process.exit(0); }
     try { saveChanges(describeChanges(old, out)); } catch (e) { console.log('Could not work out what changed: ' + e.message); }
+    try { saveDetail(detailChanges(old, out)); } catch (e) { console.log('Could not save the change details: ' + e.message); }
   } catch (e) { /* unreadable old file: overwrite */ }
 }
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

@@ -2,7 +2,7 @@
  * (or quietly updating) a VGC Lab tab with the game in its address. */
 'use strict';
 const LAB = 'https://nramsay1212.github.io/vgc-lab/';
-const DEFAULTS = { enabled: true, lossesOnly: false, format: 'gen9championsvgc2026regmc' };
+const DEFAULTS = { enabled: true, lossesOnly: false, format: 'gen9championsvgc2026regmc', headsUp: true };
 const toId = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const getSettings = async () => ({ ...DEFAULTS, ...(await chrome.storage.sync.get(Object.keys(DEFAULTS))) });
@@ -11,7 +11,9 @@ const getSettings = async () => ({ ...DEFAULTS, ...(await chrome.storage.sync.ge
 const battleId = (room) => { const m = String(room).replace(/^battle-/, '').match(/^([a-z0-9]+-\d+)/); return m ? m[1] : ''; };
 
 function readBattle(log, me) {
-  const players = {}; const preview = { p1: [], p2: [] }; let winner = null, rated = null;
+  const players = {}; const preview = { p1: [], p2: [] }; let winner = null, rated = null, turn = 0;
+  const seen = { p1: [], p2: [] }, leads = { p1: [], p2: [] };
+  const sp = (s) => String(s || '').split(',')[0].replace(/-\*$/, '').replace(/-Mega(-[XYZ])?$/, '');
   for (const line of log.split('\n')) {
     const f = line.split('|');
     if (f[1] === 'player' && f[3]) players[f[2]] = f[3];
@@ -19,10 +21,33 @@ function readBattle(log, me) {
     else if (f[1] === 'win') winner = f[2] || '';
     else if (f[1] === 'tie') winner = '';
     else if (f[1] === 'rated') rated = f[2] || '';
+    else if (f[1] === 'turn') turn = +f[2] || turn;
+    else if (f[1] === 'switch' || f[1] === 'drag') { const s = (f[2] || '').slice(0, 2); const n = sp(f[3]); if (!seen[s]) continue; if (!seen[s].includes(n)) seen[s].push(n); if (turn === 0 && !leads[s].includes(n)) leads[s].push(n); }
   }
   const side = Object.keys(players).find(k => toId(players[k]) === toId(me));
   const opp = side === 'p1' ? 'p2' : 'p1';
-  return { side, rated, result: winner === null ? null : winner === '' ? 'T' : toId(winner) === toId(me) ? 'W' : 'L', theirs: side ? preview[opp] : [], oppName: side ? players[opp] : '' };
+  return { side, rated, turns: turn, result: winner === null ? null : winner === '' ? 'T' : toId(winner) === toId(me) ? 'W' : 'L', theirs: side ? preview[opp] : [], oppName: side ? players[opp] : '', oppLeads: side ? leads[opp] : [], oppBrought: side ? seen[opp] : [] };
+}
+
+// ---------- opponent history, for the heads-up at team preview ----------
+// Every finished game in your format where you were a player, rated or not: who it was, what they showed,
+// brought and led, and the result. Kept on this computer only (up to 12 games per player, 400 players).
+async function rememberOpponent(id, b) {
+  if (!b.oppName || (b.result !== 'W' && b.result !== 'L')) return;
+  const { opphist = {} } = await chrome.storage.local.get('opphist');
+  const k = toId(b.oppName); const list = (opphist[k] || []).filter(g => g.id !== id);
+  list.unshift({ id, t: Date.now(), name: b.oppName, result: b.result, turns: b.turns, preview: b.theirs, brought: b.oppBrought, leads: b.oppLeads });
+  opphist[k] = list.slice(0, 12);
+  const keys = Object.keys(opphist); if (keys.length > 400) { keys.sort((a, c) => (opphist[a][0].t || 0) - (opphist[c][0].t || 0)).slice(0, keys.length - 400).forEach(x => delete opphist[x]); }
+  await chrome.storage.local.set({ opphist });
+}
+async function lookupOpponent({ room, me, log }) {
+  const s = await getSettings();
+  if (!s.headsUp || !battleId(room).startsWith(toId(s.format) + '-')) return null;
+  const b = readBattle(log, me); if (!b.side || !b.oppName) return null;
+  const { opphist = {} } = await chrome.storage.local.get('opphist');
+  const games = (opphist[toId(b.oppName)] || []).filter(g => g.id !== battleId(room));
+  return games.length ? { opp: b.oppName, preview: b.theirs, games } : null;
 }
 
 // the browser's own deflate, then base64 that's safe in an address
@@ -62,11 +87,12 @@ function badge(text, color) {
 
 async function onBattle({ room, me, log }) {
   const s = await getSettings();
-  if (!s.enabled) return;
   const id = battleId(room);
   if (!id || !id.startsWith(toId(s.format) + '-')) return; // only the format you picked
   const b = readBattle(log, me);
   if (!b.side) return; // you were watching, not playing
+  if (s.headsUp) await rememberOpponent(id, b); // for the heads-up: every game you played, even with sending off
+  if (!s.enabled) return;
   if (b.rated === null || /tournament/i.test(b.rated)) return; // ladder games only: challenges and tournaments aren't rated
   if (b.result !== 'W' && b.result !== 'L') return; // ties and unfinished games
   const { sent = [] } = await chrome.storage.local.get('sent');
@@ -82,6 +108,7 @@ async function onBattle({ room, me, log }) {
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (msg && msg.type === 'battle-end' && sender.tab && /^https:\/\/play\.pokemonshowdown\.com\//.test(sender.url || sender.tab.url || '')) { onBattle(msg); return; }
+  if (msg && msg.type === 'battle-start' && sender.tab && /^https:\/\/play\.pokemonshowdown\.com\//.test(sender.url || sender.tab.url || '')) { lookupOpponent(msg).then(reply).catch(() => reply(null)); return true; }
   if (msg && msg.type === 'resend' && sender.id === chrome.runtime.id && String(sender.url || '').startsWith(chrome.runtime.getURL(''))) { // from the menu's Send buttons
     chrome.storage.local.get('recent').then(async ({ recent = [] }) => {
       const e = recent.find(x => x.id === msg.id); if (!e || !e.hash) { reply({ ok: false }); return; }

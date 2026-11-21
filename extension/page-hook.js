@@ -36,6 +36,8 @@
     if (line.startsWith('|init|battle')) { r = rooms[id] = { lines: [], ended: false, timer: null }; done.delete(id); return; } // joining sends the whole battle again
     if (!r) r = rooms[id] = { lines: [], ended: false, timer: null };
     r.lines.push(line);
+    // team preview: both players and both sixes are known, so the heads-up can look the opponent up
+    if (line.startsWith('|teampreview') && !r.previewSent) { r.previewSent = true; post({ type: 'battle-start', room: id, me: me || '', log: r.lines.join('\n') }); }
     if (/^\|(win|tie)(\||$)/.test(line)) {
       r.ended = true;
       // the rating change arrives a moment after the win line

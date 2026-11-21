@@ -115,7 +115,16 @@
   }
 
   // ---------- state ----------
-  const A = (VL.account = { user: null, enabled: false, resolved: false, status: 'off', message: '', hasRecovery: null });
+  const A = (VL.account = { user: null, enabled: false, resolved: false, status: 'off', message: '', hasRecovery: null, waiters: [] });
+  // run fn once this device has the account's data (right away with no account). Anything that writes a
+  // default (a setting, a "seen" mark) waits for this, so it can't replace the account's real record.
+  VL.whenDataReady = function (fn) {
+    (function wait() {
+      if (A.resolved && !A.user) return fn();
+      if (A.resolved && A.user) { if (A.pulled) fn(); else A.waiters.push(fn); return; }
+      setTimeout(wait, 300);
+    })();
+  };
   const nameOf = (u) => (u && u.email ? u.email.split('@')[0] : '');
   function setStatus(status, message) {
     A.status = status; A.message = message;
@@ -155,7 +164,7 @@
       const since = +(ls.get(pk) || 0);
       const got = await be.pull(uid, since ? since - 60000 : 0);
       if (got.length) { VL.store.mergeRecords(got); ls.set(pk, got.reduce((m, g) => Math.max(m, g.s || 0), since)); }
-      ls.set(fk, '1'); A.pulled = true; if (A.onFirstPull) { const f = A.onFirstPull; A.onFirstPull = null; f(); }
+      ls.set(fk, '1'); A.pulled = true; const w = A.waiters.splice(0); w.forEach(f => { try { f(); } catch (x) { console.error(x); } });
       const pushedU = +(ls.get(sk) || 0);
       const out = VL.store.changedSince(pushedU);
       if (out.length) { await be.push(uid, out); ls.set(sk, out.reduce((m, o) => Math.max(m, o.r.u || 0), pushedU)); }

@@ -113,7 +113,8 @@
   $('op-add').onclick = () => { const n = $('op-new').value.trim(); if (!n) return; ensureOpponent(n); $('op-new').value = ''; VL.toast('Added ' + n); VL.sound && VL.sound.play('save'); };
   $('op-q').addEventListener('input', renderOpponents);
   $('op-list').addEventListener('change', e => { const id = e.target.dataset.opnotes; if (!id) return; const o = store.get('opponents', id); if (o) store.put('opponents', id, { name: o.name, notes: e.target.value.trim() }); });
-  $('op-list').addEventListener('click', e => { const id = e.target.dataset.opdel; if (id) VL.armDelete(e.target, () => store.del('opponents', id)); });
+  // the list doesn't redraw by itself while you're in it (so notes you're typing aren't wiped), so redraw it here
+  $('op-list').addEventListener('click', e => { const id = e.target.dataset.opdel; if (id) VL.armDelete(e.target, () => { const o = store.get('opponents', id); store.del('opponents', id); renderOpponents(); VL.toast && VL.toast(`Deleted ${o ? o.name : 'opponent'}`); }); });
 
   VL.plan = {
     render() { renderTournaments(); renderOpponents(); },

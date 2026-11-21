@@ -249,6 +249,37 @@
       <text x="${Math.min(x(pts.length - 1), W - pr - 4)}" y="${Math.max(y(last.rating) - 10, 12)}" text-anchor="end" style="fill:var(--ink);font-weight:500">${last.rating}</text>
       <text x="${pl}" y="${H - 6}">game 1</text><text x="${W - pr}" y="${H - 6}" text-anchor="end">game ${pts.length}</text></svg>`;
   }
+  // ---------- sessions and tilt ----------
+  // Games more than 45 minutes apart start a new session. Each game is sorted by where it fell in its
+  // session, what happened just before it, and the time of day, so slumps show up as numbers.
+  function tiltHtml(list) {
+    const gs = list.filter(x => x.ts && (x.result === 'W' || x.result === 'L')).sort((a, b) => a.ts - b.ts);
+    if (gs.length < 15) return `<p class="sub">Shows up once you have 15 games here (${gs.length} so far). Games the Showdown extension sends count automatically, with their real times.</p>`;
+    const GAP = 45 * 60 * 1000; const rows = []; let sess = 0, k = 0, prev = null, lossRun = 0; const sizes = [];
+    for (const g of gs) {
+      if (!prev || g.ts - prev.ts > GAP) { sess++; k = 0; lossRun = 0; sizes.push(0); }
+      k++; sizes[sizes.length - 1]++;
+      rows.push({ g, sess, k, after: k === 1 ? null : prev.result, lossRun });
+      lossRun = g.result === 'L' ? lossRun + 1 : 0; prev = g;
+    }
+    const wr = (xs) => ({ n: xs.length, v: pct(xs.filter(r => r.g.result === 'W').length, xs.length) });
+    const all = wr(rows);
+    const hour = (r) => new Date(r.g.ts).getHours();
+    const groups = [
+      ['In a session', [['Games 1 to 3', rows.filter(r => r.k <= 3)], ['Games 4 to 6', rows.filter(r => r.k >= 4 && r.k <= 6)], ['Game 7 and later', rows.filter(r => r.k >= 7)]]],
+      ['What came just before', [['First game of a session', rows.filter(r => r.after === null)], ['After a win', rows.filter(r => r.after === 'W')], ['After a loss', rows.filter(r => r.after === 'L')], ['After 2 or more losses in a row', rows.filter(r => r.lossRun >= 2)]]],
+      ['Time of day', [['Morning (5 to noon)', rows.filter(r => hour(r) >= 5 && hour(r) < 12)], ['Afternoon (noon to 5)', rows.filter(r => hour(r) >= 12 && hour(r) < 17)], ['Evening (5 to 10)', rows.filter(r => hour(r) >= 17 && hour(r) < 22)], ['Late night (10 to 5)', rows.filter(r => hour(r) >= 22 || hour(r) < 5)]]],
+    ];
+    // the clearest slump: at least 6 games and 10 points under your overall win rate
+    const cands = groups.flatMap(([, gg]) => gg).map(([label, xs]) => ({ label, ...wr(xs) })).filter(c => c.n >= 6 && c.v <= all.v - 10).sort((a, b) => a.v - b.v);
+    const tip = { 'Game 7 and later': 'Long sessions are costing you. Try stopping after 6 games.', 'Games 4 to 6': 'You fade after the first few games. Try shorter sessions with a break.', 'After a loss': 'Losses carry over into the next game. Take a minute between games after a loss.', 'After 2 or more losses in a row': 'Two losses in a row is your cue to stop for a while.', 'Late night (10 to 5)': 'Late-night games go worse. Play earlier when you can.', 'Morning (5 to noon)': 'Mornings are your weakest time.', 'Afternoon (noon to 5)': 'Afternoons are your weakest time.', 'Evening (5 to 10)': 'Evenings are your weakest time.', 'First game of a session': 'Your first game is the weakest. Warm up first (Today\'s session has a warm-up).', 'Games 1 to 3': 'You start sessions slowly. Warm up before queuing.' };
+    const worst = cands[0];
+    const head = worst ? `<div class="tilt-tip"><b>${esc(worst.label)}: ${worst.v}% wins</b> over ${worst.n} games, against ${all.v}% overall. ${esc(tip[worst.label] || '')}</div>`
+      : `<p class="sub">No slump stands out: nothing is 10 or more points under your ${all.v}% overall. Keep it up.</p>`;
+    const line = ([label, xs]) => { const r = wr(xs); return r.n ? `<div class="bar"><span>${esc(label)}</span><span class="track"><span class="fill ${r.v < all.v - 9 && r.n >= 6 ? 'bad' : 'acc'}" style="display:block;width:${r.v}%"></span></span><span class="n">${r.v}% <span class="mini">(${r.n})</span></span></div>` : `<div class="bar"><span>${esc(label)}</span><span class="sub">No games</span></div>`; };
+    return `${head}<div class="grid2 tilt-grid">${groups.map(([title, gg]) => `<div><div class="section-label">${esc(title)}</div><div class="bars">${gg.map(line).join('')}</div></div>`).join('')}
+      <div><div class="section-label">Your sessions</div><p class="sub">${sizes.length} sessions, ${Math.round(10 * gs.length / sizes.length) / 10} games each on average, longest ${Math.max(...sizes)}. A new session starts after a 45-minute break.</p></div></div>`;
+  }
   function renderReview() {
     fillTeamPick(); fillScope();
     const list = scoped();
@@ -258,6 +289,7 @@
     $('rv-tiles').innerHTML = [['Games', n], ['Win rate', n ? pct(w, n) + '%' : '–'], ['Last 20', last20.length ? pct(w20, last20.length) + '%' : '–'], ['Losses tagged', losses.length ? pct(tagged, losses.length) + '%' : '–']]
       .map(([k, v]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
     $('rv-chart').innerHTML = ratingChart(list);
+    $('rv-tilt').innerHTML = tiltHtml(list);
     const tc = {}; for (const g of losses) for (const t of (g.tags || [])) tc[t] = (tc[t] || 0) + 1;
     const tagRows = Object.entries(tc).sort((a, b) => b[1] - a[1]).map(([t, v]) => ({ label: esc(TAGMAP[t] || t), v }));
     $('rv-tags').innerHTML = tagRows.length ? barList(tagRows, { fmt: r => `${r.v} · ${pct(r.v, losses.length)}%` }) + `<p class="sub">Percent of ${losses.length} losses. Bad luck is included so you can see how often it really decides games.</p>`
@@ -842,12 +874,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       const p = profile();
       // a default format only once the account's data is here, so it can't replace the real profile
       const setDefault = () => { if (!profile().format) putProfile({ format: D.format().id }); };
-      (function waitAcct() {
-        const A = VL.account;
-        if (!A || (A.resolved && !A.user)) return setDefault(); // no account: this device's data is all there is
-        if (A.resolved && A.user) { if (A.pulled) setDefault(); else A.onFirstPull = setDefault; return; }
-        setTimeout(waitAcct, 300);
-      })();
+      if (VL.whenDataReady) VL.whenDataReady(setDefault); else setDefault();
       fillFormatSelect(); fillDatalist(); VL.study.fill(curFormatId().startsWith('custom:') ? '' : curFormatId());
       renderAll(); route();
       VL.meta.ready.then(() => { renderAll(); if (location.hash === '#meta') VL.meta.render(); });

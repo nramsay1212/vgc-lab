@@ -1,10 +1,10 @@
 'use strict';
-const DEFAULTS = { enabled: true, lossesOnly: false, format: 'gen9championsvgc2026regmc' };
+const DEFAULTS = { enabled: true, lossesOnly: false, format: 'gen9championsvgc2026regmc', headsUp: true };
 const $ = (id) => document.getElementById(id);
 
 async function load() {
   const s = { ...DEFAULTS, ...(await chrome.storage.sync.get(Object.keys(DEFAULTS))) };
-  $('enabled').checked = s.enabled; $('lossesOnly').checked = s.lossesOnly; $('format').value = s.format;
+  $('enabled').checked = s.enabled; $('lossesOnly').checked = s.lossesOnly; $('headsUp').checked = s.headsUp; $('format').value = s.format;
   $('state').textContent = s.enabled ? (s.lossesOnly ? 'On: sending losses only' : 'On: sending every ladder game') : 'Off: nothing is sent';
   const { recent = [] } = await chrome.storage.local.get('recent');
   const box = $('recent');
@@ -25,6 +25,6 @@ async function load() {
     box.append(row);
   }
 }
-for (const k of ['enabled', 'lossesOnly']) $(k).addEventListener('change', async () => { await chrome.storage.sync.set({ [k]: $(k).checked }); load(); });
+for (const k of ['enabled', 'lossesOnly', 'headsUp']) $(k).addEventListener('change', async () => { await chrome.storage.sync.set({ [k]: $(k).checked }); load(); });
 $('format').addEventListener('change', async () => { const v = $('format').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || DEFAULTS.format; await chrome.storage.sync.set({ format: v }); load(); });
 load();

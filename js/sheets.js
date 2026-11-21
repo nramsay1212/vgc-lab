@@ -13,6 +13,26 @@
 
   let P = null; // the open practice
   let pending = null; // an opponent handed over from Top teams
+  // timed team preview: 90 seconds with both sheets, like the real thing, before the analysis shows
+  const PREVIEW_SECS = 90, TIMEDKEY = 'vgclab-shtimed';
+  const timedOn = () => { try { return localStorage.getItem(TIMEDKEY) === '1'; } catch (e) { return false; } };
+  let clock = null;
+  function stopClock() { clearInterval(clock); clock = null; }
+  function startClock() {
+    stopClock(); P.timed = { start: Date.now(), done: false };
+    clock = setInterval(() => {
+      if (!P || !P.timed || P.timed.done) { stopClock(); return; }
+      const left = Math.max(0, PREVIEW_SECS - Math.floor((Date.now() - P.timed.start) / 1000));
+      const c = $('sh-clock'); if (c) { c.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; c.classList.toggle('low', left <= 15); }
+      if (left <= 5 && left > 0) VL.sound && VL.sound.play('tick');
+      if (left === 0) lockIn(true);
+    }, 1000);
+  }
+  function lockIn(out) {
+    if (!P || !P.timed || P.timed.done) return;
+    stopClock(); P.timed.done = true; P.timed.out = !!out; P.timed.secs = Math.min(PREVIEW_SECS, Math.round((Date.now() - P.timed.start) / 1000));
+    VL.sound && VL.sound.play(out ? 'wrong' : 'save'); render();
+  }
   const singles = () => VL.isSingles && VL.isSingles();
   const NB = () => (singles() ? 3 : 4), NL = () => (singles() ? 1 : 2);
 
@@ -87,10 +107,14 @@
     if (pending) { const p = pending; pending = null; begin(p); }
     if (!P) return renderHome();
     const fmt = D().format(P.fmt);
+    if (P.timed && !P.timed.done) return renderTimed(fmt);
     setTimeout(fillDamage, 0);
+    const brought = P.sm.filter(x => x > 0).length, led = P.sm.filter(x => x === 2).length;
+    const timedLine = P.timed ? `<div class="card sh-timed-res ${P.timed.out ? 'out' : ''}"><b>${P.timed.out ? 'Time ran out.' : `Locked in after ${P.timed.secs} seconds.`}</b> You picked ${brought} of ${NB()} and ${led} of ${NL()} leads${P.timed.out && (brought < NB() || led < NL()) ? '. In a real game the rest would be picked for you' : ''}. Now check your pick against the matchup notes and who beats whom below, and change it if you'd do it differently.</div>` : '';
     root.innerHTML = `
       <div class="card"><div class="card-head"><div><h3>${esc(P.teamName)} <span class="sub">against</span> ${esc(P.label)}</h3><div class="sub">${esc(fmt.name)} · bring ${NB()}, lead ${NL()}</div></div>
         <div class="row" style="gap:6px"><button class="btn ghost small" data-sh="random">Another random opponent</button><button class="btn ghost small" data-sh="close">Close</button></div></div></div>
+      ${timedLine}
       <div class="sh-cols"><div class="card"><div class="card-head"><h3>Their team sheet</h3></div>${sheetHtml(P.opp, fmt, false)}</div>
         <div class="card"><div class="card-head"><h3>Your team sheet</h3></div>${sheetHtml(P.mine, fmt, true)}</div></div>
       ${notesHtml(P.mine, P.opp, fmt)}
@@ -102,6 +126,16 @@
           <label for="sh-actual">What they really brought and led, and whether the plan held up<textarea id="sh-actual">${esc(P.actual)}</textarea></label></details>
         <div class="row" style="justify-content:flex-end;gap:6px"><span class="sub" id="sh-msg" role="status"></span><button class="btn ghost small" data-sh="notebook">Save to Notebook too</button><button class="btn" data-sh="save">Save plan</button></div></div>`;
   }
+  // the clock running: both sheets and your picks only, no analysis yet
+  function renderTimed(fmt) {
+    $('sh-root').innerHTML = `
+      <div class="card sh-clockbar"><div><div class="sub">Team preview · ${esc(P.teamName)} against ${esc(P.label)}</div><b>Pick ${NB()} and your ${NL()} leads</b></div>
+        <div class="row" style="gap:10px;align-items:center"><span class="sh-clock num" id="sh-clock">${Math.floor(PREVIEW_SECS / 60)}:${String(PREVIEW_SECS % 60).padStart(2, '0')}</span><button class="btn" data-sh="lock">Lock in</button></div></div>
+      <div class="sh-cols"><div class="card"><div class="card-head"><h3>Their team sheet</h3></div>${sheetHtml(P.opp, fmt, false)}</div>
+        <div class="card"><div class="card-head"><h3>Your team sheet</h3></div>${sheetHtml(P.mine, fmt, true)}</div></div>
+      <div class="card"><div class="card-head"><h3>Your picks</h3><span class="sub">Tap once to bring, again to lead, a third time to leave out</span></div>
+        <div id="sh-picks">${picker('What you bring', P.mine, P.sm, 'm', fmt)}</div></div>`;
+  }
   function renderHome() {
     const root = $('sh-root');
     const teams = store().list('teams').filter(t => t.paste).sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
@@ -110,11 +144,12 @@
       <div class="card"><div class="card-head"><h3>Start a practice</h3></div>
         ${teams.length ? `<div class="row"><label for="sh-team">Your team<select id="sh-team">${teams.map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')}</option>`).join('')}</select></label>
           <label for="sh-fmt">Opponents from<select id="sh-fmt"><option value="">Loading formats…</option></select></label></div>
+        <label class="vd-check" for="sh-timed"><input type="checkbox" id="sh-timed" ${timedOn() ? 'checked' : ''}> Timed team preview: 90 seconds to pick, like a real game, before the analysis shows</label>
         <div class="row" style="gap:8px"><button class="btn" data-sh="random">Random top-cut opponent</button><a class="btn ghost" href="#topteams">Pick one from Top teams</a></div>
         <details><summary class="sub" style="cursor:pointer">Or paste an opponent's team</summary><textarea id="sh-paste" style="min-height:120px;font-family:var(--mono);font-size:12.5px" placeholder="Paste a team in Showdown format"></textarea><div class="row" style="justify-content:flex-end"><button class="btn ghost small" data-sh="paste">Use this team</button></div></details>
         <p class="sub" id="sh-msg" role="status"></p>`
         : '<p class="sub">You need a saved team first. Build one in the Team builder, or copy one from Top teams.</p><div class="row"><a class="btn small" href="#teams">Open the Team builder</a><a class="btn ghost small" href="#topteams">Browse Top teams</a></div>'}</div>
-      ${saved.length ? `<div class="card"><div class="card-head"><h3>Your plans</h3><span class="sub">${saved.length} saved</span></div>${saved.map(r => `<div class="threat"><div class="h"><div><b>${esc(r.teamName || 'Your team')}</b> <span class="sub">against</span> <b>${esc(r.label || 'a team')}</b> ${r.result ? `<span class="pill ${r.result === 'W' ? 'w' : 'l'}">${r.result === 'W' ? 'Won' : 'Lost'}</span>` : ''} <span class="mini">${r.ts ? new Date(r.ts).toLocaleDateString() : ''}</span><div class="kv" style="margin-top:4px">${VL.spriteRow((r.opp || []).map(m => m.n), 'xs')}</div></div>
+      ${saved.length ? `<div class="card"><div class="card-head"><h3>Your plans</h3><span class="sub">${saved.length} saved</span></div>${saved.map(r => `<div class="threat"><div class="h"><div><b>${esc(r.teamName || 'Your team')}</b> <span class="sub">against</span> <b>${esc(r.label || 'a team')}</b> ${r.result ? `<span class="pill ${r.result === 'W' ? 'w' : 'l'}">${r.result === 'W' ? 'Won' : 'Lost'}</span>` : ''}${r.timed ? ` <span class="pill m">${r.timed.out ? 'Timed · ran out' : `Timed · ${r.timed.secs}s`}</span>` : ''} <span class="mini">${r.ts ? new Date(r.ts).toLocaleDateString() : ''}</span><div class="kv" style="margin-top:4px">${VL.spriteRow((r.opp || []).map(m => m.n), 'xs')}</div></div>
         <div class="kv"><button class="btn small" data-shopen="${esc(r.id)}">Open</button><button class="linkbtn" data-shdel="${esc(r.id)}">Delete</button></div></div>
         ${r.lead && r.lead.length ? `<div class="sub">Lead ${esc(r.lead.join(' + '))}${r.back && r.back.length ? ', back ' + esc(r.back.join(', ')) : ''}</div>` : ''}${r.plan ? `<div class="sub" style="white-space:pre-wrap">${esc(r.plan)}</div>` : ''}</div>`).join('')}</div>` : ''}`;
     fillFormats(false);
@@ -193,8 +228,10 @@
     const sel = $('sh-team'); const t = store().get('teams', teamId || (P && P.team) || (sel && sel.value) || '') || teams[0];
     if (!t) { P = null; return false; }
     const mine = fromPaste(t.paste); if (!mine.length) return false;
+    stopClock();
     P = { id: saved ? saved.id : null, team: t.id, teamName: t.name || 'Your team', mine, opp: mons, label: label || 'an opponent', fmt: fmt || t.fmt || VL.curFormatId(), plan: saved ? saved.plan || '' : '', actual: saved ? saved.actual || '' : '', result: saved ? saved.result || '' : '',
       sm: mine.map(m => saved ? ((saved.lead || []).includes(m.n) ? 2 : (saved.back || []).includes(m.n) ? 1 : 0) : 0), so: mons.map(m => saved ? ((saved.olead || []).includes(m.n) ? 2 : (saved.oback || []).includes(m.n) ? 1 : 0) : 0) };
+    if (!saved && timedOn()) startClock(); else if (saved && saved.timed) P.timed = { done: true, out: !!saved.timed.out, secs: saved.timed.secs };
     return true;
   }
   function grab() { if (!P) return; const p = $('sh-plan'), a = $('sh-actual'), r = $('sh-result'); if (p) P.plan = p.value.trim(); if (a) P.actual = a.value.trim(); if (r) P.result = r.value; }
@@ -202,7 +239,7 @@
     grab(); if (!P.id) P.id = VL.newId('s');
     const pick = (mons, st, v) => mons.filter((m, i) => st[i] === v).map(m => m.n);
     const prev = store().get('sheets', P.id);
-    store().put('sheets', P.id, { ts: prev?.ts || Date.now(), label: P.label, fmt: P.fmt, team: P.team, teamName: P.teamName, opp: P.opp.map(m => ({ n: m.n, i: m.i, a: m.a, na: m.na, m: m.m, t: m.t })), lead: pick(P.mine, P.sm, 2), back: pick(P.mine, P.sm, 1), olead: pick(P.opp, P.so, 2), oback: pick(P.opp, P.so, 1), plan: P.plan, actual: P.actual, result: P.result });
+    store().put('sheets', P.id, { ts: prev?.ts || Date.now(), label: P.label, fmt: P.fmt, team: P.team, teamName: P.teamName, opp: P.opp.map(m => ({ n: m.n, i: m.i, a: m.a, na: m.na, m: m.m, t: m.t })), lead: pick(P.mine, P.sm, 2), back: pick(P.mine, P.sm, 1), olead: pick(P.opp, P.so, 2), oback: pick(P.opp, P.so, 1), plan: P.plan, actual: P.actual, result: P.result, ...(P.timed && P.timed.done ? { timed: { secs: P.timed.secs, out: !!P.timed.out } } : {}) });
   }
   async function randomOpp() {
     const fsel = $('sh-fmt'); const fmt = P ? P.fmt : (fsel && fsel.value) || pickedFmt;
@@ -215,6 +252,7 @@
   document.addEventListener('change', (e) => {
     if (e.target.id === 'sh-team') fillFormats(true);
     if (e.target.id === 'sh-fmt') pickedFmt = e.target.value;
+    if (e.target.id === 'sh-timed') { try { localStorage.setItem(TIMEDKEY, e.target.checked ? '1' : '0'); } catch (x) { /* private mode */ } }
   });
   document.addEventListener('click', (e) => {
     const mg = e.target.closest('[data-shmega]'); if (mg && P) { P.megaPick = mg.dataset.shmega; fillDamage(); return; }
@@ -225,14 +263,15 @@
       st[i] = (st[i] + 1) % 3;
       if (st[i] === 1 && st.filter(x => x > 0).length > NB()) st[i] = 0;
       if (st[i] === 2 && st.filter(x => x === 2).length > NL()) st[i] = 0;
-      const fmt = D().format(P.fmt); $('sh-picks').innerHTML = picker('What you bring', P.mine, P.sm, 'm', fmt) + picker('What you expect them to bring', P.opp, P.so, 'o', fmt); return;
+      const fmt = D().format(P.fmt); $('sh-picks').innerHTML = picker('What you bring', P.mine, P.sm, 'm', fmt) + (P.timed && !P.timed.done ? '' : picker('What you expect them to bring', P.opp, P.so, 'o', fmt)); return;
     }
     const op = e.target.closest('[data-shopen]'); if (op) { const r = store().get('sheets', op.dataset.shopen); if (r && begin({ mons: r.opp || [], label: r.label, fmt: r.fmt, teamId: r.team, saved: r })) render(); else VL.toast('The team for that plan was deleted.'); return; }
     const dl = e.target.closest('[data-shdel]'); if (dl) { VL.armDelete(dl, () => { store().del('sheets', dl.dataset.shdel); render(); }); return; }
     const b = e.target.closest('[data-sh]'); if (!b) return; const k = b.dataset.sh;
     if (k === 'random') randomOpp();
+    if (k === 'lock') lockIn(false);
     if (k === 'paste') { const mons = fromPaste($('sh-paste').value); if (mons.length < 2) { $('sh-msg').textContent = 'Paste at least two Pokémon in Showdown format.'; return; } if (begin({ mons, label: 'a pasted team' })) render(); }
-    if (k === 'close') { if (P && (P.plan || P.sm.some(Boolean))) save(); P = null; render(); }
+    if (k === 'close') { stopClock(); if (P && (P.plan || P.sm.some(Boolean))) save(); P = null; render(); }
     if (k === 'save') { save(); const m = $('sh-msg'); if (m) m.textContent = 'Saved.'; VL.toast('Plan saved'); VL.sound && VL.sound.play('save'); }
     if (k === 'notebook') {
       save(); const pick = (v) => P.mine.filter((m, i) => P.sm[i] === v).map(m => m.n);
