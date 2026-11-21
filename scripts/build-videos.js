@@ -66,6 +66,10 @@ const CHANNELS = [
   { handle: 'Riopaser', name: 'Eric Rios', style: 'doubles' },
   { handle: 'JoeUX9', name: 'Joseph Ugarte', style: 'doubles' },
   { id: 'UCi5dCo0kzUggrtTtpnsq7DA', name: 'Baz Anderson', style: 'doubles' },
+  { handle: 'PokeProfessorJosh', name: 'PokeProfessorJosh', style: 'doubles' },
+  { handle: 'skrawvgc', name: 'Skraw', style: 'doubles' },
+  { handle: 'AndyLaVGC', name: 'AndyLaVGC', style: 'doubles' },
+  { handle: 'PlayPokemon', name: 'Play! Pokémon (official)', style: 'doubles', only: /\bVGC\b|Championships?|Worlds|Regional|International|Champions Battle|Video Game/i },
   { handle: 'pokemon', name: 'Pokémon (official)', style: 'doubles', only: /\bVGC\b|Championships?|Worlds|Regional|International|Champions Battle/i },
   { id: 'UCbXuFrNGSKcmZY_5DwYz4Ew', name: 'PokeaimMD', style: 'singles' },
   { id: 'UC-tIwhZwjGMTCEBUVuAG5fA', name: 'blunder', style: 'singles' },
@@ -113,6 +117,7 @@ function kind(title, hasPaste) {
   for (const c of CHANNELS) {
     const id = await channelId(c, old);
     if (!id) { console.log(`  ${c.name}: channel not found`); continue; }
+    if (channels.some(x => x.id === id)) { console.log(`  ${c.name}: already on the list`); continue; }
     channels.push({ id, name: c.name, style: c.style, url: `https://www.youtube.com/channel/${id}`, ...(c.handle ? { handle: c.handle } : {}) });
     const viaKey = KEY ? await viaApi(id) : null;
     if (viaKey) {
