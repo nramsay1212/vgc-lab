@@ -193,6 +193,8 @@
     place, shownName,
     // every team loaded so far (recent events plus any seasons opened), for the archetype drill
     allTeams() { if (!DATA) return []; const seen = new Set(); const out = []; for (const evs of [DATA.events, ...Object.values(ARCH.got)]) for (const ev of evs || []) { if (seen.has(ev.id)) continue; seen.add(ev.id); for (const t of ev.teams) out.push(t); } return out; },
+    // every past season that has teams for this format (the index lists each season's formats)
+    loadFormat(fid) { return loadIndex().then(ix => Promise.all(Object.entries(ix || {}).filter(([, s]) => s.formats && s.formats[fid]).map(([k]) => loadSeason(k)))); },
     loadLatestSeason() { return loadIndex().then(ix => { const k = Object.keys(ix || {}).sort().pop(); return k ? loadSeason(k) : null; }); },
   };
 })();

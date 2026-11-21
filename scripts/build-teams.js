@@ -176,6 +176,14 @@ async function archive() {
     seasons[k] = { events: cur.events.length, official: cur.events.filter(e => e.src === 'official').length, online: cur.events.filter(e => e.src === 'online').length, teams: cur.events.reduce((a, e) => a + e.teams.length, 0), from: cur.events[cur.events.length - 1].date, to: cur.events[0].date };
     console.log(`  ${k} season: ${seasons[k].events} events, ${seasons[k].teams} teams, ${(fs.statSync(file).size / 1024).toFixed(0)} KB`);
   }
+  // which formats each season has teams for, so the app can load just the season a format needs
+  for (const k of Object.keys(seasons)) {
+    try {
+      const cur = JSON.parse(fs.readFileSync(path.join(DIR, k + '.json'), 'utf8')); const f = {};
+      for (const e of cur.events) for (const id of new Set([e.fmt, e.meta].filter(Boolean))) f[id] = (f[id] || 0) + e.teams.length;
+      seasons[k].formats = f;
+    } catch (e) { /* season file missing */ }
+  }
   fs.writeFileSync(IDX, JSON.stringify({ v: 1, generated: new Date().toISOString(), seasons, done: [...done].sort(), doneOnline: [...doneOnline].sort() }));
 }
 // one online tournament's top teams from Limitless, or null if it isn't finished or its team sheets are hidden

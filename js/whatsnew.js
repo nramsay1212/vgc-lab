@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['fmt-era-1', 'study', 'Older formats stay in their era', 'Read a team now only uses real teams from the format you picked (older ones load their past season), and switches off for formats with no saved teams, like VGC 2009. Ability answers, Priority and Mechanics explanations no longer mention Pokémon, moves or abilities from later games.'],
     ['fmt-practice-1', 'progress', 'Only current formats count', 'Games, tests and drills in older formats (like VGC 2009) are now practice: they don\'t change your ratings or your saved scores, and a line under the format menu says so. Older-format tests from before this change were taken back out of your ratings.'],
     ['sd-accts-1', 'settings', 'Main and testing Showdown accounts', 'In Settings under <b>Showdown accounts</b>, mark each Showdown account as Climb or Testing. Games the extension sends from your testing account land in Testing, so they stay out of your climb record and rating line.'],
     ['sd-ext-1', 'log', 'New: Showdown games come in by themselves', 'With the VGC Lab Showdown extension installed in Brave, every rated ladder game you finish is logged as a climb game, tagged with the saved team that matches your six, with your rating. A note at the bottom says what came in. <b>Review game</b> in Recent games steps through it turn by turn. Press <b>Edit</b> to add tags and notes.'],

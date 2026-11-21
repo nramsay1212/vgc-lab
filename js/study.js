@@ -30,7 +30,11 @@
       return ov ? { ...s, ...(ov.s ? { s: ov.s } : {}), ...(ov.t ? { t: ov.t } : {}), ...(ov.a ? { a: ov.a } : {}), i } : { ...s, i };
     },
     // item and ability text as it reads in this format's game
-    item(id, fmt) { const it = this.dex.items[id]; if (!it) return null; const d = fmt && fmt.itd && fmt.itd[id]; return d ? { ...it, d } : it; },
+    item(id, fmt) {
+      const it = this.dex.items[id]; if (!it) return null; let d = fmt && fmt.itd && fmt.itd[id];
+      if (fmt && fmt.gen < 5 && / \(except Sky Drop\)/.test(d || it.d)) d = (d || it.d).replace(/ \(except Sky Drop\)/, ''); // Sky Drop came later
+      return d ? { ...it, d } : it;
+    },
     ability(id, fmt) { const ab = this.dex.abilities[id]; if (!ab) return null; const d = fmt && fmt.abd && fmt.abd[id]; return d ? { ...ab, d } : ab; },
     // the Mega or Primal form a Pokémon becomes holding this item, or null
     megaOf(rec, item) {
@@ -47,7 +51,9 @@
     // priority moves that exist in this format, with this game's priority
     prio(fmt) {
       const ids = fmt && fmt.pm ? fmt.pm : Object.keys(this.dex.priorityMoves);
-      return ids.map(id => { const t = this.dex.priorityMoves[id]; if (!t) return null; const m = this.move(id, fmt); return { ...t, id, p: m ? m.p || 0 : t.p }; }).filter(x => x && x.p);
+      // Generation 4 text where today's mentions moves that came later
+      const OLD = fmt && fmt.gen < 5 ? { feint: 'Only works if the target is using Protect or Detect this turn, and breaks it.' } : {};
+      return ids.map(id => { const t = this.dex.priorityMoves[id]; if (!t) return null; const m = this.move(id, fmt); return { ...t, ...(OLD[id] ? { d: OLD[id] } : {}), id, p: m ? m.p || 0 : t.p }; }).filter(x => x && x.p);
     },
     find(name) { const i = this.byName.get(toId(name)); return i === undefined ? -1 : i; },
     chart(fmt) { return this.dex.typeCharts[fmt ? fmt.chart : this.dex.typeCharts.length - 1] || this.dex.typeCharts[0]; },
@@ -110,6 +116,12 @@
     return VL.MECHANICS.map((c, i) => ({ ...c, i })).filter(c => gen >= (c.min || 1) && (!c.max || gen <= c.max) && (c.champ === 'only' ? champ : c.champ === 'not' ? !champ : true) && (c.dbl ? dbl : c.sgl ? !dbl : true));
   }
 
+  // every ability some legal Pokémon in this format can have
+  const FMT_AB = {};
+  function fmtAbilities(fmt) {
+    if (!fmt || !fmt.species) return new Set(Object.keys(D.dex.abilities));
+    return FMT_AB[fmt.id] || (FMT_AB[fmt.id] = new Set(fmt.species.flatMap(i => { const m = D.mon(i, fmt); return m ? (m.a || []).map(toId) : []; })));
+  }
   // ---------- helpers for harder questions ----------
   // c.level: 1 = Standard, 2 = Hard, 3 = Expert
   const lvl = (c) => (c && c.level) || 1;
@@ -271,10 +283,12 @@
     archetypes: {
       keys: (c) => {
         const T = VL.topteams && VL.topteams.allTeams ? VL.topteams.allTeams() : [];
-        if (!T.length && VL.topteams && !GEN.archetypes.asked) { GEN.archetypes.asked = true; VL.topteams.load().then(() => VL.topteams.loadLatestSeason()).then(() => { if (!S.quiz) render(); }); }
         const fm = c.fmt.id; const mine = T.filter(t => t.ev && (t.ev.fmt === fm || (t.ev.meta || '') === fm));
-        const use = (mine.length >= 40 ? mine : T).slice(0, 1500);
-        return use.flatMap(t => ['speed', 'field', 'setter', 'fakeout'].map(k => k + '|' + t.key));
+        // only teams from this format: an older format's teams live in its past season's file, loaded the first time
+        const asked = (GEN.archetypes.asked ||= {});
+        if (mine.length < 40 && VL.topteams && !asked[fm]) { asked[fm] = true; VL.topteams.load().then(() => VL.topteams.loadFormat(fm)).then(() => { if (!S.quiz) render(); }); }
+        if (mine.length < 10) return []; // no real teams for this format (VGC 2009, say), so the drill is off
+        return mine.slice(0, 1500).flatMap(t => ['speed', 'field', 'setter', 'fakeout'].map(k => k + '|' + t.key));
       },
       make(key, c) {
         const [kind, tkey] = key.split('|'); const T = VL.topteams.allTeams(); const t = T.find(x => x.key === tkey); if (!t) return null;
@@ -312,7 +326,9 @@
       keys: (c) => { const s = new Set(); for (const i of c.pool) for (const a of (D.mon(i, c.fmt).a || [])) s.add(toId(a)); return [...s].filter(k => D.ability(k, c.fmt)); },
       make(key, c) {
         const ab = D.ability(key, c.fmt); if (!ab) return null;
-        const keys = GEN.abilities.keys(c).concat(Object.keys(D.dex.abilities)).filter(k => k !== key && D.ability(k, c.fmt) && D.ability(k, c.fmt).d !== ab.d);
+        // wrong answers come from abilities that exist in this format, so VGC 2009 never offers a Generation 9 ability
+        const inFmt = fmtAbilities(c.fmt);
+        const keys = GEN.abilities.keys(c).concat([...inFmt]).filter(k => k !== key && D.ability(k, c.fmt) && D.ability(k, c.fmt).d !== ab.d);
         const who = c.pool.map(i => D.mon(i, c.fmt)).filter(p => (p.a || []).some(a => toId(a) === key)).slice(0, 5).map(p => p.n);
         const ex = `<b>${esc(ab.n)}</b>: ${esc(ab.d)}${who.length ? `<br><span class="sub">Seen on: ${esc(who.join(', '))}</span>` : ''}`;
         if (lvl(c) >= 3 && Math.random() < 0.5) {
@@ -341,10 +357,12 @@
     },
     mechanics: {
       keys: (c) => { const all = mechCards(c.fmt); const hard = all.filter(x => x.hard); return (lvl(c) >= 2 && hard.length >= 10 ? hard : all).map(x => String(x.i)); },
-      make(key) {
+      make(key, c) {
         const card = VL.MECHANICS[+key]; if (!card) return null;
         const opts = shuffle([{ label: card.a, ok: true }, ...card.w.map(w => ({ label: w, ok: false }))]);
-        return { q: esc(card.q), opts, long: true, ex: esc(card.ex) };
+        const gen = c && c.fmt ? c.fmt.gen : 9;
+        const ex = [card.ex, ...(card.later || []).filter(([g]) => gen >= g).map(([, t]) => t)].filter(Boolean).join(' ');
+        return { q: esc(card.q), opts, long: true, ex: esc(ex) };
       },
     },
   };
@@ -538,8 +556,9 @@
       const st = drillStats(d.id); const acc = recentAcc(st);
       const avail = GEN[d.id].keys(ctx).length;
       const due = Object.values(st.miss || {}).filter(n => n > 0).length;
+      const why = avail ? '' : d.id === 'archetypes' ? `No tournament teams saved for ${ctx.fmt.name}, so this drill is off for that format.` : `Not available for ${ctx.fmt.name}.`;
       return `<button class="drill-card" data-drill="${d.id}" ${avail ? '' : 'disabled'}>
-        <h4>${esc(d.name)}</h4><span class="sub">${esc(d.desc)}</span>
+        <h4>${esc(d.name)}</h4><span class="sub">${esc(why || d.desc)}</span>
         <span class="meter"><span style="width:${acc ?? 0}%"></span></span>
         <span class="acc">${acc === null ? 'Not tried yet' : `${acc}% recent · ${st.n} answered`}${due ? ` · ${due} to review` : ''}</span>
       </button>`;
