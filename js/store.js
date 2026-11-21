@@ -88,7 +88,13 @@
     },
     // every record of a collection, whichever play style it belongs to
     listAll(c) { return Object.entries(state[c] || {}).filter(([, r]) => r && !r.del).map(([id, r]) => ({ id, ...r })); },
-    get(c, id) { if (c === 'days') id = dayId(id); const r = state[c] && state[c][id]; return r && !r.del ? { id: c === 'days' ? String(id).replace(/^S~/, '') : id, ...r } : null; },
+    get(c, id) {
+      if (c === 'days') id = dayId(id); const r = state[c] && state[c][id];
+      if (!r || r.del) return null;
+      // a team, game or plan from the other play style doesn't exist from this one (doubles and singles are independent)
+      if (SCOPED.has(c) && c !== 'days' && recStyle(id, r) !== curStyle()) return null;
+      return { id: c === 'days' ? String(id).replace(/^S~/, '') : id, ...r };
+    },
     put(c, id, body) {
       if (c === 'days') id = dayId(id);
       const rec = { ...body, u: Date.now() }; delete rec.id;

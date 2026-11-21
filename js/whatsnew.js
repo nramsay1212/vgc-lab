@@ -9,6 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const NOTES = [
+    ['style-teams-1', 'teams', 'Doubles and singles teams stay apart', 'Your doubles teams and singles teams are fully separate now. Switching play style no longer reopens a team from the other style in the Team builder, and each style remembers the team you had open.'],
     ['mm-noscore-1', 'teams', 'Vs the meta: no more score', 'Vs the meta no longer gives your team a score out of 100 or a grade. It only checks one Pokémon against one, so strong teams that win through partners, Intimidate or Fake Out could score low. You still see which of the most used Pokémon are problems, shaky or covered, and who answers each.'],
     ['fmt-era-1', 'study', 'Older formats stay in their era', 'Read a team now only uses real teams from the format you picked (older ones load their past season), and switches off for formats with no saved teams, like VGC 2009. Ability answers, Priority and Mechanics explanations no longer mention Pokémon, moves or abilities from later games.'],
     ['fmt-practice-1', 'progress', 'Only current formats count', 'Games, tests and drills in older formats (like VGC 2009) are now practice: they don\'t change your ratings or your saved scores, and a line under the format menu says so. Older-format tests from before this change were taken back out of your ratings.'],

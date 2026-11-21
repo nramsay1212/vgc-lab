@@ -128,14 +128,15 @@
   }
 
   // ---------- teams in storage ----------
-  const LAST = 'vgclab-builder-team';
+  // the team you had open, remembered per play style (doubles keeps the original key)
+  const LAST = () => 'vgclab-builder-team' + (VL.style && VL.style() === 'singles' ? '-singles' : '');
   const teamsList = () => store().list('teams').sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
   function openTeam(id) {
     const t = id && store().get('teams', id);
     if (t) {
       const sets = parsePaste(t.paste || ''); while (sets.length < 6) sets.push(null);
       T = { id: t.id, name: t.name || 'Untitled team', fmt: t.fmt || VL.curFormatId(), sets, why: t.why || '', weak: t.weak || '', src: t.src || '' };
-      try { localStorage.setItem(LAST, t.id); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(LAST(), t.id); } catch (e) { /* ignore */ }
     } else {
       T = { id: null, name: 'Untitled team', fmt: VL.curFormatId(), sets: [null, null, null, null, null, null], why: '', weak: '', src: '' };
     }
@@ -147,7 +148,7 @@
     clearTimeout(saveTimer);
     const go = () => {
       if (!T.sets.some(s => s && s.species) && !T.id) return; // nothing to save yet
-      if (!T.id) { T.id = VL.newId('t'); try { localStorage.setItem(LAST, T.id); } catch (e) { /* ignore */ } }
+      if (!T.id) { T.id = VL.newId('t'); try { localStorage.setItem(LAST(), T.id); } catch (e) { /* ignore */ } }
       const prev = store().get('teams', T.id);
       store().put('teams', T.id, { ts: prev?.ts || Date.now(), name: T.name.trim() || 'Untitled team', fmt: T.fmt, paste: exportTeam(), why: T.why, weak: T.weak, src: T.src });
       const st = $('bd-saved'); if (st) st.textContent = 'Saved';
@@ -158,7 +159,7 @@
   // ---------- rendering ----------
   function render() {
     const root = $('bd-root'); if (!root || !D().dex) return;
-    if (!T) { let last = null; try { last = localStorage.getItem(LAST); } catch (e) { /* ignore */ } openTeam(last && store().get('teams', last) ? last : (teamsList()[0] || {}).id); }
+    if (!T) { let last = null; try { last = localStorage.getItem(LAST()); } catch (e) { /* ignore */ } openTeam(last && store().get('teams', last) ? last : (teamsList()[0] || {}).id); }
     const f = fmt();
     if (LSfor !== f.id) { LSfor = f.id; LS = null; learnset(f.id).then(x => { if (LSfor === f.id) { LS = x; renderEditor(); } }); }
     root.innerHTML = `
@@ -963,7 +964,7 @@
         if (k === 'export') exportDlg();
         if (k === 'notes') notesDlg();
         if (k === 'clear') VL.armDelete(b, () => { T.sets = [null, null, null, null, null, null]; sel = 0; renderSlots(); renderEditor(); renderAnalysis(); save(); });
-        if (k === 'del') VL.armDelete(b, () => { if (T.id) store().del('teams', T.id); try { localStorage.removeItem(LAST); } catch (x) { /* ignore */ } T = null; openTeam((teamsList()[0] || {}).id); render(); VL.toast('Team deleted'); });
+        if (k === 'del') VL.armDelete(b, () => { if (T.id) store().del('teams', T.id); try { localStorage.removeItem(LAST()); } catch (x) { /* ignore */ } T = null; openTeam((teamsList()[0] || {}).id); render(); VL.toast('Team deleted'); });
         return;
       }
       const hb = e.target.closest('[data-h]'); if (hb) { const v = hb.dataset.v; H[hb.dataset.h] = hb.dataset.h === 'hits' ? +v : v; if (hb.dataset.h === 'goal') H.tspread = 'common'; renderHelper(); return; }
@@ -1029,7 +1030,7 @@
     // shared with Team sheet practice: weather and terrain for a pair, and one damage roll as % of HP
     pairFieldMaker, row,
     render() { if (!D().dex) return; if (!bound) { bind(); bound = true; } render(); },
-    open(id) { try { localStorage.setItem(LAST, id); } catch (e) { /* ignore */ } T = null; if (bound && location.hash === '#teams') render(); },
+    open(id) { try { localStorage.setItem(LAST(), id); } catch (e) { /* ignore */ } T = null; if (bound && location.hash === '#teams') render(); },
     refreshSide() { /* the builder saves its own changes; nothing to redraw from outside */ },
     parsePaste, statsOf,
   };
