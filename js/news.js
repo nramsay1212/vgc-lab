@@ -70,12 +70,12 @@
     return parts.join(' ');
   }
   function moversHtml() {
-    const fid = VL.curFormatId ? VL.curFormatId() : ''; const mv = VL.meta.movers(fid, 4);
+    const fid = VL.curFormatId ? VL.curFormatId() : ''; const mv = VL.meta.movers(fid, 8); // extra rows are shown only when there's room (fillSide)
     if (!mv || (!mv.up.length && !mv.down.length)) return '';
     const row = (x) => `<div class="mv-row">${VL.sprite(x.n, 'xs', false)}<span>${esc(x.n)}</span><span class="num ${x.d > 0 ? 'good-t' : 'bad-t'}">${x.d > 0 ? '▲ +' : '▼ −'}${Math.abs(x.d).toFixed(1)}</span><span class="mini">${x.u.toFixed(1)}%</span></div>`;
     const mon = (m) => new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month: 'long' });
     return `<div class="card"><div class="card-head"><h3>Meta movers</h3><a class="sub" href="#meta">${esc(VL.fmtName(fid))} · ${esc(mon(mv.month))} vs ${esc(mon(mv.prev))}</a></div>
-      <div class="grid2 tight"><div><div class="section-label">Rising</div>${mv.up.map(row).join('') || '<span class="sub">Nothing much</span>'}</div><div><div class="section-label">Falling</div>${mv.down.map(row).join('') || '<span class="sub">Nothing much</span>'}</div></div>
+      <div class="grid2 tight"><div class="mv-list"><div class="section-label">Rising</div>${mv.up.map(row).join('') || '<span class="sub">Nothing much</span>'}</div><div class="mv-list"><div class="section-label">Falling</div>${mv.down.map(row).join('') || '<span class="sub">Nothing much</span>'}</div></div>
       <p class="sub">Change in the share of teams using each Pokémon, in percentage points.</p></div>`;
   }
   function calendarHtml(n) {
@@ -107,7 +107,7 @@
           <button type="button" class="nw-all" id="nw-all" hidden>Show all ${Math.min(list.length, shown)} items</button>
           ${list.length > shown ? `<div class="row" id="nw-older" style="justify-content:center"${open ? '' : ' hidden'}><button class="btn ghost" id="nw-more">Show older</button></div>` : ''}
           <button type="button" class="nw-all" id="nw-less"${open ? '' : ' hidden'}>Show less</button></div>
-        <div class="nw-side">${calendarHtml(6)}${moversHtml()}</div>
+        <div class="nw-side">${calendarHtml(16)}${moversHtml()}</div>
       </div>`;
     requestAnimationFrame(fit);
     if (location.hash === '#news') { try { localStorage.setItem(SEEN, JSON.stringify({ day: dayKey(), at: new Date().toISOString() })); } catch (e) { /* ignore */ } dot(); }
@@ -118,6 +118,7 @@
     const lay = document.querySelector('#nw-root .nw-layout');
     const side = document.querySelector('#nw-root .nw-side');
     ls.style.maxHeight = ''; ls.classList.remove('clipped'); bar.hidden = true; if (lay) lay.classList.remove('fitted'); if (side) side.style.height = '';
+    fillSide(null);
     if (open || !ls.offsetParent) return;
     // on very wide screens the page is zoomed, so the window's height is measured in zoomed units
     const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
@@ -126,7 +127,8 @@
     if (ls.scrollHeight > room + 40) { ls.style.maxHeight = room + 'px'; ls.classList.add('clipped'); bar.hidden = false;
       // the side column ends where the feed does (side by side only, not when stacked on a phone)
       const sideBySide = lay && side && getComputedStyle(lay).gridTemplateColumns.split(' ').length > 1;
-      if (sideBySide) { lay.classList.add('fitted'); side.style.height = lay.firstElementChild.offsetHeight + 'px'; }
+      // while the feed is measured, the side column mustn't make the page any taller (it's filled to match after)
+      if (sideBySide) { lay.classList.add('fitted'); side.style.overflow = 'hidden'; side.style.height = lay.firstElementChild.offsetHeight + 'px'; }
       // then trim by however much the page still runs past the bottom, so the short view never scrolls
       const docH = () => document.documentElement.scrollHeight / z;
       const viewH = window.innerHeight / z;
@@ -138,7 +140,41 @@
         if (sideBySide) side.style.height = lay.firstElementChild.offsetHeight + 'px';
         if (h === 160) break;
       }
+      if (sideBySide) fillSide(lay.firstElementChild.offsetHeight);
     }
+  }
+  // The side column: as many upcoming events and meta movers as fit next to the feed, starting at the top.
+  // With no height to match (feed opened, phone, short feed): 6 events and 4 movers each way.
+  function fillSide(target) {
+    const side = document.querySelector('#nw-root .nw-side'); if (!side) return;
+    const cal = [...side.querySelectorAll('.cal>div')];
+    const lists = [...side.querySelectorAll('.mv-list')].map(l => [...l.querySelectorAll('.mv-row')]);
+    const up = lists[0] || [], down = lists[1] || [];
+    const show = (rows, n) => rows.forEach((r, i) => { r.hidden = i >= n; });
+    const mvCard = side.querySelector('.mv-list') && side.querySelector('.mv-list').closest('.card');
+    if (mvCard) mvCard.hidden = false;
+    if (target === null) { show(cal, 6); show(up, 4); show(down, 4); side.style.overflow = ''; [...side.children].forEach(x => x.classList.remove('grow')); return; }
+    // start from everything, then take rows away until the cards fit the feed's height
+    let c = cal.length, u = up.length, d = down.length;
+    [...side.children].forEach(x => x.classList.remove('grow'));
+    show(cal, c); show(up, u); show(down, d); side.style.height = ''; side.style.overflow = '';
+    const natural = () => side.scrollHeight;
+    const trim = (minC, minM) => {
+      for (let guard = 0; guard < 80 && natural() > target; guard++) {
+        // keep the two cards balanced: trim the calendar while it's longer than the movers, else the longer movers list
+        if (c > minC && (c > Math.max(u, d) + 1 || (u <= minM && d <= minM))) { c--; show(cal, c); }
+        else if (u >= d && u > minM) { u--; show(up, u); }
+        else if (d > minM) { d--; show(down, d); }
+        else if (c > minC) { c--; show(cal, c); }
+        else break;
+      }
+    };
+    trim(3, 2);
+    // a short screen: the movers step aside (they have their own page, Meta) and the calendar gets the room
+    if (natural() > target && mvCard) { mvCard.hidden = true; c = cal.length; show(cal, c); trim(2, 0); }
+    side.style.height = natural() > target ? '' : target + 'px';
+    // the last card still showing takes up the leftover (less than a row), so both columns end together
+    [...side.children].forEach(x => x.classList.toggle('grow', x === [...side.children].filter(y => !y.hidden).pop()));
   }
   let fitT = null; window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fit, 150); });
   // opening or closing "About this page" changes the room left for the feed

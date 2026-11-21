@@ -1059,14 +1059,16 @@ input[type=search]::-webkit-search-cancel-button{filter:invert(.6)}
 .nw-all{display:block;width:100%;margin-top:6px;padding:11px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--hover);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
 .nw-all:hover{border-color:var(--accent);color:var(--accent)}
 .nw-all[hidden]{display:none}
-/* short news view: the side column's two cards stretch to end where the feed does */
+/* short news view: the side column ends where the feed does. It's filled with as many events and
+   movers as fit (news.js fillSide), so its content starts at the top; only the leftover (less than a
+   row) goes to the bottom card, above its footnote. */
 @media (min-width:1001px){
   .nw-layout.fitted{align-items:start}
-  .nw-layout.fitted .nw-side>.card{display:flex;flex-direction:column}
-  .nw-layout.fitted .nw-side>.card:first-child{flex:1 0 auto}
-  .nw-layout.fitted .nw-side>.card:last-child{flex:1 1 auto;min-height:0;overflow:auto}
-  .nw-layout.fitted .nw-side>.card>:last-child{margin-top:auto}
+  .nw-layout.fitted .nw-side>.card{flex:none}
+  .nw-layout.fitted .nw-side>.card.grow{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  .nw-layout.fitted .nw-side>.card.grow>p.sub:last-child{margin-top:auto}
 }
+.nw-side .cal>div[hidden],.nw-side .mv-row[hidden],.nw-side>.card[hidden]{display:none}
 /* Damage calculator quick picks */
 .cl-quick{margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg-2)}
 .cl-quick summary{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;cursor:pointer;list-style:none;font-weight:600;font-size:13.5px}
