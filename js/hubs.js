@@ -10,7 +10,7 @@
 
   const HUBS = [
     ['Home', ['today', 'news']],
-    ['Play', ['log', 'companion', 'replay', 'review']],
+    ['Play', ['log', 'replay', 'review']],
     ['Practice', ['study', 'videos', 'games', 'test', 'sheets']],
     ['Meta and teams', ['meta', 'topteams', 'teams', 'teamcompare', 'calc']],
     ['Progress', ['progress', 'roadmap']],

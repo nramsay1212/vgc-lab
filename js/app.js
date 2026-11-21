@@ -440,7 +440,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       if (VL.compare && location.hash === '#review') VL.compare.render();
       if (VL.progress && location.hash === '#progress') VL.progress.render();
       if (VL.plan && !inside('op-list')) VL.plan.render();
-      if (VL.companion && location.hash === '#companion' && !inside('cp-live')) VL.companion.render();
       if (VL.meta.render && location.hash === '#meta' && !inside('mt-detail')) VL.meta.render();
     });
   }
@@ -448,7 +447,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
   let rsz = null; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderAll, 250); });
 
   // ---------- routing ----------
-  const TABS = ['news', 'replay', 'topteams', 'sheets', 'videos', 'today', 'log', 'companion', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'notebook', 'teams', 'teamcompare', 'tournaments', 'opponents', 'roadmap', 'settings'];
+  const TABS = ['news', 'replay', 'topteams', 'sheets', 'videos', 'today', 'log', 'review', 'games', 'test', 'progress', 'study', 'meta', 'calc', 'notebook', 'teams', 'teamcompare', 'tournaments', 'opponents', 'roadmap', 'settings'];
   function route() {
     if (location.hash.startsWith('#import=')) return; // a game handed over by the Showdown extension; js/autoimport.js handles it and puts the page back
     const h = location.hash.replace('#', ''); const tab = TABS.includes(h) ? h : 'today';
@@ -461,7 +460,6 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     if (tab === 'games' && VL.arcade) VL.arcade.render(); else if (VL.arcade) VL.arcade.stop();
     if (tab === 'test' && VL.test) VL.test.render();
     if (tab === 'progress' && VL.progress) VL.progress.render();
-    if (tab === 'companion' && VL.companion) VL.companion.render();
     if (tab === 'meta' && VL.meta.render) VL.meta.render();
     if (tab === 'teams' && VL.builder) VL.builder.render();
     if (tab === 'teamcompare' && VL.teamcompare) VL.teamcompare.render();
@@ -697,7 +695,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     btn.dataset.armed = '1'; const old = btn.textContent; btn.textContent = 'Confirm';
     setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = old; } }, 3000);
   }
-  // ---------- fill the log form from the battle companion or a replay ----------
+  // ---------- fill the log form from a replay ----------
   let pendingSource = null, pendingFmt = null; // a game handed over from another page may be in another format
   let previewMine = null, bringN = 4;
   function backHelp(preview, n) {

@@ -99,7 +99,7 @@
       <p>Open a section and its pages show as tabs along the top of the page. Each section opens on the page you used last. On a phone, <b>More</b> lists every page by section.</p>`],
     ['Train: every day', `<p><b>Today</b> shows your recent trends (win rate, mistakes, ratings, meta movers), your focus for the week and your daily checklist. <b>News</b> lists rule and data changes, tournament results and headlines, and updates itself every day.</p>
       <p><b>Log a game</b> right after each game (press <kbd>N</kbd> on a computer). Only Win or Loss is required; tags for what lost it make Review much smarter. Paste a Showdown replay link to fill it in automatically.</p>
-      <p><b>Battle companion</b> runs alongside a live game: turn counters for Tailwind, Trick Room, weather, terrain and screens, plus the opponent's team. <b>Replay review</b> steps through a Showdown replay turn by turn so you can mark the turn the game swung.</p>`],
+      <p><b>Replay review</b> steps through a Showdown replay turn by turn so you can mark the turn the game swung.</p>`],
     ['See your progress', `<p><b>Review</b> shows your win rate, the mistakes that cost the most games, the Pokémon you lose to and which leads work.</p>
       <p><b>Games</b> are quick training games for speed tiers, damage guesses and turn order. <b>Test</b> checks everything you've studied, on Standard, Hard or Expert. Both feed your <b>ratings</b>, and <b>Progress</b> charts them over time so you can see real improvement.</p>`],
     ['Learn the game', `<p><b>Study</b> has short drills: type matchups, speed tiers, items, abilities, priority, mechanics and common sets. Questions you miss come back until you get them.</p>

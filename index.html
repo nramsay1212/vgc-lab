@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=78">
-<link rel="stylesheet" href="css/pixel.css?v=78">
+<link rel="stylesheet" href="css/app.css?v=79">
+<link rel="stylesheet" href="css/pixel.css?v=79">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench';var pal=localStorage.getItem('vgclab-palette')||'shiny';if(pal==='pixel'){pal='shiny';localStorage.setItem('vgclab-palette',pal);localStorage.setItem('vgclab-look','minimal')}document.documentElement.dataset.palette=pal;document.documentElement.dataset.look=localStorage.getItem('vgclab-look')||'standard'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
@@ -29,7 +29,6 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
     <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
     <a href="#news"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h3.5"/></svg><span>News</span></a>
     <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log a game</span><kbd>N</kbd></a>
-    <a href="#companion"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Battle companion</span></a>
     <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
     <a href="#replay"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4h4"/><path d="m10.5 9 4.5 3-4.5 3z"/></svg><span>Replay review</span></a>
     <div class="navgroup">Progress</div>
@@ -385,36 +384,6 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
     <div class="card"><div class="card-head"><h3>Test history</h3></div><div class="scroll" id="pg-tests"></div></div>
   </section>
 
-  <!-- BATTLE COMPANION -->
-  <section class="panel" id="p-companion">
-    <header class="page-head">
-      <h1>Battle companion</h1>
-      <details class="howto"><summary>About this page</summary><div class="howto-box"><p class="lede">Keep this open on your phone next to your Switch. It counts field turns, tracks what your opponent reveals, and turns the game into a log entry when it ends.</p><ol><li>Pick the format, then at <span class="term" data-term="preview">team preview</span> tap each slot to add their 6 and tap <b>Start battle</b>.</li><li>Tap <b>Next turn</b> at the start of every turn. Timers count down on their own.</li><li>When Tailwind, Trick Room, weather, terrain or screens go up, tap it. The card shows how many turns are left, counting the current one.</li><li>On each opponent card, record what they reveal: item, ability, moves. Tap <b>Protected</b> when they Protect, and the card warns you when a second Protect in a row is likely to fail.</li><li>When the game ends, tap <b>Won</b> or <b>Lost</b>. The log form opens already filled in.</li></ol></div></details>
-    </header>
-    <div id="cp-setup" class="card">
-      <div class="card-head"><h3>New battle</h3><span class="sub" id="cp-fmt"></span></div>
-      <div class="row"><label for="cp-fmtsel">Format<select id="cp-fmtsel"></select></label><label for="cp-team">My team<select id="cp-team"></select></label></div>
-      <div><div class="section-label">Their team at preview</div><div class="cp-slots" id="cp-oppslots"></div>
-        <details class="cp-typed"><summary>Or type their names</summary><input type="text" id="cp-opp" list="dl-mons" placeholder="Incineroar, Rillaboom, Garchomp, ..." aria-label="Their Pokémon, separated by commas"></details></div>
-      <label for="cp-oppname">Opponent's name (optional)<input type="text" id="cp-oppname" list="dl-opps"></label>
-      <div class="row" style="justify-content:flex-end"><button class="btn" id="cp-start">Start battle</button></div>
-    </div>
-    <div id="cp-live" hidden style="display:flex;flex-direction:column;gap:16px">
-      <div class="card turnbar">
-        <div class="turnnum"><span class="sub">Turn</span><b class="num" id="cp-turn">1</b></div>
-        <div class="row" style="gap:8px;align-items:center">
-          <button class="btn ghost small" id="cp-undo" aria-label="Back one turn">− Turn</button>
-          <button class="btn" id="cp-next">Next turn</button>
-        </div>
-      </div>
-      <div class="card"><div class="card-head"><h3>Field</h3><span class="sub">Tap to start a timer. Tap again to clear it.</span></div><div class="timers" id="cp-timers"></div></div>
-      <div class="card"><div class="card-head"><h3>Their Pokémon</h3><span class="sub">Tap "Lead" on the two they send out first</span></div><div class="oppgrid" id="cp-opps"></div></div>
-      <div class="card" id="cp-mine-card"><div class="card-head"><h3>My Protects</h3><span class="sub">So you don't forget your own</span></div><div class="chips" id="cp-mine"></div></div>
-      <label for="cp-notes" class="card">Notes during the game<textarea id="cp-notes" placeholder="Turn 2: they Protected the Incineroar and attacked my Sneasler"></textarea></label>
-      <div class="card"><div class="row" style="justify-content:space-between;align-items:center"><span class="sub">Game over?</span><div class="row" style="gap:8px"><button class="btn ghost" id="cp-cancel">Discard</button><button class="btn" id="cp-won" style="background:var(--win)">Won</button><button class="btn" id="cp-lost" style="background:var(--loss)">Lost</button></div></div></div>
-    </div>
-  </section>
-
   <!-- META -->
   <section class="panel" id="p-meta">
     <header class="page-head">
@@ -701,7 +670,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <nav class="bottombar" aria-label="Sections">
   <a href="#today"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
   <a href="#log"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Log</span></a>
-  <a href="#companion"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Battle</span></a>
+  <a href="#review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Review</span></a>
   <a href="#study"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg><span>Study</span></a>
   <button type="button" id="more-btn" aria-expanded="false" aria-controls="sheet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></button>
 </nav>
@@ -768,37 +737,36 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=78"></script>
-<script src="js/sound.js?v=78"></script>
-<script src="js/content.js?v=78"></script>
-<script src="js/search.js?v=78"></script>
-<script src="js/study.js?v=78"></script>
-<script src="js/sprites.js?v=78"></script>
-<script src="js/help.js?v=78"></script>
-<script src="js/meta.js?v=78"></script>
-<script src="js/calc.js?v=78"></script>
-<script src="js/companion.js?v=78"></script>
-<script src="js/teamcheck.js?v=78"></script>
-<script src="js/builder.js?v=78"></script>
-<script src="js/plan.js?v=78"></script>
-<script src="js/topteams.js?v=78"></script>
-<script src="js/news.js?v=78"></script>
-<script src="js/replay.js?v=78"></script>
-<script src="js/sheets.js?v=78"></script>
-<script src="js/teamcompare.js?v=78"></script>
-<script src="js/battleview.js?v=78"></script>
-<script src="js/videos.js?v=78"></script>
-<script src="js/trends.js?v=78"></script>
-<script src="js/progress.js?v=78"></script>
-<script src="js/arcade.js?v=78"></script>
-<script src="js/test.js?v=78"></script>
-<script src="js/compare.js?v=78"></script>
-<script src="js/app.js?v=78"></script>
-<script src="js/autoimport.js?v=78"></script>
-<script src="js/hubs.js?v=78"></script>
-<script src="js/whatsnew.js?v=78"></script>
-<script src="js/firebase-config.js?v=78"></script>
-<script src="js/account.js?v=78"></script>
+<script src="js/store.js?v=79"></script>
+<script src="js/sound.js?v=79"></script>
+<script src="js/content.js?v=79"></script>
+<script src="js/search.js?v=79"></script>
+<script src="js/study.js?v=79"></script>
+<script src="js/sprites.js?v=79"></script>
+<script src="js/help.js?v=79"></script>
+<script src="js/meta.js?v=79"></script>
+<script src="js/calc.js?v=79"></script>
+<script src="js/teamcheck.js?v=79"></script>
+<script src="js/builder.js?v=79"></script>
+<script src="js/plan.js?v=79"></script>
+<script src="js/topteams.js?v=79"></script>
+<script src="js/news.js?v=79"></script>
+<script src="js/replay.js?v=79"></script>
+<script src="js/sheets.js?v=79"></script>
+<script src="js/teamcompare.js?v=79"></script>
+<script src="js/battleview.js?v=79"></script>
+<script src="js/videos.js?v=79"></script>
+<script src="js/trends.js?v=79"></script>
+<script src="js/progress.js?v=79"></script>
+<script src="js/arcade.js?v=79"></script>
+<script src="js/test.js?v=79"></script>
+<script src="js/compare.js?v=79"></script>
+<script src="js/app.js?v=79"></script>
+<script src="js/autoimport.js?v=79"></script>
+<script src="js/hubs.js?v=79"></script>
+<script src="js/whatsnew.js?v=79"></script>
+<script src="js/firebase-config.js?v=79"></script>
+<script src="js/account.js?v=79"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

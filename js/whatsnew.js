@@ -35,7 +35,6 @@
     ['battle-1', 'replay', 'A Showdown-style battle screen', 'Replays now show the battle like Showdown: their Pokémon at the top, yours at the bottom, with HP, status, stat changes, field effects and each team\'s party.'],
     ['meta-older-1', 'meta', 'Every format, and tournament numbers', 'The Format menu now has every older format back to VGC 2009, plus older rules Showdown no longer lists. <b>Numbers from → Tournament team sheets</b> shows what actually places at events instead of what\'s popular on ladder.'],
     ['compare-1', 'review', 'New: Compared with top players', 'Shows the Pokémon top players bring in your format, your record against each, and how your team\'s items and moves differ from theirs.'],
-    ['companion-1', 'companion', 'Pick their team with the picker', 'Choose the format, then tap each slot to add their Pokémon with the same picker as the Team builder. Their likely teammates show first.'],
     ['titles-1', 'progress', 'Titles', 'The <b>Titles</b> card shows every rating title and how far you are from the next one.'],
     ['tagq-1', 'log', 'Not sure which mistake it was?', 'Under the mistake tags, <b>Not sure which it was?</b> asks plain questions and ticks the right tags for you. It opens by itself after a loss.'],
     ['seasons-1', 'topteams', 'Past seasons', 'The Event menu has every official event since 2023 by season, plus large online tournaments from now on.'],
