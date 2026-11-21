@@ -111,6 +111,15 @@
       for (const { c, i, r } of list) {
         if (!COLLS.includes(c) || !r) continue;
         const cur = state[c][i];
+        if (c === 'meta' && i === 'profile' && cur && !cur.del && !r.del) {
+          // settings: keep every field either copy has, the newer copy's value winning. If the newer one
+          // was missing fields (a default written before the real profile arrived), the result is new, so it syncs back.
+          const [old, nw] = (r.u || 0) > (cur.u || 0) ? [cur, r] : [r, cur];
+          const m = { ...old, ...nw };
+          if (Object.keys(old).some(k => !(k in nw))) m.u = Date.now();
+          if (JSON.stringify(m) !== JSON.stringify(cur)) { state[c][i] = m; changed = true; }
+          continue;
+        }
         if (!cur || (r.u || 0) > (cur.u || 0)) { state[c][i] = r; changed = true; }
       }
       if (changed) { scheduleSave(); emit(true); }

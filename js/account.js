@@ -147,10 +147,15 @@
     try {
       const be = await backend(); const uid = A.user.uid;
       const pk = 'vgclab-acct-pull-' + uid, sk = 'vgclab-acct-push-' + uid;
-      // pull with a one-minute overlap so writes that commit out of order aren't missed
+      // pull with a one-minute overlap so writes that commit out of order aren't missed.
+      // Once per account per device (and after any switch of account), download everything: a device that
+      // was signed out and back in used to ask only for changes since its last visit and miss the rest.
+      const fk = 'vgclab-acct-full2-' + uid;
+      if (!ls.get(fk)) ls.del(pk);
       const since = +(ls.get(pk) || 0);
       const got = await be.pull(uid, since ? since - 60000 : 0);
       if (got.length) { VL.store.mergeRecords(got); ls.set(pk, got.reduce((m, g) => Math.max(m, g.s || 0), since)); }
+      ls.set(fk, '1'); A.pulled = true; if (A.onFirstPull) { const f = A.onFirstPull; A.onFirstPull = null; f(); }
       const pushedU = +(ls.get(sk) || 0);
       const out = VL.store.changedSince(pushedU);
       if (out.length) { await be.push(uid, out); ls.set(sk, out.reduce((m, o) => Math.max(m, o.r.u || 0), pushedU)); }
@@ -182,8 +187,9 @@
       ls.del('vgclab-acct-push-' + user.uid);
       VL.toast && VL.toast('Added this device\'s data to your account');
     }
+    if (owner !== user.uid) { ls.del('vgclab-acct-pull-' + user.uid); ls.del('vgclab-acct-full2-' + user.uid); }
     ls.set(OWNER, user.uid);
-    A.user = user; A.hasRecovery = null;
+    A.user = user; A.hasRecovery = null; A.pulled = false;
     hideGate();
     await syncNow();
     backend().then(be => be.getPrivate(user.uid)).then(p => { if (A.user && A.user.uid === user.uid) { A.hasRecovery = !!p; renderCard(); } }).catch(() => {});
@@ -314,7 +320,9 @@
       VL.armDelete(b, async () => {
         await syncNow().catch(() => {});
         const be = await backend(); await be.signOut();
+        const was = A.user && A.user.uid;
         A.user = null; A.hasRecovery = null; await VL.store.clearAll(); ls.set(OWNER, 'local');
+        if (was) { ls.del('vgclab-acct-pull-' + was); ls.del('vgclab-acct-push-' + was); ls.del('vgclab-acct-full2-' + was); }
         setStatus('off', 'Not signed in'); showGate('in');
       });
     }
@@ -326,9 +334,9 @@
     if (!be) { A.resolved = true; renderCard(); return; }
     let first = true;
     be.onAuth(async (u) => {
-      A.resolved = true;
-      if (u) await adopt(u);
+      if (u) { await adopt(u); A.resolved = true; }
       else {
+        A.resolved = true;
         A.user = null; setStatus('off', 'Not signed in');
         if (first && !ls.get(NOACCT)) showGate('in');
       }

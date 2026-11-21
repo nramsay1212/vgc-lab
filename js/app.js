@@ -840,7 +840,14 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     D.load(dex);
     store.ready.then(() => {
       const p = profile();
-      if (!p.format) putProfile({ format: D.format().id });
+      // a default format only once the account's data is here, so it can't replace the real profile
+      const setDefault = () => { if (!profile().format) putProfile({ format: D.format().id }); };
+      (function waitAcct() {
+        const A = VL.account;
+        if (!A || (A.resolved && !A.user)) return setDefault(); // no account: this device's data is all there is
+        if (A.resolved && A.user) { if (A.pulled) setDefault(); else A.onFirstPull = setDefault; return; }
+        setTimeout(waitAcct, 300);
+      })();
       fillFormatSelect(); fillDatalist(); VL.study.fill(curFormatId().startsWith('custom:') ? '' : curFormatId());
       renderAll(); route();
       VL.meta.ready.then(() => { renderAll(); if (location.hash === '#meta') VL.meta.render(); });
