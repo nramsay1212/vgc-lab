@@ -5,8 +5,12 @@
  *
  *   node scripts/build-videos.js [out.json]
  *
- * Uses each channel's public RSS feed (no API key). Feeds only list the latest
- * 15 videos, so older ones are kept from the previous file. Team videos that
+ * With a YouTube Data API key (environment variable YOUTUBE_API_KEY, a repository
+ * secret in the daily workflow) it reads each channel's last ~100 uploads, with
+ * their length (Shorts are left out by length) and views. Without a key, or if the
+ * API fails for a channel, it uses that channel's public RSS feed, which only lists
+ * the latest 15 videos; older ones are kept from the previous file either way.
+ * The API's free daily allowance is 10,000 units; this uses about 4 per channel. Team videos that
  * link a PokéPaste get the team's text saved, so the app can open it in the
  * Team builder.
  */
@@ -15,7 +19,36 @@ const fs = require('fs');
 const path = require('path');
 const OUT = path.resolve(process.argv[2] || path.join(__dirname, '..', 'data', 'videos.json'));
 const UA = { 'User-Agent': 'Mozilla/5.0 (toxicroak-vgc-lab; github.com/nramsay1212/vgc-lab)' };
-const KEEP_PER_CHANNEL = 60, KEEP_DAYS = 730;
+const KEY = process.env.YOUTUBE_API_KEY || '';
+const KEEP_PER_CHANNEL = KEY ? 100 : 60, KEEP_DAYS = 730;
+const API = 'https://www.googleapis.com/youtube/v3/';
+async function api(pathq) {
+  const r = await fetch(API + pathq + '&key=' + encodeURIComponent(KEY), { headers: UA }).catch(() => null);
+  if (!r || !r.ok) { if (r) console.log(`  YouTube API ${r.status} for ${pathq.split('?')[0]}`); return null; }
+  return r.json();
+}
+// ISO 8601 length (PT1H2M3S) to seconds
+const secs = (d) => { const m = String(d || '').match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; };
+
+// a channel's recent uploads through the API: its uploads playlist (UC... -> UU...), two pages of 50,
+// then the videos' lengths and views. null if anything fails, so the caller falls back to RSS.
+async function viaApi(id) {
+  const items = []; let page = '';
+  for (let p = 0; p < 2; p++) {
+    const j = await api(`playlistItems?part=snippet&maxResults=50&playlistId=UU${id.slice(2)}${page ? '&pageToken=' + page : ''}`);
+    if (!j) return p ? items : null;
+    for (const it of j.items || []) { const s = it.snippet || {}; const vid = s.resourceId && s.resourceId.videoId; if (vid) items.push({ vid, title: s.title || '', desc: s.description || '', date: String(s.publishedAt || '').slice(0, 10) }); }
+    if (!j.nextPageToken) break; page = j.nextPageToken;
+  }
+  for (let i = 0; i < items.length; i += 50) {
+    const chunk = items.slice(i, i + 50);
+    const j = await api(`videos?part=contentDetails,statistics,snippet&id=${chunk.map(x => x.vid).join(',')}`);
+    if (!j) continue;
+    const by = new Map((j.items || []).map(v => [v.id, v]));
+    for (const x of chunk) { const v = by.get(x.vid); if (!v) continue; x.len = secs(v.contentDetails && v.contentDetails.duration); x.views = +((v.statistics || {}).viewCount || 0); x.live = (v.snippet || {}).liveBroadcastContent !== 'none' && (v.snippet || {}).liveBroadcastContent; }
+  }
+  return items;
+}
 
 // style: which way the channel mostly plays; only: a title filter for channels that post much more than battles
 const CHANNELS = [
@@ -59,6 +92,7 @@ async function channelId(c, old) {
   if (c.id) return c.id;
   const known = old && old.channels && old.channels.find(x => x.name === c.name && x.id);
   if (known) return known.id;
+  if (KEY && c.handle) { const j = await api(`channels?part=id&forHandle=%40${encodeURIComponent(c.handle)}`); const id = j && j.items && j.items[0] && j.items[0].id; if (id) return id; }
   const page = await get(c.user ? `https://www.youtube.com/user/${c.user}` : `https://www.youtube.com/@${c.handle}`);
   const m = page && (page.match(/"externalId":"(UC[\w-]{22})"/) || page.match(/<meta itemprop="identifier" content="(UC[\w-]{22})"/) || page.match(/"channelId":"(UC[\w-]{22})"/));
   return m ? m[1] : null;
@@ -81,6 +115,21 @@ function kind(title, hasPaste) {
     const id = await channelId(c, old);
     if (!id) { console.log(`  ${c.name}: channel not found`); continue; }
     channels.push({ id, name: c.name, style: c.style, url: `https://www.youtube.com/channel/${id}` });
+    const viaKey = KEY ? await viaApi(id) : null;
+    if (viaKey) {
+      let n = 0;
+      for (const x of viaKey) {
+        if (c.only && !c.only.test(x.title)) continue;
+        // Shorts are 3 minutes or less; live and upcoming streams aren't videos yet
+        if (/#shorts/i.test(x.title) || OFF_TOPIC.test(x.title) || (x.len && x.len <= 180) || x.live) continue;
+        const prev = oldVids.get(x.vid);
+        const paste = (x.desc.match(/https?:\/\/pokepast\.es\/([0-9a-f]{8,})/i) || [])[1] || null;
+        fresh.push({ id: x.vid, ch: id, title: x.title, date: x.date, views: x.views || (prev && prev.views) || 0, desc: x.desc.slice(0, 400), paste, team: prev && prev.team, kind: null, ...(x.len ? { len: x.len } : {}) });
+        n++;
+      }
+      console.log(`  ${c.name}: ${n} videos (API)`);
+      continue;
+    }
     const xml = await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`);
     if (!xml) { console.log(`  ${c.name}: feed not available`); continue; }
     let n = 0;

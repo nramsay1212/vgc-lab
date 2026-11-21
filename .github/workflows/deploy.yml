@@ -99,6 +99,10 @@ jobs:
       - name: Refresh videos
         id: videos
         continue-on-error: true
+        env:
+          # optional: a YouTube Data API key (repository secret) gives each channel's last ~100 uploads
+          # and real Shorts filtering; without it the free public feeds (latest 15 per channel) are used
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: node scripts/build-videos.js
 
       - name: Refresh news
