@@ -76,7 +76,29 @@
 
   const ready = () => new Promise((res) => { const t0 = Date.now(); (function wait() { if (VL.store && VL.D && VL.D.dex && VL.parseReplay && VL.builder) return VL.store.ready.then(res); if (Date.now() - t0 > 20000) return res(); setTimeout(wait, 100); })(); });
 
-  async function importGame({ log, me, bid, url }) {
+  // ---------- answers from the box on Showdown (their style, what went wrong, who stayed back) ----------
+  const ARCHS = ['Tailwind offense', 'Trick Room', 'Sun', 'Rain', 'Sand', 'Snow', 'Terrain', 'Balance', 'Hyper offense', 'Other'];
+  const monList = (s) => String(s || '').split(',').map(x => x.trim()).filter(Boolean);
+  function addDetails(id, x) {
+    const g = VL.store.listAll('games').find(r => r.id === id); if (!g || !x || typeof x !== 'object') return '';
+    const tagIds = new Set((VL.ALLTAGS || []).map(t => t[0]));
+    const out = { ...g }; const said = [];
+    if (ARCHS.includes(x.arch)) { out.arch = x.arch; said.push(x.arch); }
+    const tags = Array.isArray(x.tags) ? x.tags.filter(t => tagIds.has(t)) : [];
+    if (tags.length) { out.tags = [...new Set([...(g.tags || []), ...tags])]; said.push(`${tags.length} mistake${tags.length === 1 ? '' : 's'}`); }
+    const back = Array.isArray(x.back) ? x.back.filter(n => typeof n === 'string' && n && n.length < 40).slice(0, 3) : [];
+    if (back.length) {
+      const have = monList(g.mylead).concat(monList(g.myback)); const k = (n) => String(n).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const add = back.filter(n => !have.some(h => k(h) === k(n) || k(h).startsWith(k(n))));
+      if (add.length) { out.myback = monList(g.myback).concat(add).join(', '); said.push('back: ' + add.join(', ')); }
+    }
+    if (typeof x.note === 'string' && x.note.trim()) { const n = x.note.trim().slice(0, 300); if (!String(g.note || '').includes(n)) { out.note = (g.note ? g.note + '\n' : '') + n; said.push('note'); } }
+    if (!said.length) return '';
+    VL.store.put('games', id, out);
+    return said.join(' · ');
+  }
+
+  async function importGame({ log, me, bid, url, extra }) {
     await ready();
     if (!VL.parseReplay) return { msg: 'VGC Lab is still loading. Send the game again from the extension.' };
     if (!me) { // a replay link: work out which player you were from your names or your saved teams
@@ -87,7 +109,9 @@
     if (!me) return { msg: 'Couldn\'t tell which player you were. Type your Showdown username on the Log page under Import a replay, then send it again.' };
     try { if (!localStorage.getItem(SD)) localStorage.setItem(SD, me); } catch (e) { /* private mode */ }
     bid = bid || battleId(url);
-    if (bid && VL.store.listAll('games').some(g => g.battle === bid || String(g.source || '').includes(bid))) return { msg: 'Already imported. That game is in your log.', dup: true };
+    const had = bid && VL.store.listAll('games').find(g => g.battle === bid || String(g.source || '').includes(bid));
+    if (had && extra) { const said = addDetails(had.id, extra); return said ? { ok: true, id: had.id, msg: `Updated your ${had.result === 'W' ? 'win' : 'loss'}${had.oppName ? ' vs ' + had.oppName : ''}: ${said}` } : { msg: 'Already imported. That game is in your log.', dup: true }; }
+    if (had) return { msg: 'Already imported. That game is in your log.', dup: true };
     const r = VL.parseReplay(log, me);
     if (r.error) return { msg: r.error };
     if (!r.result) return { msg: 'That battle has no winner (a tie or unfinished), so it wasn\'t logged.' };
@@ -106,13 +130,14 @@
       tags: [], note: `Sent from Showdown by the extension. Lasted ${r.turns} turn${r.turns === 1 ? '' : 's'}.`, oppName: r.oppName || null,
       source: url || (bid ? 'showdown:' + bid : 'showdown-log'), battle: bid || null, logz, auto: true,
     });
+    const said = extra ? addDetails(id, extra) : '';
     if (r.oppName && VL.plan && VL.plan.ensureOpponent) VL.plan.ensureOpponent(r.oppName);
     if (mode === 'climb' && VL.markDone && (!VL.style || VL.style() === style)) VL.markDone('log');
     // name what they brought (what came in), or their team preview if the replay shows nothing
     const theirs = (r.opp || []).length ? (r.opplead || []).concat((r.opp || []).filter(n => !(r.opplead || []).includes(n))) : [];
     const shown = theirs.slice(0, 2).join('/') + (theirs.length > 2 ? '/…' : '');
-    const extra = newAcct ? ` · New account ${me}, logged as climb. If it's your testing account, switch it in Settings under Showdown accounts.` : mode === 'test' ? ' · testing game' : '';
-    return { ok: true, id, msg: `Imported: ${r.result === 'W' ? 'Win' : 'Loss'}${shown ? ' vs ' + shown : ''}${team ? ' · ' + (team.name || 'your team') : ' · no saved team matched'}${extra}` };
+    const more = newAcct ? ` · New account ${me}, logged as climb. If it's your testing account, switch it in Settings under Showdown accounts.` : mode === 'test' ? ' · testing game' : '';
+    return { ok: true, id, msg: `Imported: ${r.result === 'W' ? 'Win' : 'Loss'}${shown ? ' vs ' + shown : ''}${team ? ' · ' + (team.name || 'your team') : ' · no saved team matched'}${said ? ' · ' + said : ''}${more}` };
   }
 
   // ---------- telling you ----------
@@ -149,7 +174,7 @@
         let res;
         if (raw.startsWith('sd1.')) {
           const p = JSON.parse(await inflate(raw.slice(4)));
-          res = await importGame({ log: p.log, me: p.me, bid: battleId(p.id) });
+          res = await importGame({ log: p.log, me: p.me, bid: battleId(p.id), extra: p.extra });
         } else {
           let url = decodeURIComponent(raw).replace(/[?#].*$/, '').replace(/\.(json|log)$/, '');
           if (!/^https:\/\/replay\.pokemonshowdown\.com\/[^/]+/.test(url)) res = { msg: 'That isn\'t a Showdown replay link.' };

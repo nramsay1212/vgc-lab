@@ -113,6 +113,13 @@ await check('Import a replay log (finds your side)', async (page) => {
   expect(await page.evaluate(() => (document.querySelector('[data-rpme][aria-pressed=true]') || { dataset: {} }).dataset.rpme) === 'p2', 'Replay review did not open from your side');
 });
 
+// the offline file: it was once emptied by mistake, so make sure it's whole and its version matches the page's
+await check('Offline support file is intact', async (page) => {
+  const [sw, html] = await page.evaluate(() => Promise.all([fetch('sw.js').then(r => r.text()), fetch('index.html').then(r => r.text())]));
+  const v = (html.match(/\?v=(\d+)/) || [])[1];
+  expect(sw.includes("addEventListener('fetch'") && sw.includes(`'vgclab-v${v}'`), `sw.js is empty or its version doesn't match index.html (v${v})`);
+});
+
 // 5. a game sent by the Showdown extension
 await check('Game from the Showdown extension', async (page) => {
   await page.evaluate((p) => VL.store.put('teams', 'tMain', { ts: 1, name: 'Main team', paste: p, fmt: 'gen9championsvgc2026regmc' }), TEAM);
@@ -121,6 +128,11 @@ await check('Game from the Showdown extension', async (page) => {
   const g = await page.evaluate(() => VL.store.list('games')[0]);
   expect(g && g.result === 'W' && g.team === 'tMain' && g.mode === 'climb', 'the game was not saved as a climb win with the right team');
   expect((await text(page, '#ai-note')).startsWith('Imported'), 'no confirmation note');
+  // answers from the box on Showdown go into that same game
+  const h2 = await page.evaluate(async (l) => 'sd1.' + await VL.autoimport.deflate(JSON.stringify({ v: 1, id: 'gen9championsvgc2026regmc-99', me: 'TestPlayer', log: l, extra: { arch: 'Trick Room', tags: ['calc', 'made-up'], note: 'test note' } })), LOG());
+  await page.evaluate((x) => { location.hash = 'import=' + x; }, h2); await page.waitForTimeout(1500);
+  const gs = await page.evaluate(() => VL.store.list('games'));
+  expect(gs.length === 1 && gs[0].arch === 'Trick Room' && gs[0].tags.join() === 'calc' && gs[0].note.includes('test note'), 'answers from Showdown did not update the game');
 });
 
 // 6. Team builder
