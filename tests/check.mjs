@@ -116,8 +116,8 @@ await check('Import a replay log (finds your side)', async (page) => {
 // the offline file: it was once emptied by mistake, so make sure it's whole and its version matches the page's
 await check('Offline support file is intact', async (page) => {
   const [sw, html] = await page.evaluate(() => Promise.all([fetch('sw.js').then(r => r.text()), fetch('index.html').then(r => r.text())]));
-  const v = (html.match(/\?v=(\d+)/) || [])[1];
-  expect(sw.includes("addEventListener('fetch'") && sw.includes(`'vgclab-v${v}'`), `sw.js is empty or its version doesn't match index.html (v${v})`);
+  const v = (html.match(/\?v=([0-9a-z]+)"/) || [])[1];
+  expect(sw.includes("addEventListener('fetch'") && new RegExp(`'vgclab-v?${v}'`).test(sw), `sw.js is empty or its version doesn't match index.html (v${v})`);
 });
 
 // 5. a game sent by the Showdown extension
