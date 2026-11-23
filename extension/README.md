@@ -24,6 +24,8 @@ VGC Lab logs it as a climb game, tagged with the saved team that matches your si
 - **Send my games to VGC Lab**: on or off.
 - **Losses only**: wins are skipped. A skipped win stays in Recent games with a **Send** button.
 - **Ask after each game**: the box above. Turn it off if you'd rather not be asked.
+- **Best-of-3 sets** (on): every game of a Showdown best-of-3 set is sent (ladder, tournament or challenge), even with Losses only on, grouped into one set in VGC Lab. After game 1 or 2 the box also asks your plan for the next game, and at the next game's team preview a box shows the score, that plan, and what they led, brought and Mega Evolved in the earlier games.
+- **Other challenges and tournaments** (off): single games off the ladder, such as a tournament where each game is its own challenge. Games against the same player within 30 minutes are grouped as a set.
 - **Format**: the format in the battle's address. Change it when the regulation changes.
 - **Send again**: sends a recent game again (VGC Lab skips it if it already has it).
 

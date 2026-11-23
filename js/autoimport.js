@@ -70,7 +70,8 @@
   function formatOf(log, bid) {
     const tier = (String(log).match(/^\|tier\|(.+)$/m) || [])[1] || '';
     const ids = (VL.D && VL.D.dex ? VL.D.dex.formats : []).map(f => f.id);
-    for (const id of [toId(tier), bid.split('-')[0]]) if (id && ids.includes(id)) return id;
+    // a best-of-3 game is played in the (Bo3) version of a format: it counts as the format itself
+    for (const raw of [toId(tier), bid.split('-')[0]]) { const id = raw.replace(/bo3$/, ''); if (id && ids.includes(id)) return id; }
     return VL.curFormatId ? VL.curFormatId() : '';
   }
 
@@ -93,12 +94,24 @@
       if (add.length) { out.myback = monList(g.myback).concat(add).join(', '); said.push('back: ' + add.join(', ')); }
     }
     if (typeof x.note === 'string' && x.note.trim()) { const n = x.note.trim().slice(0, 300); if (!String(g.note || '').includes(n)) { out.note = (g.note ? g.note + '\n' : '') + n; said.push('note'); } }
+    if (typeof x.plan === 'string' && x.plan.trim()) { out.plan = x.plan.trim().slice(0, 300); out.planSame = typeof x.planSame === 'boolean' ? x.planSame : null; said.push('plan for the next game'); }
     if (!said.length) return '';
     VL.store.put('games', id, out);
     return said.join(' · ');
   }
 
-  async function importGame({ log, me, bid, url, extra }) {
+  // Showdown writes "Game 2 of a best-of-3" into each game of a set, linking the set's own room: its id groups the set
+  function readSet(log) {
+    const m = String(log).match(/\|uhtml(?:change)?\|bestof\|.*?Game (\d+)<\/strong> of <a href="\/game-bestof(\d+)-([a-z0-9]+-\d+)/);
+    return m ? { key: 'bo' + m[2] + '-' + m[3], n: +m[1], of: +m[2] } : null;
+  }
+  function cleanSet(x) {
+    if (!x || typeof x !== 'object' || !/^[a-z0-9-]{3,80}$/.test(String(x.key || ''))) return null;
+    const n = Math.round(+x.n), of = Math.round(+x.of);
+    return n >= 1 && n <= 5 && (of === 3 || of === 5) && n <= of ? { key: x.key, n, of } : null;
+  }
+
+  async function importGame({ log, me, bid, url, extra, set }) {
     await ready();
     if (!VL.parseReplay) return { msg: 'VGC Lab is still loading. Send the game again from the extension.' };
     if (!me) { // a replay link: work out which player you were from your names or your saved teams
@@ -123,9 +136,12 @@
     if (!acct) { setAcct(me, 'climb'); acct = accts()[toId(me)]; newAcct = Object.keys(accts()).length > 1; }
     const mode = acct && acct.mode === 'test' ? 'test' : 'climb';
     const id = VL.newId('g'); const now = Date.now();
+    const st = readSet(log) || cleanSet(set);
+    const rated = (String(log).match(/^\|rated\|(.*)$/m) || [])[1];
+    const type = /tournament/i.test(rated || '') ? 'Tournament' : st ? (rated !== undefined ? 'Ladder (best of 3)' : 'Best-of-3 practice') : 'Ladder (best of 1)';
     VL.store.put('games', id, {
       ts: now, day: VL.dayKey(), fmt, fmtName: VL.fmtName ? VL.fmtName(fmt) : fmt, result: r.result, mode, style, sdUser: me,
-      type: 'Ladder (best of 1)', rating: ratingAfter(log, me), team: team ? team.id : null, arch: null,
+      type, rating: ratingAfter(log, me), ...(st ? { set: st.key, setGame: st.n, setOf: st.of } : {}), team: team ? team.id : null, arch: null,
       opp: (r.opp || []).slice(0, 6), mylead: (r.mylead || []).join(', '), myback: (r.myback || []).join(', '), opplead: (r.opplead || []).join(', '), turn: null,
       tags: [], note: `Sent from Showdown by the extension. Lasted ${r.turns} turn${r.turns === 1 ? '' : 's'}.`, oppName: r.oppName || null,
       source: url || (bid ? 'showdown:' + bid : 'showdown-log'), battle: bid || null, logz, auto: true,
@@ -137,7 +153,7 @@
     const theirs = (r.opp || []).length ? (r.opplead || []).concat((r.opp || []).filter(n => !(r.opplead || []).includes(n))) : [];
     const shown = theirs.slice(0, 2).join('/') + (theirs.length > 2 ? '/…' : '');
     const more = newAcct ? ` · New account ${me}, logged as climb. If it's your testing account, switch it in Settings under Showdown accounts.` : mode === 'test' ? ' · testing game' : '';
-    return { ok: true, id, msg: `Imported: ${r.result === 'W' ? 'Win' : 'Loss'}${shown ? ' vs ' + shown : ''}${team ? ' · ' + (team.name || 'your team') : ' · no saved team matched'}${said ? ' · ' + said : ''}${more}` };
+    return { ok: true, id, msg: `Imported${st ? ` game ${st.n} of a best-of-${st.of}` : ''}: ${r.result === 'W' ? 'Win' : 'Loss'}${shown ? ' vs ' + shown : ''}${team ? ' · ' + (team.name || 'your team') : ' · no saved team matched'}${said ? ' · ' + said : ''}${more}` };
   }
 
   // ---------- telling you ----------
@@ -174,7 +190,7 @@
         let res;
         if (raw.startsWith('sd1.')) {
           const p = JSON.parse(await inflate(raw.slice(4)));
-          res = await importGame({ log: p.log, me: p.me, bid: battleId(p.id), extra: p.extra });
+          res = await importGame({ log: p.log, me: p.me, bid: battleId(p.id), extra: p.extra, set: p.set });
         } else {
           let url = decodeURIComponent(raw).replace(/[?#].*$/, '').replace(/\.(json|log)$/, '');
           if (!/^https:\/\/replay\.pokemonshowdown\.com\/[^/]+/.test(url)) res = { msg: 'That isn\'t a Showdown replay link.' };

@@ -465,6 +465,12 @@
 
   function startQuiz(id) {
     const ctx = ctxFor();
+    // the common-sets drill needs the format's usage numbers; an older format's download the first time they're asked for
+    if (id === 'commonsets' && VL.meta && ctx.fmt && !VL.meta.forFormat(ctx.fmt.id) && !startQuiz.waiting) {
+      startQuiz.waiting = true; VL.toast('Loading this format\'s usage stats…');
+      VL.meta.ensure(ctx.fmt.id).then(() => { startQuiz.waiting = false; startQuiz(id); });
+      return;
+    }
     const n = Math.min(10, GEN[id].keys(ctx).length);
     S.quiz = { id, ctx, n, i: 0, results: [], used: new Set(), cur: null, answered: false, upd: { miss: {} } };
     nextQ();

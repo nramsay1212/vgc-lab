@@ -138,7 +138,7 @@
   }
   function renderHome() {
     const root = $('sh-root');
-    const teams = store().list('teams').filter(t => t.paste).sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
+    const teams = store().list('teams').filter(t => t.paste && VL.teamFits(t, VL.curFormatId())).sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
     const saved = store().list('sheets').sort((a, b) => (b.u || b.ts || 0) - (a.u || a.ts || 0));
     root.innerHTML = `
       <div class="card"><div class="card-head"><h3>Start a practice</h3></div>
@@ -148,7 +148,7 @@
         <div class="row" style="gap:8px"><button class="btn" data-sh="random">Random top-cut opponent</button><a class="btn ghost" href="#topteams">Pick one from Top teams</a></div>
         <details><summary class="sub" style="cursor:pointer">Or paste an opponent's team</summary><textarea id="sh-paste" style="min-height:120px;font-family:var(--mono);font-size:12.5px" placeholder="Paste a team in Showdown format"></textarea><div class="row" style="justify-content:flex-end"><button class="btn ghost small" data-sh="paste">Use this team</button></div></details>
         <p class="sub" id="sh-msg" role="status"></p>`
-        : '<p class="sub">You need a saved team first. Build one in the Team builder, or copy one from Top teams.</p><div class="row"><a class="btn small" href="#teams">Open the Team builder</a><a class="btn ghost small" href="#topteams">Browse Top teams</a></div>'}</div>
+        : `<p class="sub">You need a saved team for ${esc(VL.D.format(VL.curFormatId()).name)} first. Build one in the Team builder, or copy one from Top teams. Teams from other formats aren't offered here, since they wouldn't be legal.</p><div class="row"><a class="btn small" href="#teams">Open the Team builder</a><a class="btn ghost small" href="#topteams">Browse Top teams</a></div>`}</div>
       ${saved.length ? `<div class="card"><div class="card-head"><h3>Your plans</h3><span class="sub">${saved.length} saved</span></div>${saved.map(r => `<div class="threat"><div class="h"><div><b>${esc(r.teamName || 'Your team')}</b> <span class="sub">against</span> <b>${esc(r.label || 'a team')}</b> ${r.result ? `<span class="pill ${r.result === 'W' ? 'w' : 'l'}">${r.result === 'W' ? 'Won' : 'Lost'}</span>` : ''}${r.timed ? ` <span class="pill m">${r.timed.out ? 'Timed · ran out' : `Timed · ${r.timed.secs}s`}</span>` : ''} <span class="mini">${r.ts ? new Date(r.ts).toLocaleDateString() : ''}</span><div class="kv" style="margin-top:4px">${VL.spriteRow((r.opp || []).map(m => m.n), 'xs')}</div></div>
         <div class="kv"><button class="btn small" data-shopen="${esc(r.id)}">Open</button><button class="linkbtn" data-shdel="${esc(r.id)}">Delete</button></div></div>
         ${r.lead && r.lead.length ? `<div class="sub">Lead ${esc(r.lead.join(' + '))}${r.back && r.back.length ? ', back ' + esc(r.back.join(', ')) : ''}</div>` : ''}${r.plan ? `<div class="sub" style="white-space:pre-wrap">${esc(r.plan)}</div>` : ''}</div>`).join('')}</div>` : ''}`;

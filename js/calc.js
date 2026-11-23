@@ -36,7 +36,7 @@
   const spTotal = () => isChamp() ? 66 : 510;
 
   // ---------- quick picks: your saved teams and the Pokémon beating you ----------
-  const teamsList = () => VL.store.list('teams').filter(t => t && t.paste).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const teamsList = () => VL.store.list('teams').filter(t => t && t.paste && VL.teamFits(t, fmt() && fmt().id)).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   function pickTeam(key) {
     const ts = teamsList(); if (!ts.length) return null;
     const want = (S.qteams && S.qteams[key]) || S.qteam;
@@ -205,9 +205,18 @@
     ensure('dl-calc-moves').innerHTML = Object.keys(D.dex.moves || {}).map(id => D.move(id, f)).filter(m => m.c !== 'S').map(m => `<option value="${esc(m.n)}">`).join('');
   }
 
+  let waiting = false;
   function commonSet(key) {
     const s = S[key]; const e = VL.meta.forFormat(fmt().id); const m = VL.meta.get(e, s.mon);
-    if (!m) { VL.toast('No usage stats for ' + (s.mon || 'that Pokémon') + ' in this format yet'); return false; }
+    if (!m) {
+      // an older format's numbers download the first time they're asked for: wait for them, then fill the set in
+      if (!e && !waiting) {
+        const want = s.mon; waiting = true;
+        VL.meta.ensure(fmt().id).then(x => { waiting = false; if (x && S[key].mon === want && VL.meta.get(x, want)) { commonSet(key); save(); render(); VL.toast('Loaded the most common set'); } else VL.toast('No usage stats for ' + (want || 'that Pokémon') + ' in this format yet'); });
+        return false;
+      }
+      VL.toast('No usage stats for ' + (s.mon || 'that Pokémon') + ' in this format yet'); return false;
+    }
     const top = (arr) => arr && arr[0] ? arr[0][0] : '';
     s.item = top(m.items) === 'No item' ? '' : top(m.items);
     s.ability = top(m.abilities) || s.ability;

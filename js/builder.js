@@ -27,7 +27,7 @@
 
   // ---------- format helpers ----------
   let T = null; // the open team: { id, name, fmt, sets: [6], why, weak, src }
-  let sel = 0, rtab = 'off', atab = 'mm';
+  let sel = 0, rtab = 'off', atab = 'mm', asked = null;
   const fmt = () => D().format(T && T.fmt);
   const isChamp = () => { const f = fmt(); return !!(f && f.mod && f.mod.startsWith('champions')); };
   const spMax = () => (isChamp() ? 32 : 252);
@@ -159,19 +159,26 @@
   // ---------- rendering ----------
   function render() {
     const root = $('bd-root'); if (!root || !D().dex) return;
-    if (!T) { let last = null; try { last = localStorage.getItem(LAST()); } catch (e) { /* ignore */ } openTeam(last && store().get('teams', last) ? last : (teamsList()[0] || {}).id); }
+    // open the team you last had for your current format; a team from another format isn't legal here
+    if (!T) {
+      const cur = VL.curFormatId(); let last = null; try { last = localStorage.getItem(LAST()); } catch (e) { /* ignore */ }
+      const lt = last && store().get('teams', last);
+      // a team you asked for (from Top teams, say) opens whatever its format
+      openTeam(lt && (VL.teamFits(lt, cur) || asked === last) ? last : (teamsList().find(t => VL.teamFits(t, cur)) || {}).id); asked = null;
+    }
     const f = fmt();
     if (LSfor !== f.id) { LSfor = f.id; LS = null; learnset(f.id).then(x => { if (LSfor === f.id) { LS = x; renderEditor(); } }); }
     root.innerHTML = `
       <div class="bd-top">
         <div class="bd-name"><input type="text" id="bd-name" value="${esc(T.name)}" aria-label="Team name" maxlength="60">
-          <select id="bd-pick" aria-label="Open a saved team"><option value="">Saved teams…</option>${teamsList().map(t => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')}</option>`).join('')}<option value="__new">+ New team</option></select></div>
+          <select id="bd-pick" aria-label="Open a saved team"><option value="">Saved teams…</option>${pickOptions()}<option value="__new">+ New team</option></select></div>
         <div class="bd-actions">
           <select id="bd-fmt" aria-label="Format">${D().formats().map(x => `<option value="${esc(x.id)}" ${x.id === f.id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.game)}</option>`).join('')}</select>
           <button class="btn ghost small" data-bd="import">Import</button><button class="btn ghost small" data-bd="export">Showdown export</button><button class="btn ghost small" data-bd="notes">Notes</button><button class="btn ghost small" data-bd="del">Delete</button>
         </div>
       </div>
       <div class="bd-sub"><span><b id="bd-count">${T.sets.filter(s => s && s.species).length}/6</b> Pokémon</span>${recordPill()}<span class="sub" id="bd-saved">${T.id ? 'Saved' : 'Starts saving when you add a Pokémon'}</span><button class="linkbtn" data-bd="clear">Clear all</button></div>
+      ${otherFmt()}
       <div class="bd-slots" id="bd-slots"></div>
       <div id="bd-rules"></div>
       <div class="bd-main">
@@ -180,6 +187,20 @@
       </div>
       <div class="card bd-analysis" id="bd-analysis"></div>`;
     renderSlots(); renderEditor(); renderAnalysis();
+  }
+  // saved teams, your current format's first; the rest under the format each was built for
+  function pickOptions() {
+    const cur = VL.curFormatId(); const all = teamsList();
+    const opt = (t) => `<option value="${esc(t.id)}">${esc(t.name || 'Untitled team')}</option>`;
+    const here = all.filter(t => VL.teamFits(t, cur)); const by = {};
+    for (const t of all) if (!VL.teamFits(t, cur)) (by[t.fmt] = by[t.fmt] || []).push(t);
+    return here.map(opt).join('') + Object.entries(by).map(([f, ts]) => `<optgroup label="${esc(D().format(f).name)}">${ts.map(opt).join('')}</optgroup>`).join('');
+  }
+  // a team built for another format than the one you play now
+  function otherFmt() {
+    const cur = VL.curFormatId(); if (!T.sets.some(x => x && x.species) || VL.teamFits(T, cur) || !D().dex.formats.some(x => x.id === cur)) return '';
+    const n = D().format(cur).name;
+    return `<div class="bd-rule info bd-otherfmt"><b>This team is for ${esc(fmt().name)}.</b> Your current format is ${esc(n)}, so it isn't offered in the Log, the calculator or Team sheet practice there. <button class="linkbtn" data-bd="newcur">Start a ${esc(n)} team</button></div>`;
   }
   function recordPill() {
     if (!T.id) return '';
@@ -852,6 +873,8 @@
     T.sets[sel] = s;
     renderSlots(); renderEditor(); analysisSoon(); save();
     if (m) VL.toast(note ? `Filled in its most common set. ${note}` : 'Filled in its most common set. Change anything you like.');
+    // an older format's numbers download the first time they're asked for: fill the set in once they arrive
+    else if (!metaE() && VL.meta) { const slot = sel, want = species; VL.meta.ensure(fmt().id).then(x => { if (x && T.sets[slot] && T.sets[slot].species === want && !T.sets[slot].moves.some(Boolean) && (metaOf(rec.n) || metaOf(species))) { const keep = sel; sel = slot; setMon(name); sel = keep; renderSlots(); renderEditor(); } }); }
   }
   function applyCommon(s, m, keepItem) {
     if (!keepItem && m.items[0] && m.items[0][0] !== 'No item') {
@@ -959,6 +982,7 @@
         if (k === 'ctradd') { pickMonFor({ fmtId: fmt().id, names: CT.targets, onPick: (n) => { CT.custom = true; CT.targets = CT.targets.filter(x => x !== n).concat([n]).slice(-4); renderAnalysis(); } }); return; }
         if (k === 'pickitem') pickItem();
         if (k === 'common') { const s = T.sets[sel]; const rec = recOf(s.species); const m = metaOf(megaName(s, rec) || rec.n) || metaOf(rec.n); if (m) { const keep = s.ability; applyCommon(s, m, false); if (!rec.a.some(a => toId(a) === toId(s.ability))) s.ability = rec.a.some(a => toId(a) === toId(keep)) ? keep : rec.a[0]; renderSlots(); renderEditor(); analysisSoon(); save(); } }
+        if (k === 'newcur') { save(true); T = null; openTeam(null); render(); VL.toast('New team for your current format'); return; }
         if (k === 'import') importDlg();
         if (k === 'export') exportDlg();
         if (k === 'notes') notesDlg();
@@ -1029,7 +1053,7 @@
     // shared with Team sheet practice: weather and terrain for a pair, and one damage roll as % of HP
     pairFieldMaker, row,
     render() { if (!D().dex) return; if (!bound) { bind(); bound = true; } render(); },
-    open(id) { try { localStorage.setItem(LAST(), id); } catch (e) { /* ignore */ } T = null; if (bound && location.hash === '#teams') render(); },
+    open(id) { try { localStorage.setItem(LAST(), id); } catch (e) { /* ignore */ } T = null; asked = id; if (bound && location.hash === '#teams') render(); },
     refreshSide() { /* the builder saves its own changes; nothing to redraw from outside */ },
     parsePaste, statsOf,
   };

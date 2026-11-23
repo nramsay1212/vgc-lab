@@ -89,7 +89,7 @@
   // With a team picked, every round has your Pokémon in it, on your own set: your Speed, your item and
   // ability, your moves. The other Pokémon still come from "Pokémon to play with".
   const TEAMKEY = 'vgclab-arteam';
-  const teamsList = () => VL.store.list('teams').filter(t => t && t.paste).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const teamsList = () => VL.store.list('teams').filter(t => t && t.paste && VL.teamFits(t, fmt().id)).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   function curTeam() { const v = $('ar-team') && $('ar-team').value; return v ? VL.store.get('teams', v) : null; }
   function teamMons(f) {
     const t = curTeam(); if (!t || !VL.builder || !VL.builder.parsePaste) return [];

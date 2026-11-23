@@ -133,6 +133,12 @@ await check('Game from the Showdown extension', async (page) => {
   await page.evaluate((x) => { location.hash = 'import=' + x; }, h2); await page.waitForTimeout(1500);
   const gs = await page.evaluate(() => VL.store.list('games'));
   expect(gs.length === 1 && gs[0].arch === 'Trick Room' && gs[0].tags.join() === 'calc' && gs[0].note.includes('test note'), 'answers from Showdown did not update the game');
+  // a game of a best-of-3 set: Showdown's marker groups it, and the (Bo3) format counts as the format itself
+  const bo3 = LOG().replace('|tier|', '|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-gen9championsvgc2026regmcbo3-55">a best-of-3</a></h2>\n|tier|');
+  const h3 = await page.evaluate(async (l) => 'sd1.' + await VL.autoimport.deflate(JSON.stringify({ v: 1, id: 'gen9championsvgc2026regmcbo3-98', me: 'TestPlayer', log: l })), bo3);
+  await page.evaluate((x) => { location.hash = 'import=' + x; }, h3); await page.waitForTimeout(1500);
+  const g3 = await page.evaluate(() => VL.store.list('games').find(g => g.battle === 'gen9championsvgc2026regmcbo3-98'));
+  expect(g3 && g3.set === 'bo3-gen9championsvgc2026regmcbo3-55' && g3.setGame === 2 && g3.fmt === 'gen9championsvgc2026regmc', 'a best-of-3 game did not join its set');
 });
 
 // 6. Team builder

@@ -25,6 +25,15 @@
       for (const id of ids) if (this.has(id)) { this.load(id); break; }
       return null;
     },
+    // the same, but waits for a finished format's file to download (the first ask for one otherwise finds nothing)
+    async ensure(fid, bo3) {
+      if (!fid) return null;
+      const now = this.forFormat(fid, bo3); if (now) return now;
+      await M.ready;
+      const ids = bo3 ? [fid + 'bo3', fid] : [fid, fid + 'bo3'];
+      for (const id of ids) { if (this.lookup(id)) return this.lookup(id); if (this.has(id)) { const e = await this.load(id); if (e) return e; } }
+      return null;
+    },
     lookup(id) { return (this.data && this.data.formats[id]) || A.got[id] || null; },
     has(id) { return !!((this.data && this.data.formats[id]) || (A.index && A.index[id] && !A.index[id].none)); },
     load(id) {

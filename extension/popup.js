@@ -1,10 +1,10 @@
 'use strict';
-const DEFAULTS = { enabled: true, lossesOnly: false, format: 'gen9championsvgc2026regmc', headsUp: true, askAfter: true };
+const DEFAULTS = { enabled: true, lossesOnly: false, format: 'gen9championsvgc2026regmc', headsUp: true, askAfter: true, sets: true, practice: false };
 const $ = (id) => document.getElementById(id);
 
 async function load() {
   const s = { ...DEFAULTS, ...(await chrome.storage.sync.get(Object.keys(DEFAULTS))) };
-  $('enabled').checked = s.enabled; $('lossesOnly').checked = s.lossesOnly; $('headsUp').checked = s.headsUp; $('askAfter').checked = s.askAfter; $('format').value = s.format;
+  $('enabled').checked = s.enabled; $('lossesOnly').checked = s.lossesOnly; $('headsUp').checked = s.headsUp; $('askAfter').checked = s.askAfter; $('sets').checked = s.sets; $('practice').checked = s.practice; $('format').value = s.format;
   $('state').textContent = s.enabled ? (s.lossesOnly ? 'On: sending losses only' : 'On: sending every ladder game') : 'Off: nothing is sent';
   const { recent = [] } = await chrome.storage.local.get('recent');
   const box = $('recent');
@@ -14,7 +14,7 @@ async function load() {
     const row = document.createElement('div'); row.className = 'game';
     const p = document.createElement('span'); p.className = 'pill ' + g.result; p.textContent = g.result === 'W' ? 'Win' : 'Loss';
     const who = document.createElement('span'); who.className = 'who';
-    who.textContent = (g.skipped ? '(skipped) ' : '') + (g.opp && g.opp.length ? g.opp.join(', ') : 'Opponent');
+    who.textContent = (g.skipped ? '(skipped) ' : '') + (g.set ? `Game ${g.set.n} of ${g.set.of}: ` : '') + (g.opp && g.opp.length ? g.opp.join(', ') : 'Opponent');
     who.title = (g.oppName ? g.oppName + ': ' : '') + (g.opp || []).join(', ') + ' · ' + new Date(g.t).toLocaleString();
     row.append(p, who);
     if (g.hash) {
@@ -25,6 +25,6 @@ async function load() {
     box.append(row);
   }
 }
-for (const k of ['enabled', 'lossesOnly', 'askAfter', 'headsUp']) $(k).addEventListener('change', async () => { await chrome.storage.sync.set({ [k]: $(k).checked }); load(); });
+for (const k of ['enabled', 'lossesOnly', 'sets', 'practice', 'askAfter', 'headsUp']) $(k).addEventListener('change', async () => { await chrome.storage.sync.set({ [k]: $(k).checked }); load(); });
 $('format').addEventListener('change', async () => { const v = $('format').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || DEFAULTS.format; await chrome.storage.sync.set({ format: v }); load(); });
 load();

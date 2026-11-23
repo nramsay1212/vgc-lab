@@ -8,7 +8,7 @@
     if (typeof d.room !== 'string' || typeof d.log !== 'string' || d.log.length > 2000000) return;
     try {
       if (d.type === 'battle-end') chrome.runtime.sendMessage({ type: 'battle-end', room: d.room, me: String(d.me || ''), log: d.log }, (res) => { void chrome.runtime.lastError; if (res && res.ask) afterGame(res); });
-      else chrome.runtime.sendMessage({ type: 'battle-start', room: d.room, me: String(d.me || ''), log: d.log }, (res) => { void chrome.runtime.lastError; if (res && res.games && res.games.length) headsUp(res); });
+      else chrome.runtime.sendMessage({ type: 'battle-start', room: d.room, me: String(d.me || ''), log: d.log }, (res) => { void chrome.runtime.lastError; if (res && res.set) setBox(res); else if (res && res.games && res.games.length) headsUp(res); });
     } catch (e) { /* the extension was reloaded; refresh Showdown */ }
   });
 
@@ -41,6 +41,44 @@
     document.body.appendChild(box);
   }
 
+  // ---------- the next game of a best-of-3: the score, what they did, and your plan ----------
+  function setBox(res) {
+    let box = document.getElementById('vgclab-headsup'); if (box) box.remove();
+    box = el('div'); box.id = 'vgclab-headsup';
+    const { n, of, w, l, games } = res.set;
+    const tone = w > l ? '#4CB782' : w < l ? '#EB5757' : '#2CC6CB';
+    // an after-game box you haven't saved yet stays put; this one sits beside it
+    const right = document.querySelector('.vgclab-after') ? 392 : 16;
+    box.setAttribute('style', `position:fixed;top:64px;right:${right}px;z-index:2147483000;width:340px;max-width:calc(100vw - 32px);max-height:calc(100vh - 90px);overflow:auto;background:#17181c;color:#ececef;border:1px solid ${tone};border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif;padding:12px 14px`);
+    const head = el('div'); head.setAttribute('style', 'display:flex;justify-content:space-between;align-items:baseline;gap:8px');
+    const title = el('div'); title.append(el('b', '', `Game ${n} of ${of}`), ` vs ${res.opp}`);
+    const x = el('button', '', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.setAttribute('style', 'background:none;border:0;color:#9a9aa2;font-size:18px;cursor:pointer;line-height:1');
+    x.onclick = () => box.remove();
+    head.append(title, x); box.append(head);
+    const sc = el('div', '', w === l ? `Tied ${w}–${l}${w + l === of - 1 ? ': this game decides it' : ''}` : w > l ? `You lead ${w}–${l}` : `You're down ${w}–${l}`);
+    sc.setAttribute('style', `font-weight:700;font-size:15px;color:${tone};margin:4px 0 8px`); box.append(sc);
+    const last = games[games.length - 1];
+    if (last && last.plan) {
+      const pl = el('div'); pl.setAttribute('style', 'background:#24252b;border-left:3px solid #2CC6CB;border-radius:4px;padding:6px 8px;margin-bottom:8px');
+      pl.append(el('div', '', 'Your plan for this game')); pl.firstChild.setAttribute('style', 'color:#9a9aa2;font-size:12px');
+      pl.append(el('div', '', last.plan)); pl.lastChild.setAttribute('style', 'font-weight:600');
+      box.append(pl);
+    }
+    for (const g of games.slice().reverse()) {
+      const row = el('div'); row.setAttribute('style', 'border-top:1px solid #2b2c33;padding:6px 0');
+      const t = el('div', '', `Game ${g.n}: you ${g.result === 'W' ? 'won' : 'lost'}`); t.setAttribute('style', `font-weight:600;color:${g.result === 'W' ? '#4CB782' : '#EB5757'}`); row.append(t);
+      if (g.leads && g.leads.length) row.append(el('div', '', `They led: ${g.leads.join(' + ')}`));
+      const back = (g.brought || []).filter(m => !(g.leads || []).includes(m));
+      if (back.length) row.append(el('div', '', `Then brought: ${back.join(', ')}`));
+      if (g.gim && g.gim.length) row.append(el('div', '', g.gim.join(' · ')));
+      if (g.myLeads && g.myLeads.length) { const m = el('div', '', `You led: ${g.myLeads.join(' + ')}`); m.setAttribute('style', 'color:#9a9aa2;font-size:12px'); row.append(m); }
+      box.append(row);
+    }
+    const foot = el('div', '', 'VGC Lab · from the earlier games of this set'); foot.setAttribute('style', 'color:#6b6b70;font-size:11px;margin-top:4px');
+    box.append(foot);
+    document.body.appendChild(box);
+  }
+
   // ---------- after the game: a few quick questions, added to the game in VGC Lab ----------
   const BTN = 'background:#24252b;color:#ececef;border:1px solid #3a3b44;border-radius:999px;padding:4px 10px;font:12px/1.3 system-ui,sans-serif;cursor:pointer;margin:0 6px 6px 0;text-align:left';
   const ON = 'background:#2CC6CB;color:#0e1013;border-color:#2CC6CB;font-weight:600';
@@ -63,10 +101,34 @@
     box.setAttribute('style', `position:fixed;top:${64 + n * 24}px;right:${16 + n * 24}px;z-index:2147483000;width:360px;max-width:calc(100vw - 32px);max-height:calc(100vh - 90px);overflow:auto;background:#17181c;color:#ececef;border:1px solid ${res.result === 'W' ? '#4CB782' : '#EB5757'};border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif;padding:12px 14px`);
     const head = el('div'); head.setAttribute('style', 'display:flex;justify-content:space-between;align-items:baseline;gap:8px');
     const t = el('div'); t.append(el('b', '', res.result === 'W' ? 'Win' : 'Loss'), res.oppName ? ` vs ${res.oppName} · sent to VGC Lab` : ' · sent to VGC Lab');
+    const st = res.set;
     const x = el('button', '', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.setAttribute('style', 'background:none;border:0;color:#9a9aa2;font-size:18px;cursor:pointer;line-height:1');
     x.onclick = () => box.remove();
     head.append(t, x); box.append(head);
+    if (st) {
+      const won = st.w > st.l;
+      const line = el('div', '', st.decided ? `Game ${st.n} of ${st.of} · you ${won ? 'won' : 'lost'} the set ${st.w}–${st.l}` : `Game ${st.n} of ${st.of} · ${st.w === st.l ? `tied ${st.w}–${st.l}` : st.w > st.l ? `you lead ${st.w}–${st.l}` : `you're down ${st.w}–${st.l}`}`);
+      line.setAttribute('style', `font-weight:700;margin-top:2px;color:${st.decided ? (won ? '#4CB782' : '#EB5757') : '#2CC6CB'}`); box.append(line);
+    }
     const sub = el('div', '', 'Add a few details here and they go straight into that game.'); sub.setAttribute('style', 'color:#9a9aa2;font-size:12px'); box.append(sub);
+    // between games of a set: the plan for the next one, shown again at its team preview
+    let planBox = null, planIn = null;
+    if (res.plans && res.plans.length) {
+      box.append(label(`Plan for game ${st.n + 1}`));
+      planBox = el('div'); const g = { box: planBox };
+      for (const [id, l] of res.plans) {
+        const c = chip(l, id, g); const click = c.onclick;
+        // "Same plan" and the changes don't go together
+        c.onclick = () => { click(); if (c.getAttribute('aria-pressed') === 'true') planBox.querySelectorAll('[aria-pressed=true]').forEach(o => { if (o !== c && (o.dataset.v === 'same') !== (id === 'same')) { o.setAttribute('aria-pressed', 'false'); o.setAttribute('style', BTN); } }); };
+        planBox.append(c);
+      }
+      box.append(planBox);
+      planIn = el('input'); planIn.type = 'text'; planIn.maxLength = 200; planIn.placeholder = 'e.g. lead Incineroar + Sylveon, save Protect for Trick Room';
+      planIn.setAttribute('aria-label', 'Plan details');
+      planIn.setAttribute('style', 'width:100%;box-sizing:border-box;background:#24252b;color:#ececef;border:1px solid #3a3b44;border-radius:6px;padding:6px;font:13px system-ui,sans-serif');
+      for (const ev of ['keydown', 'keypress', 'keyup']) planIn.addEventListener(ev, (e) => e.stopPropagation());
+      box.append(planIn);
+    }
 
     box.append(label('What style was their team?'));
     const sel = el('select'); sel.setAttribute('aria-label', 'Their style');
@@ -104,7 +166,7 @@
     save.onclick = () => {
       save.disabled = true; msg.textContent = 'Saving…';
       try {
-        chrome.runtime.sendMessage({ type: 'details', id: res.id, arch: sel.value, tags: picked(tagBox), back: picked(backBox), note: note.value }, (r) => {
+        chrome.runtime.sendMessage({ type: 'details', id: res.id, arch: sel.value, tags: picked(tagBox), back: picked(backBox), note: note.value, plans: picked(planBox), plan: planIn ? planIn.value : '' }, (r) => {
           void chrome.runtime.lastError;
           if (r && r.ok) { msg.textContent = r.empty ? 'Nothing picked, so nothing changed.' : 'Added to the game in VGC Lab ✓'; msg.style.color = r.empty ? '#9a9aa2' : '#4CB782'; setTimeout(() => box.remove(), r.empty ? 2000 : 1600); }
           else { msg.textContent = 'Couldn\'t save. Try Send again in the extension menu.'; msg.style.color = '#EB5757'; save.disabled = false; }

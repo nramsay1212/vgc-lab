@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=89">
-<link rel="stylesheet" href="css/pixel.css?v=89">
+<link rel="stylesheet" href="css/app.css?v=90">
+<link rel="stylesheet" href="css/pixel.css?v=90">
 <script>try{document.documentElement.dataset.titlefont=localStorage.getItem('vgclab-titlefont')||'workbench';var pal=localStorage.getItem('vgclab-palette')||'shiny';if(pal==='pixel'){pal='shiny';localStorage.setItem('vgclab-palette',pal);localStorage.setItem('vgclab-look','minimal')}document.documentElement.dataset.palette=pal;document.documentElement.dataset.look=localStorage.getItem('vgclab-look')||'standard'}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')||'dark';document.documentElement.dataset.style=localStorage.getItem('vgclab-style')||'doubles'}catch(e){document.documentElement.dataset.theme='dark'}</script>
 </head>
@@ -141,7 +141,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
       </div>
       <div class="row">
         <label for="lf-type"><span>Game type <span class="term" data-term="bo3">best of 1 or 3?</span></span>
-          <select id="lf-type"><option>Ladder (best of 1)</option><option>Best-of-3 practice</option><option>Tournament</option><option>Online event</option></select>
+          <select id="lf-type"><option>Ladder (best of 1)</option><option>Ladder (best of 3)</option><option>Best-of-3 practice</option><option>Tournament</option><option>Online event</option></select>
         </label>
         <label for="lf-rating">Rating after<input type="number" id="lf-rating" inputmode="numeric"></label>
         <label for="lf-team">My team<select id="lf-team"></select></label>
@@ -152,6 +152,12 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
           </select>
         </label>
       </div>
+      <div class="row lf-set" id="lf-setrow" hidden>
+        <label for="lf-setgame">Game of a best-of-3<select id="lf-setgame"><option value="">Not part of a set</option><option value="1">Game 1</option><option value="2">Game 2</option><option value="3">Game 3</option></select></label>
+        <label for="lf-plankind">Next game<select id="lf-plankind"><option value="">(not set)</option><option value="same">Same plan</option><option value="change">Change something</option></select></label>
+        <label for="lf-plan" style="flex:2 1 240px">Plan for the next game<input type="text" id="lf-plan" maxlength="200" placeholder="e.g. lead Incineroar + Sylveon, save Protect for Trick Room"></label>
+      </div>
+      <p class="sub lf-setinfo" id="lf-setinfo" hidden></p>
       <div class="row">
         <label for="lf-oppname">Opponent (optional)<input type="text" id="lf-oppname" list="dl-opps" placeholder="Their name or username"></label>
       </div>
@@ -235,6 +241,10 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
     <div class="grid2">
       <div class="card"><div class="card-head"><h3>By their style</h3></div><div id="rv-arch"></div></div>
       <div class="card"><div class="card-head"><h3>By your lead</h3><span class="sub">Leads used 3+ times</span></div><div id="rv-leads"></div></div>
+    </div>
+    <div class="card" id="rv-sets-card" hidden>
+      <div class="card-head"><h3>Best-of-3 sets</h3><span class="sub">How you adapt once you've seen their team</span></div>
+      <div id="rv-sets"></div>
     </div>
     <div class="card">
       <div class="card-head"><h3>Compared with top players</h3><span class="sub">Tournament team sheets in your format</span></div>
@@ -741,37 +751,37 @@ try{document.documentElement.dataset.theme=localStorage.getItem('vgclab-theme')|
 <div class="pop" id="pop" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/store.js?v=89"></script>
-<script src="js/sound.js?v=89"></script>
-<script src="js/content.js?v=89"></script>
-<script src="js/search.js?v=89"></script>
-<script src="js/study.js?v=89"></script>
-<script src="js/sprites.js?v=89"></script>
-<script src="js/help.js?v=89"></script>
-<script src="js/meta.js?v=89"></script>
-<script src="js/calc.js?v=89"></script>
-<script src="js/teamcheck.js?v=89"></script>
-<script src="js/builder.js?v=89"></script>
-<script src="js/plan.js?v=89"></script>
-<script src="js/topteams.js?v=89"></script>
-<script src="js/news.js?v=89"></script>
-<script src="js/replay.js?v=89"></script>
-<script src="js/sheets.js?v=89"></script>
-<script src="js/teamcompare.js?v=89"></script>
-<script src="js/battleview.js?v=89"></script>
-<script src="js/videos.js?v=89"></script>
-<script src="js/trends.js?v=89"></script>
-<script src="js/progress.js?v=89"></script>
-<script src="js/arcade.js?v=89"></script>
-<script src="js/test.js?v=89"></script>
-<script src="js/compare.js?v=89"></script>
-<script src="js/app.js?v=89"></script>
-<script src="js/autoimport.js?v=89"></script>
-<script src="js/regreport.js?v=89"></script>
-<script src="js/hubs.js?v=89"></script>
-<script src="js/whatsnew.js?v=89"></script>
-<script src="js/firebase-config.js?v=89"></script>
-<script src="js/account.js?v=89"></script>
+<script src="js/store.js?v=90"></script>
+<script src="js/sound.js?v=90"></script>
+<script src="js/content.js?v=90"></script>
+<script src="js/search.js?v=90"></script>
+<script src="js/study.js?v=90"></script>
+<script src="js/sprites.js?v=90"></script>
+<script src="js/help.js?v=90"></script>
+<script src="js/meta.js?v=90"></script>
+<script src="js/calc.js?v=90"></script>
+<script src="js/teamcheck.js?v=90"></script>
+<script src="js/builder.js?v=90"></script>
+<script src="js/plan.js?v=90"></script>
+<script src="js/topteams.js?v=90"></script>
+<script src="js/news.js?v=90"></script>
+<script src="js/replay.js?v=90"></script>
+<script src="js/sheets.js?v=90"></script>
+<script src="js/teamcompare.js?v=90"></script>
+<script src="js/battleview.js?v=90"></script>
+<script src="js/videos.js?v=90"></script>
+<script src="js/trends.js?v=90"></script>
+<script src="js/progress.js?v=90"></script>
+<script src="js/arcade.js?v=90"></script>
+<script src="js/test.js?v=90"></script>
+<script src="js/compare.js?v=90"></script>
+<script src="js/app.js?v=90"></script>
+<script src="js/autoimport.js?v=90"></script>
+<script src="js/regreport.js?v=90"></script>
+<script src="js/hubs.js?v=90"></script>
+<script src="js/whatsnew.js?v=90"></script>
+<script src="js/firebase-config.js?v=90"></script>
+<script src="js/account.js?v=90"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}); });

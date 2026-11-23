@@ -32,6 +32,9 @@
     return f ? f.name : id;
   }
   VL.curFormatId = curFormatId;
+  // A team belongs to the format it was built for: pickers only offer teams for the format in use
+  // (a team saved before teams had a format goes anywhere).
+  VL.teamFits = (t, fid) => !!t && (!t.fmt || !fid || t.fmt === fid || String(fid).startsWith('custom:'));
   // which play style a format belongs to (used to sort older records that don't say)
   VL.styleOfFmt = (fid) => { if (!fid || !D.dex || String(fid).startsWith('custom:')) return null; const f = D.dex.formats.find(x => x.id === fid); return f ? (f.doubles ? 'doubles' : 'singles') : null; };
   // focus, season goal and best rank are kept per play style
@@ -165,9 +168,9 @@
   }
 
   // ---------- log ----------
-  function teamOptions(sel, first) {
+  function teamOptions(sel, first, fid) {
     const cur = sel.value;
-    sel.innerHTML = `<option value="">${first}</option>` + teams().slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+    sel.innerHTML = `<option value="">${first}</option>` + teams().filter(t => !fid || VL.teamFits(t, fid) || t.id === cur).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
     sel.value = cur;
   }
   function fillDatalist() {
@@ -178,7 +181,8 @@
     $('dl-mons').innerHTML = idx.map(i => `<option value="${esc(D.dex.species[i].n)}">`).join('');
   }
   function renderLog() {
-    teamOptions($('lf-team'), '(not set)');
+    let lf = null; try { lf = pendingFmt; } catch (e) { /* not set up yet */ }
+    teamOptions($('lf-team'), '(not set)', lf || curFormatId());
     $('log-fmt').textContent = 'Format: ' + fmtName(curFormatId());
     const all = games(); const show = ($('recent-mode') || {}).value || 'all';
     const g = show === 'all' ? all : all.filter(x => show === 'test' ? isTest(x) : !isTest(x));
@@ -188,7 +192,7 @@
     const tname = Object.fromEntries(teams().map(t => [t.id, t.name]));
     $('recent').innerHTML = `<table class="list"><thead><tr><th></th><th>Date</th><th>Their team</th><th>Leads (mine / theirs)</th><th>Tags</th><th>Note</th><th></th></tr></thead><tbody>${
       g.slice(0, 40).map(x => `<tr>
-        <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span>${isTest(x) ? '<br><span class="pill m" title="Testing game: not part of your climb">Test</span>' : ''}</td>
+        <td><span class="pill ${x.result === 'W' ? 'w' : 'l'}">${x.result}</span>${x.set ? `<br><span class="pill n" title="Game ${x.setGame} of a best-of-${x.setOf || 3}">G${x.setGame}/${x.setOf || 3}</span>` : ''}${isTest(x) ? '<br><span class="pill m" title="Testing game: not part of your climb">Test</span>' : ''}</td>
         <td class="mono" style="white-space:nowrap">${esc((x.day || '').slice(5))}${Number.isFinite(x.rating) ? `<br><span class="sub">${x.rating}</span>` : ''}${x.sdUser ? `<br><span class="sub" title="Showdown account">${esc(x.sdUser)}</span>` : ''}<br><span class="sub">${esc(x.fmtName || fmtName(x.fmt))}</span></td>
         <td>${(x.opp || []).length ? `<span class="sprrow" title="${esc((x.opp || []).join(', '))}">${(x.opp || []).map(n => VL.sprite(n, 'xs')).join('')}</span>` : '<span class="sub">–</span>'}${/^https:\/\/replay\.pokemonshowdown\.com\//.test(x.source || '') ? `<br><button class="linkbtn" data-review="${esc(x.source)}">Review replay</button>` : x.logz ? `<br><button class="linkbtn" data-reviewgame="${esc(x.id)}">Review game</button>` : ''}${x.arch ? `<br><span class="sub">${esc(x.arch)}</span>` : ''}${x.team && tname[x.team] ? `<br><span class="sub">with ${esc(tname[x.team])}</span>` : ''}</td>
         <td>${esc(x.mylead || '–')} / ${esc(x.opplead || '–')}</td>
@@ -196,6 +200,38 @@
         <td style="max-width:280px">${esc(x.note || '')}${x.turn ? ` <span class="sub">(T${x.turn})</span>` : ''}</td>
         <td style="white-space:nowrap"><button class="linkbtn" data-editgame="${esc(x.id)}">Edit</button> <button class="linkbtn" data-delgame="${esc(x.id)}">Delete</button></td></tr>`).join('')
     }</tbody></table>`;
+  }
+
+  // ---------- best-of-3 sets in Review ----------
+  // Game 1 is mostly your team against theirs; games 2 and 3 are about adapting to what you saw.
+  function renderSets(list) {
+    const by = {}; for (const g of list) if (g.set) (by[g.set] = by[g.set] || []).push(g);
+    const sets = Object.values(by).map(gs => { gs.sort((a, b) => (a.setGame || 0) - (b.setGame || 0)); const w = gs.filter(g => g.result === 'W').length, l = gs.length - w; const of = gs[0].setOf || 3; const need = Math.floor(of / 2) + 1; return { gs, w, l, won: w >= need ? true : l >= need ? false : null, t: Math.max(...gs.map(g => g.ts || 0)) }; })
+      .filter(s => s.gs.length >= 2 || s.won !== null).sort((a, b) => b.t - a.t);
+    $('rv-sets-card').hidden = !sets.length; if (!sets.length) return;
+    const pct = (a, n) => n ? Math.round(a / n * 100) + '%' : '–';
+    const done = sets.filter(s => s.won !== null); const sw = done.filter(s => s.won).length;
+    const g1 = sets.map(s => s.gs.find(g => g.setGame === 1)).filter(Boolean); const g1w = g1.filter(g => g.result === 'W').length;
+    const later = sets.flatMap(s => s.gs.filter(g => (g.setGame || 0) >= 2)); const lw = later.filter(g => g.result === 'W').length;
+    const down = done.filter(s => (s.gs.find(g => g.setGame === 1) || {}).result === 'L'); const back = down.filter(s => s.won).length;
+    // did changing the plan between games help? the game after each plan
+    const after = (same) => sets.flatMap(s => s.gs.filter((g, i) => i > 0 && s.gs[i - 1].planSame === same));
+    const ch = after(false), sm = after(true);
+    const tile = (v, l, sub) => `<div class="tile"><div class="k">${esc(l)}</div><div class="v">${v}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>`;
+    const tiles = [
+      tile(done.length ? `${sw}–${done.length - sw}` : '–', 'Sets won–lost', `${sets.length - done.length ? sets.length - done.length + ' unfinished' : ''}`),
+      tile(pct(g1w, g1.length), 'Game 1 win rate', `${g1.length} game${g1.length === 1 ? '' : 's'}`),
+      tile(pct(lw, later.length), 'Games 2 and 3', `${later.length} game${later.length === 1 ? '' : 's'}`),
+      tile(down.length ? `${back} of ${down.length}` : '–', 'Comebacks after losing game 1', ''),
+    ].join('');
+    const adapt = ch.length + sm.length >= 2 ? `<p class="sub">After you <b>changed</b> your plan you won ${pct(ch.filter(g => g.result === 'W').length, ch.length)} of the next games (${ch.length}); after keeping the <b>same</b> plan, ${pct(sm.filter(g => g.result === 'W').length, sm.length)} (${sm.length}).</p>`
+      : '<p class="sub">Write a plan for the next game between games (on Showdown, or in the Log form) and this shows whether changing it helps.</p>';
+    const read = later.length >= 4 && g1.length >= 4 ? (lw / later.length < g1w / g1.length - 0.1 ? '<p class="sub">You win game 1 more often than the games after it, so opponents adapt to you better than you adapt to them. Before each game 2, write down what they led and what they kept in the back, and change one thing.</p>' : lw / later.length > g1w / g1.length + 0.1 ? '<p class="sub">You do better once you\'ve seen their team. That\'s the adapting skill best-of-3 tests.</p>' : '') : '';
+    const rows = sets.slice(0, 6).map(s => {
+      const who = s.gs.find(g => g.oppName); const res = s.won === null ? `<span class="pill n">${s.w}–${s.l}</span>` : `<span class="pill ${s.won ? 'w' : 'l'}">${s.won ? 'Won' : 'Lost'} ${s.w}–${s.l}</span>`;
+      return `<tr><td>${res}</td><td class="mono">${esc((s.gs[0].day || '').slice(5))}</td><td>${who ? esc(who.oppName) : '<span class="sub">–</span>'}</td><td>${s.gs.map(g => `<span class="pill ${g.result === 'W' ? 'w' : 'l'}" title="Game ${g.setGame}${g.plan ? ': plan after it: ' + esc(g.plan) : ''}">${g.result}</span>`).join(' ')}</td><td class="sub">${esc(s.gs[0].type || '')}</td></tr>`;
+    }).join('');
+    $('rv-sets').innerHTML = `<div class="tiles">${tiles}</div>${adapt}${read}<table class="list"><thead><tr><th>Set</th><th>Date</th><th>Opponent</th><th>Games</th><th>Where</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   // ---------- review ----------
@@ -302,6 +338,7 @@
     const leads = {}; for (const g of list) { if (!g.mylead) continue; const k = splitMons(g.mylead).sort().join(' + '); if (!k) continue; (leads[k] ||= { n: 0, w: 0 }); leads[k].n++; if (g.result === 'W') leads[k].w++; }
     const lr = wrRows(Object.entries(leads).filter(([, v]) => v.n >= 3));
     $('rv-leads').innerHTML = lr.length ? barList(lr, { acc: true, fmt: r => `${r.v}% · ${r.n}` }) : '<div class="empty">Log your lead to see which openings win for you.</div>';
+    renderSets(list);
     renderInsights(list);
     const reps = store.list('reports').sort((a, b) => (b.ts || 0) - (a.ts || 0));
     $('coach-past-wrap').hidden = !reps.length;
@@ -680,7 +717,10 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
       opplead: splitMons($('lf-opplead').value).join(', '), turn: Number.isFinite(turn) ? turn : null,
       tags: [...document.querySelectorAll('#lf-tags [aria-pressed=true]')].map(b => b.dataset.tag), note: $('lf-note').value.trim(),
       oppName: $('lf-oppname').value.trim() || null, source: pendingSource || null,
+      ...setFields(old),
     });
+    const nextUp = !old && setNext();
+    const setDone = !old && +$('lf-setgame').value ? (() => { const g = games().filter(x => x.setGame === +$('lf-setgame').value).sort((a, b) => b.ts - a.ts)[0]; const sc = g && setScore(g.set); return sc && sc.decided ? sc : null; })() : null;
     if ($('lf-oppname').value.trim() && VL.plan) VL.plan.ensureOpponent($('lf-oppname').value.trim());
     pendingSource = null; pendingFmt = null;
     const res = lfResult; setResult(null);
@@ -690,9 +730,64 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     syncQs(); $('lf-tagq').open = false;
     const wasEdit = !!editingId; stopEditing();
     $('lf-msg').textContent = wasEdit ? 'Changes saved.' : 'Saved. Next game.';
+    resetSet();
+    if (setDone) $('lf-msg').textContent = `Saved. You ${setDone.w > setDone.l ? 'won' : 'lost'} the set ${setDone.w}–${setDone.l}.`;
+    if (nextUp) { // between games of a set: one tap fills in the next game's form
+      $('lf-msg').innerHTML = `Saved game ${nextUp.n - 1}. <button type="button" class="linkbtn" id="lf-nextgame">Log game ${nextUp.n} of this set</button>`;
+      $('lf-nextgame').onclick = () => fillNext(nextUp);
+    }
     if (!wasEdit) VL.markDone('log');
     VL.toast(wasEdit ? 'Game updated' : res === 'W' ? 'Win logged' : 'Loss logged'); VL.sound && VL.sound.play('save');
   });
+  // ---------- best-of-3 sets in the form ----------
+  // In person there's no extension: you say which game of the set this was, and it joins the set
+  // you were playing against the same opponent (game 1 starts a new one).
+  const need3 = (of) => Math.floor((of || 3) / 2) + 1;
+  function setGames(key) { return key ? games().filter(g => g.set === key).sort((a, b) => (a.setGame || 0) - (b.setGame || 0)) : []; }
+  function setScore(key) { const gs = setGames(key); const w = gs.filter(g => g.result === 'W').length, l = gs.filter(g => g.result === 'L').length; const of = (gs[0] && gs[0].setOf) || 3; return { gs, w, l, of, decided: w >= need3(of) || l >= need3(of) }; }
+  VL.setScore = setScore;
+  // the set this game continues: the newest unfinished set against this opponent from the last 12 hours
+  function prevSet(n) {
+    const who = $('lf-oppname').value.trim().toLowerCase(); const since = Date.now() - 12 * 36e5;
+    const cands = games().filter(g => g.set && g.ts > since && (g.setGame || 0) < n && (!who || String(g.oppName || '').toLowerCase() === who) && g.id !== editingId)
+      .sort((a, b) => b.ts - a.ts);
+    for (const g of cands) { const sc = setScore(g.set); if (!sc.decided && sc.gs.length < n) return g.set; }
+    return null;
+  }
+  const isSetType = () => $('lf-type').value !== 'Ladder (best of 1)';
+  function setRow() {
+    $('lf-setrow').hidden = !isSetType() && !$('lf-setgame').value;
+    const n = +$('lf-setgame').value || 0; const info = $('lf-setinfo');
+    const key = n > 1 ? (editingId && (store.get('games', editingId) || {}).set) || prevSet(n) : null;
+    if (!key) { info.hidden = !(n > 1); info.textContent = n > 1 ? `No unfinished set${$('lf-oppname').value.trim() ? ' against ' + $('lf-oppname').value.trim() : ''} from today, so this starts a new one.` : ''; return; }
+    const sc = setScore(key); const last = sc.gs[sc.gs.length - 1];
+    info.hidden = false;
+    info.innerHTML = `Continues your set${last.oppName ? ' against ' + esc(last.oppName) : ''}: ${sc.gs.map(g => `game ${g.setGame} ${g.result === 'W' ? 'won' : 'lost'}`).join(', ')}.${last.plan ? ` Your plan for this game: <b>${esc(last.plan)}</b>` : ''}`;
+  }
+  ['lf-type', 'lf-setgame'].forEach(id => $(id).addEventListener('change', setRow));
+  $('lf-oppname').addEventListener('change', setRow);
+  function setFields(old) {
+    const n = +$('lf-setgame').value || 0;
+    const plan = $('lf-plan').value.trim(); const kind = $('lf-plankind').value;
+    if (!n) return old && old.set ? { set: null, setGame: null, setOf: null, plan: null, planSame: null } : {};
+    const key = (old && old.set) || (n > 1 && prevSet(n)) || 'm' + VL.newId('s');
+    return { set: key, setGame: n, setOf: 3, plan: plan || null, planSame: kind === 'same' ? true : kind === 'change' ? false : null };
+  }
+  // after saving a game of a set that isn't over: what the next game's form needs
+  function setNext() {
+    const n = +$('lf-setgame').value || 0; if (!n) return null;
+    const g = games().filter(x => x.setGame === n).sort((a, b) => b.ts - a.ts)[0]; if (!g) return null;
+    const sc = setScore(g.set); if (sc.decided || n >= sc.of) return null;
+    return { n: n + 1, type: g.type, team: g.team, arch: g.arch, opp: g.opp, oppName: g.oppName, mode: lfMode };
+  }
+  function fillNext(x) {
+    $('lf-type').value = x.type || 'Best-of-3 practice'; $('lf-team').value = x.team || ''; $('lf-arch').value = x.arch || '';
+    $('lf-opp').value = (x.opp || []).join(', '); $('lf-oppname').value = x.oppName || ''; $('lf-setgame').value = String(x.n);
+    setRow(); $('lf-msg').textContent = `Game ${x.n}: their team and your team are filled in. Pick WIN or LOSS when it's done.`;
+    $('log-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function resetSet() { $('lf-setgame').value = ''; $('lf-plan').value = ''; $('lf-plankind').value = ''; setRow(); }
+
   // ---------- edit a logged game: load it into the form, save over it ----------
   let editingId = null;
   function stopEditing() {
@@ -706,6 +801,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     set('lf-team', x.team || ''); set('lf-arch', x.arch || ''); set('lf-opp', (x.opp || []).join(', '));
     set('lf-mylead', x.mylead || ''); set('lf-myback', x.myback || ''); set('lf-opplead', x.opplead || '');
     set('lf-turn', Number.isFinite(x.turn) ? x.turn : ''); set('lf-note', x.note || ''); set('lf-oppname', x.oppName || '');
+    set('lf-setgame', x.setGame || ''); set('lf-plan', x.plan || ''); set('lf-plankind', x.planSame === true ? 'same' : x.planSame === false ? 'change' : ''); setRow();
     document.querySelectorAll('#lf-tags [data-tag]').forEach(b => b.setAttribute('aria-pressed', String((x.tags || []).includes(b.dataset.tag))));
     syncQs();
     pendingSource = x.source || null; pendingFmt = x.fmt || null;
@@ -714,7 +810,7 @@ Rules: be direct and specific. Only state numbers you can count in the log. Don'
     $('log-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('lf-cancel').onclick = () => {
-    stopEditing(); setResult(null); pendingSource = null; pendingFmt = null;
+    stopEditing(); setResult(null); pendingSource = null; pendingFmt = null; resetSet();
     for (const f of ['lf-opp', 'lf-mylead', 'lf-myback', 'lf-opplead', 'lf-turn', 'lf-note', 'lf-arch', 'lf-oppname']) $(f).value = '';
     backHelp(null);
     document.querySelectorAll('#lf-tags [aria-pressed=true]').forEach(b => b.setAttribute('aria-pressed', 'false')); syncQs();
